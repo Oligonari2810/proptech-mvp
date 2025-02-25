@@ -1,0 +1,40 @@
+# 📦 Dependencias y paquetes innecesarios
+/node_modules
+/.pnp
+.pnp.*
+
+# 🧪 Archivos de pruebas y cobertura
+/coverage
+
+# ⚡ Caché y compilación de Next.js
+/.next/
+/out/
+
+# 🚀 Archivos de producción y build
+/build
+
+# 🌎 Configuración de Vercel (Evita subir despliegues locales)
+/.vercel
+
+# 🔑 Variables de entorno (Evita subir credenciales o configuraciones sensibles)
+.env
+.env.local
+.env.development
+.env.production
+.env*.local
+
+# 🖥️ Archivos específicos de macOS y editores de código
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+*.log
+
+# 🛠️ Archivos de TypeScript innecesarios
+*.tsbuildinfo
+next-env.d.ts
+
+# 🔄 Archivos de lock para dependencias (opcional si usas solo un gestor de paquetes)
+yarn.lock
+pnpm-lock.yaml
