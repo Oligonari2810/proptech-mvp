@@ -1,4 +1,4 @@
-"use client"; // Esto es obligatorio para manejar eventos
+"use client"; // 🔥 Esto es obligatorio para los eventos en Next.js
 
 import React from "react";
 
@@ -8,11 +8,11 @@ interface ButtonProps {
   onClick?: () => void;
 }
 
-const Button: React.FC<ButtonProps> = ({ text, className, onClick }) => {
+const Button: React.FC<ButtonProps> = ({ text, className = "", onClick = () => {} }) => {
   return (
     <button
-      className={`px-4 py-2 rounded-md ${className}`}
-      onClick={onClick} // ✅ Manejo de eventos en un Client Component
+      className={`px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-all ${className}`}
+      onClick={onClick} // ✅ Siempre tendrá una función válida
     >
       {text}
     </button>
