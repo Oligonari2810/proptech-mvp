@@ -1,24 +1,23 @@
-import './globals.css';
-import { Inter } from 'next/font/google';
+import "./globals.css";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'HábitatProRD',
-  description: 'Tu plataforma inmobiliaria innovadora',
+  title: "HábitatProRD",
+  description: "Tu plataforma inmobiliaria innovadora",
 };
 
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <head>
-        {/* ✅ Forzando favicon */}
+        {/* ✅ Favicon y metadatos */}
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        
-        {/* ✅ Otros metadatos útiles */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#ffffff" />
         <meta property="og:title" content="HábitatProRD" />
         <meta property="og:description" content="Tu plataforma inmobiliaria innovadora" />

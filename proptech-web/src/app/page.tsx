@@ -14,7 +14,7 @@ export default function Home() {
           Encuentra propiedades, haz estimaciones y toma decisiones de inversión inteligentes.
         </p>
         <Banner />
-        <ClientButtons /> {/* ✅ Mantener Client Component */}
+        <ClientButtons />
         <footer className="flex gap-6 flex-wrap items-center justify-center mt-10">
           <a href="/about" className="text-blue-500 hover:underline">
             Acerca de HábitatProRD
