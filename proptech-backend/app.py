@@ -10,7 +10,7 @@ from config import Config
 app = Flask(__name__)
 app.config.from_object(Config)
 
-CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173", "https://proptech-frontend.onrender.com"]}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173", "https://proptech-frontend.onrender.com", "https://proptech-web.vercel.app"]}}, supports_credentials=True)
 
 db.init_app(app)
 
