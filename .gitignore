@@ -80,3 +80,4 @@ instance/
 # Scrapy stuff
 .scrapy
 proptech-backend/venv/
+backup-*.zip
