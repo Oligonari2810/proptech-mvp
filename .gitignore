@@ -81,3 +81,4 @@ instance/
 .scrapy
 proptech-backend/venv/
 backup-*.zip
+backup-*.zip
