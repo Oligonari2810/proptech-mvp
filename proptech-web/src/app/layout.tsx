@@ -14,14 +14,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <head>
-        {/* ✅ Favicon y metadatos */}
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#ffffff" />
         <meta property="og:title" content="HábitatProRD" />
         <meta property="og:description" content="Tu plataforma inmobiliaria innovadora" />
-        <meta property="og:image" content="/images/Logo.png" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
