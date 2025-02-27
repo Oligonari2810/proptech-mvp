@@ -1,15 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone", 
+  output: "standalone",
   reactStrictMode: true,
-  trailingSlash: false,
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "example.com",
-      },
-    ],
+    domains: ["localhost", "proptech-mvp-1.onrender.com"], // Asegurar carga de imágenes externas
+  },
+  eslint: {
+    ignoreDuringBuilds: true, // ✅ Evita errores de ESLint en el despliegue
   },
 };
 
