@@ -10,7 +10,9 @@ interface Property {
 }
 
 const PropertyDetailPage: React.FC = () => {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params.propertyId; // ✅ Asegurar que obtenemos el parámetro correcto
+
   const [property, setProperty] = useState<Property | null>(null);
 
   useEffect(() => {
@@ -25,10 +27,10 @@ const PropertyDetailPage: React.FC = () => {
   if (!property) return <p>Loading...</p>;
 
   return (
-    <div>
-      <h1>{property.title}</h1>
-      <p>{property.description}</p>
-      <p>Precio: ${property.price}</p>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold">{property.title}</h1>
+      <p className="text-lg">{property.description}</p>
+      <p className="text-xl font-semibold">Precio: ${property.price}</p>
     </div>
   );
 };
