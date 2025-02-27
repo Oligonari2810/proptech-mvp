@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // experimental: {
+  //   appDir: true,  // Si este genera error, elimínalo temporalmente
+  // },
   reactStrictMode: true,
-  images: {
-    domains: ["localhost", "proptech-mvp-1.onrender.com"], // Asegurar carga de imágenes externas
-  },
-  eslint: {
-    ignoreDuringBuilds: true, // ✅ Evita errores de ESLint en el despliegue
-  },
+  swcMinify: true,
+  output: 'standalone', // Esto es clave para que funcione en Vercel
 };
 
 module.exports = nextConfig;
