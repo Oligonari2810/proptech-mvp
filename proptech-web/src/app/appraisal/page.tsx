@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const AppraisalRequest = () => {
+export default function AppraisalRequest() {
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
 
@@ -41,6 +41,4 @@ const AppraisalRequest = () => {
       </form>
     </div>
   );
-};
-
-export default AppraisalRequest;
+}

@@ -20,8 +20,8 @@ export default function ClientButtons() {
       />
       <Button
         text="Solicitar Tasación"
-        className="bg-green-500 text-white hover:bg-green-600"
-        onClick={() => router.push("/valuation")}
+        className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-600"
+        onClick={() => router.push("/appraisal")} // 🔥 Revisa que la ruta esté bien escrita
       />
       <Button
         text="Herramientas de Inversión"
