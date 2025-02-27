@@ -1,7 +1,7 @@
-"use client"; // ✅ Necesario porque usamos useEffect y useState
+"use client"; // Esto indica que es un componente cliente
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation"; // ✅ Nueva forma de obtener parámetros en app/
+import { useParams } from "next/navigation";
 
 interface Property {
   title: string;
@@ -10,27 +10,19 @@ interface Property {
 }
 
 const PropertyDetailPage: React.FC = () => {
-  const params = useParams(); // ✅ Obtiene el ID de la URL
+  const { id } = useParams();
   const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (params.id) {
-      fetch(`https://proptech-mvp-1.onrender.com/properties/${params.id}`)
+    if (id) {
+      fetch(`https://proptech-mvp-1.onrender.com/properties/${id}`)
         .then((res) => res.json())
-        .then((data) => {
-          setProperty(data);
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching property:", error);
-          setLoading(false);
-        });
+        .then((data) => setProperty(data))
+        .catch((error) => console.error("Error fetching property:", error));
     }
-  }, [params.id]);
+  }, [id]);
 
-  if (loading) return <p>Loading...</p>;
-  if (!property) return <p>Property not found</p>;
+  if (!property) return <p>Loading...</p>;
 
   return (
     <div>
