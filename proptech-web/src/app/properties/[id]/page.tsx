@@ -1,4 +1,4 @@
-"use client";
+"use client"; // 👈 NECESARIO PARA USAR useEffect y useState
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -9,18 +9,18 @@ interface Property {
   price: number;
 }
 
-const PropertyDetailPage = () => {
-  const { id } = useParams(); // Usar useParams para obtener el ID dinámico de Next.js
+const PropertyDetailPage: React.FC = () => {
+  const params = useParams(); // Obtiene el ID desde la URL
   const [property, setProperty] = useState<Property | null>(null);
 
   useEffect(() => {
-    if (id) {
-      fetch(`https://proptech-mvp-1.onrender.com/properties/${id}`)
+    if (params?.id) {
+      fetch(`https://proptech-mvp-1.onrender.com/properties/${params.id}`)
         .then((res) => res.json())
         .then((data) => setProperty(data))
         .catch((error) => console.error("Error fetching property:", error));
     }
-  }, [id]);
+  }, [params?.id]);
 
   if (!property) return <p>Loading...</p>;
 
