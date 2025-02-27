@@ -1,5 +1,7 @@
-import { GetServerSideProps } from "next";
+"use client";
+
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 interface Property {
   title: string;
@@ -7,11 +9,8 @@ interface Property {
   price: number;
 }
 
-interface PropertyDetailProps {
-  id: string;
-}
-
-const PropertyDetailPage: React.FC<PropertyDetailProps> = ({ id }) => {
+const PropertyDetailPage = () => {
+  const { id } = useParams(); // Usar useParams para obtener el ID dinámico de Next.js
   const [property, setProperty] = useState<Property | null>(null);
 
   useEffect(() => {
@@ -32,18 +31,6 @@ const PropertyDetailPage: React.FC<PropertyDetailProps> = ({ id }) => {
       <p>Precio: ${property.price}</p>
     </div>
   );
-};
-
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  if (!params || !params.id) {
-    return {
-      notFound: true, // Manejo de error si el ID no está definido
-    };
-  }
-
-  return {
-    props: { id: params.id }, // Pasamos solo el ID como string
-  };
 };
 
 export default PropertyDetailPage;
