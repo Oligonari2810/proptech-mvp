@@ -4,7 +4,6 @@ const nextConfig = {
   //   appDir: true,  // Si este genera error, elimínalo temporalmente
   // },
   reactStrictMode: true,
-  swcMinify: true,
   output: 'standalone', // Esto es clave para que funcione en Vercel
 };
 
