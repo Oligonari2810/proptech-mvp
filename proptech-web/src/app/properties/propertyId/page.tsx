@@ -25,7 +25,7 @@ export default function PropertyDetailPage() {
       return;
     }
 
-    fetch(`https://proptech-mvp-1.onrender.com/properties/${id}`)
+    fetch(`https://proptech-mvp-1.onrender.com/api/properties/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("No se encontró la propiedad.");
         return res.json();
