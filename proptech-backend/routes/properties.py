@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify
-from models import Property  # Asegúrate de que Property está correctamente importado
-from database import db  # Asegúrate de que db está correctamente importado
+from models import Property, db  # ✅ Importamos db desde models.py
 
 properties_bp = Blueprint('properties', __name__)
 
@@ -12,7 +11,9 @@ def get_all_properties():
         "id": p.id,
         "title": p.title,
         "description": p.description,
-        "price": p.price
+        "price": p.price,
+        "location": p.location,
+        "image_url": p.image_url
     } for p in properties])
 
 # ✅ Nueva ruta para obtener una propiedad por ID
@@ -25,5 +26,7 @@ def get_property(property_id):
         "id": property.id,
         "title": property.title,
         "description": property.description,
-        "price": property.price
+        "price": property.price,
+        "location": property.location,
+        "image_url": property.image_url
     })
