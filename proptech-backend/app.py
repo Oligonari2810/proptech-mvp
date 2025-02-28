@@ -4,7 +4,7 @@ from routes.auth import auth_bp
 from routes.properties import properties_bp
 from routes.valuation import valuation_bp
 from routes.contracts import contracts_bp
-from routes.contact import contact_bp  # ✅ Importamos la nueva ruta
+from routes.contact import contact_bp
 from models import db
 from config import Config
 
@@ -22,7 +22,7 @@ app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(properties_bp, url_prefix="/properties")
 app.register_blueprint(valuation_bp, url_prefix="/valuation")
 app.register_blueprint(contracts_bp, url_prefix="/contracts")
-app.register_blueprint(contact_bp, url_prefix="/api")  # ✅ Registrar la ruta de contacto
+app.register_blueprint(contact_bp, url_prefix="/api") 
 
 @app.route("/", methods=["GET"])
 def home():
