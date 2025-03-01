@@ -9,7 +9,7 @@ export default function AddProperty() {
     description: "",
     price: "",
     location: "",
-    image_url: "", // 🔹 Ahora usamos `image_url`
+    image_url: "", // 🔹 Ahora `image_url` correctamente definido
     property_type: "apartment"
   });
 
@@ -26,11 +26,17 @@ export default function AddProperty() {
     setMessage("");
 
     const payload = {
-      ...property,
+      title: property.title,
+      description: property.description,
       price: parseFloat(property.price),
+      location: property.location,
+      image_url: property.image_url, // ✅ Ahora `image_url` está correctamente estructurado
+      property_type: property.property_type,
+      user_id: 1  // 🔹 Asegúrate de que este usuario existe en la BD
     };
 
-    console.log("📤 Enviando JSON:", payload);  // ✅ Verifica qué datos se están enviando
+    console.log("📌 BACKEND URL:", process.env.NEXT_PUBLIC_BACKEND_URL);  // ✅ Verifica la URL del backend
+    console.log("📤 Enviando JSON:", JSON.stringify(payload, null, 2));  // ✅ Verifica qué datos se están enviando
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/properties`, {
@@ -40,7 +46,7 @@ export default function AddProperty() {
       });
 
       const data = await response.json();
-      console.log("📥 Respuesta de la API:", data);
+      console.log("📥 Respuesta de la API:", JSON.stringify(data, null, 2));  // ✅ Imprime la respuesta del backend
 
       if (response.ok) {
         setMessage("✅ Propiedad agregada exitosamente!");
