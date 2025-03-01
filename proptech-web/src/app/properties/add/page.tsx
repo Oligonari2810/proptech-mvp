@@ -9,7 +9,7 @@ export default function AddProperty() {
     description: "",
     price: "",
     location: "",
-    images: "",
+    image_url: "", // 🔹 Ahora usamos `image_url`
     property_type: "apartment"
   });
 
@@ -28,10 +28,9 @@ export default function AddProperty() {
     const payload = {
       ...property,
       price: parseFloat(property.price),
-      images: JSON.stringify([property.images]) // 🔹 Convertimos el array en string JSON
     };
 
-    console.log("📤 Enviando JSON:", payload);  // 🔹 Verificamos qué enviamos
+    console.log("📤 Enviando JSON:", payload);  // ✅ Verifica qué datos se están enviando
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/properties`, {
@@ -68,7 +67,7 @@ export default function AddProperty() {
         <textarea name="description" placeholder="Descripción" value={property.description} onChange={handleChange} required className="w-full p-2 border rounded" />
         <input type="number" name="price" placeholder="Precio" value={property.price} onChange={handleChange} required className="w-full p-2 border rounded" />
         <input type="text" name="location" placeholder="Ubicación" value={property.location} onChange={handleChange} required className="w-full p-2 border rounded" />
-        <input type="text" name="images" placeholder="URL de la Imagen" value={property.images} onChange={handleChange} required className="w-full p-2 border rounded" />
+        <input type="text" name="image_url" placeholder="URL de la Imagen" value={property.image_url} onChange={handleChange} required className="w-full p-2 border rounded" />
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded" disabled={loading}>
           {loading ? "Subiendo..." : "Subir Propiedad"}
         </button>
