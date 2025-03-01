@@ -1,8 +1,8 @@
-"""Corrigiendo conexión a PostgreSQL en Render
+"""Recreando migraciones desde cero
 
-Revision ID: 5ee2f734b69e
+Revision ID: 7dce9aabc2f5
 Revises: 
-Create Date: 2025-02-14 21:35:52.230563
+Create Date: 2025-03-01 01:23:35.791234
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '5ee2f734b69e'
+revision = '7dce9aabc2f5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -32,13 +32,18 @@ def upgrade():
     sa.Column('price', sa.Float(), nullable=False),
     sa.Column('location', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('images', sa.Text(), nullable=True),
+    sa.Column('image_url', sa.String(length=255), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('property_type', sa.String(length=50), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    with op.batch_alter_table('property', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_property_location'), ['location'], unique=False)
+        batch_op.create_index(batch_op.f('ix_property_price'), ['price'], unique=False)
+        batch_op.create_index(batch_op.f('ix_property_status'), ['status'], unique=False)
+
     op.create_table('smart_contract',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('property_id', sa.Integer(), nullable=False),
@@ -104,6 +109,11 @@ def downgrade():
     )
     op.drop_table('valuation')
     op.drop_table('smart_contract')
+    with op.batch_alter_table('property', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_property_status'))
+        batch_op.drop_index(batch_op.f('ix_property_price'))
+        batch_op.drop_index(batch_op.f('ix_property_location'))
+
     op.drop_table('property')
     op.drop_table('user')
     # ### end Alembic commands ###

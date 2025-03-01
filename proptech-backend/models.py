@@ -23,10 +23,10 @@ class Property(db.Model):
     price = db.Column(db.Float, nullable=False, index=True)
     location = db.Column(db.String(255), nullable=False, index=True)
     description = db.Column(db.Text, nullable=True)
-    images = db.Column(db.JSON, nullable=True)  # ✅ Mejor formato que `Text`
+    image_url = db.Column(db.String(255), nullable=True)  # 🔹 Ahora `image_url`, no `images`
     status = db.Column(db.String(50), nullable=False, default='available', index=True)
     property_type = db.Column(db.String(50), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # ✅ Ahora puede ser nulo (si la propiedad es de un admin)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
     # Relación con Tasaciones y Contratos
     valuations = relationship('Valuation', backref='property', lazy=True)

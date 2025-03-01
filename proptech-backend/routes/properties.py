@@ -16,20 +16,20 @@ def get_all_properties():
         "image_url": p.image_url
     } for p in properties])
 
-# ✅ Ruta para obtener una propiedad por ID
-@properties_bp.route('/<int:property_id>', methods=['GET'])
-def get_property(property_id):
-    property = Property.query.get(property_id)
-    if not property:
-        return jsonify({"error": "Propiedad no encontrada"}), 404
-    return jsonify({
-        "id": property.id,
-        "title": property.title,
-        "description": property.description,
-        "price": property.price,
-        "location": property.location,
-        "image_url": property.image_url
-    })
+# ✅ Ruta para obtener todas las propiedades
+@properties_bp.route('/', methods=['GET'])
+def get_properties():
+    properties = Property.query.all()
+    return jsonify([{
+        "id": prop.id,
+        "title": prop.title,
+        "description": prop.description,
+        "price": prop.price,
+        "location": prop.location,
+        "image_url": prop.image_url,  # ✅ CAMBIO AQUÍ (antes era `images`)
+        "property_type": prop.property_type,
+        "user_id": prop.user_id
+    } for prop in properties]), 200
 
 # ✅ NUEVO: Ruta para subir una nueva propiedad (POST)
 @properties_bp.route('/', methods=['POST'])
