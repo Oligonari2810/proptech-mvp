@@ -28,23 +28,34 @@ export default function AddProperty() {
     const payload = {
       ...property,
       price: parseFloat(property.price),
-      images: [property.images]
+      images: JSON.stringify([property.images]) // 🔹 Convertimos el array en string JSON
     };
 
-    const response = await fetch("https://proptech-mvp-1.onrender.com/api/properties", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    console.log("📤 Enviando JSON:", payload);  // 🔹 Verificamos qué enviamos
 
-    if (response.ok) {
-      setMessage("Propiedad agregada exitosamente!");
-      setTimeout(() => {
-        router.push("/properties");
-      }, 1500);
-    } else {
-      setMessage("Error al subir la propiedad.");
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/properties`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      console.log("📥 Respuesta de la API:", data);
+
+      if (response.ok) {
+        setMessage("✅ Propiedad agregada exitosamente!");
+        setTimeout(() => {
+          router.push("/properties");
+        }, 1500);
+      } else {
+        setMessage(`❌ Error en la API: ${JSON.stringify(data)}`);
+      }
+    } catch (error) {
+      console.error("🚨 Error en la solicitud:", error);
+      setMessage("❌ Error de conexión con la API.");
     }
+
     setLoading(false);
   };
 
