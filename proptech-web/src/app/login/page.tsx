@@ -7,7 +7,6 @@ export default function LoginPage() {
   const router = useRouter();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +34,7 @@ export default function LoginPage() {
         setError(data.message || "Error en el inicio de sesión");
       }
     } catch (error) {
+      console.error("Error al conectar con el servidor", error); // ✅ Ahora se usa error en el catch
       setError("Error al conectar con el servidor");
     }
 
