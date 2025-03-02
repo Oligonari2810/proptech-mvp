@@ -87,7 +87,37 @@ export default function PropertiesPage() {
           <input type="text" name="location" placeholder="Ubicación" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })} className="border p-2 rounded" />
           <input type="number" name="min_price" placeholder="Precio Mínimo" value={filters.min_price} onChange={(e) => setFilters({ ...filters, min_price: e.target.value })} className="border p-2 rounded" />
           <input type="number" name="max_price" placeholder="Precio Máximo" value={filters.max_price} onChange={(e) => setFilters({ ...filters, max_price: e.target.value })} className="border p-2 rounded" />
+          <input type="number" name="bedrooms" placeholder="Habitaciones" value={filters.bedrooms} onChange={(e) => setFilters({ ...filters, bedrooms: e.target.value })} className="border p-2 rounded" />
+          <input type="number" name="bathrooms" placeholder="Baños" value={filters.bathrooms} onChange={(e) => setFilters({ ...filters, bathrooms: e.target.value })} className="border p-2 rounded" />
+          <select name="property_type" value={filters.property_type} onChange={(e) => setFilters({ ...filters, property_type: e.target.value })} className="border p-2 rounded">
+            <option value="">Tipo de Propiedad</option>
+            <option value="apartment">Apartamento</option>
+            <option value="house">Casa</option>
+            <option value="land">Terreno</option>
+            <option value="commercial">Local Comercial</option>
+          </select>
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" name="has_pool" checked={filters.has_pool} onChange={(e) => setFilters({ ...filters, has_pool: e.target.checked })} />
+            <span>Piscina</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" name="has_garage" checked={filters.has_garage} onChange={(e) => setFilters({ ...filters, has_garage: e.target.checked })} />
+            <span>Garaje</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" name="has_elevator" checked={filters.has_elevator} onChange={(e) => setFilters({ ...filters, has_elevator: e.target.checked })} />
+            <span>Ascensor</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" name="is_luxury" checked={filters.is_luxury} onChange={(e) => setFilters({ ...filters, is_luxury: e.target.checked })} />
+            <span>Propiedad de Lujo</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" name="is_bank_owned" checked={filters.is_bank_owned} onChange={(e) => setFilters({ ...filters, is_bank_owned: e.target.checked })} />
+            <span>Propiedad de Banco</span>
+          </label>
         </div>
+        <button onClick={fetchProperties} className="bg-blue-500 text-white px-4 py-2 rounded mt-4">Buscar</button>
       </div>
 
       {/* 🔹 Resultados */}
