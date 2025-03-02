@@ -33,7 +33,7 @@ export default function LoginPage() {
       } else {
         setError(data.message || "Error en el inicio de sesión");
       }
-    } catch (err) {
+    } catch (error) {
       setError("Error al conectar con el servidor");
     }
 
