@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function iBuyingPage() {
+export default function IBuyingPage() {  // 🔥 Nombre en mayúscula
   const [property, setProperty] = useState({
     address: "",
     price: "",
