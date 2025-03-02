@@ -8,11 +8,13 @@ interface Property {
   title: string;
   description: string;
   price: number;
+  location: string;
+  image_url: string;
 }
 
 export default function PropertyDetailPage() {
-  const params = useParams();
-  const id = params.propertyId; // ✅ Asegurar que obtenemos el parámetro correcto
+  const { propertyId } = useParams();
+  const id = Array.isArray(propertyId) ? propertyId[0] : propertyId; // ✅ Asegurar que obtenemos un ID válido
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,12 +22,14 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     if (!id) {
-      setError("No se encontró el ID de la propiedad.");
+      setError("❌ No se encontró el ID de la propiedad.");
       setLoading(false);
       return;
     }
 
-    fetch(`https://proptech-mvp-1.onrender.com/api/properties/${id}`)
+    console.log("📌 Buscando propiedad con ID:", id); // 🔍 DEBUG: Verificar qué ID estamos obteniendo
+
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/properties/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("No se encontró la propiedad.");
         return res.json();
@@ -35,8 +39,8 @@ export default function PropertyDetailPage() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error obteniendo la propiedad:", error);
-        setError("Error cargando los datos. Inténtalo más tarde.");
+        console.error("❌ Error obteniendo la propiedad:", error);
+        setError("⚠️ Error cargando los datos. Inténtalo más tarde.");
         setLoading(false);
       });
   }, [id]);
@@ -50,6 +54,8 @@ export default function PropertyDetailPage() {
       <h1 className="text-3xl font-bold">{property.title}</h1>
       <p className="text-lg">{property.description}</p>
       <p className="text-xl font-semibold">💰 Precio: ${property.price}</p>
+      <p className="text-gray-600">📍 Ubicación: {property.location}</p>
+      <img src={property.image_url} alt={property.title} className="w-full max-w-lg mt-4 rounded-lg shadow-md" />
     </div>
   );
 }
