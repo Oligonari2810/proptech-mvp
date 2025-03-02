@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
+from sqlalchemy.sql.sqltypes import Boolean  # ✅ Importar Boolean correctamente
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -30,6 +31,22 @@ class Property(db.Model):
     image_url = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="available")
     property_type = Column(String(50), nullable=False, default="apartment")  # ✅ Valor por defecto para evitar NULL
+    surface = Column(Float, nullable=True)  # Superficie en m²
+    bedrooms = Column(Integer, nullable=True)  # Habitaciones
+    bathrooms = Column(Integer, nullable=True)  # Baños
+    lot_size = Column(Float, nullable=True)  # Tamaño del terreno en m²
+    year_built = Column(Integer, nullable=True)  # Año de construcción
+    num_floors = Column(Integer, nullable=True)  # Número de pisos
+    has_basement = Column(Boolean, nullable=True, default=False)  # Tiene sótano
+    has_garage = Column(Boolean, nullable=True, default=False)  # Tiene garaje
+    has_pool = Column(Boolean, nullable=True, default=False)  # Tiene piscina
+    has_elevator = Column(Boolean, nullable=True, default=False)  # Tiene ascensor
+    is_accessible = Column(Boolean, nullable=True, default=False)  # Es accesible
+    is_luxury = Column(Boolean, nullable=True, default=False)  # Es propiedad de lujo
+    is_bank_owned = Column(Boolean, nullable=True, default=False)  # Es propiedad de banco
+    has_virtual_tour = Column(Boolean, nullable=True, default=False)  # Tiene visita virtual
+    published_date = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de publicación
+
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
 
     owner = relationship("User", back_populates="properties")
