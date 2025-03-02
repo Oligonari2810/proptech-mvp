@@ -11,7 +11,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url)); // 🚫 Redirige si no está autenticado
   }
 
-  return NextResponse.next(); // ✅ Permite continuar si está autenticado
+  return NextResponse.redirect(new URL("/auth/login", req.url)); 
+
 }
 
 export const config = {
