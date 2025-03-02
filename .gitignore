@@ -83,3 +83,4 @@ proptech-backend/venv/
 backup-*.zip
 backup-*.zip
 backup-*.zip
+.vercel
