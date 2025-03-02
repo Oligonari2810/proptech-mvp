@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -43,7 +43,7 @@ export default function PropertiesPage() {
   });
 
   // ✅ Función para obtener propiedades desde la API con los filtros seleccionados
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -69,7 +69,7 @@ export default function PropertiesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   // ✅ Cargar propiedades al inicio
   useEffect(() => {
