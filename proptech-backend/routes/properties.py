@@ -47,6 +47,8 @@ def get_property(property_id):
 def create_property():
     data = request.json
 
+    print("📥 Datos Recibidos:", data)  # 🔥 DEBUG: Ver qué está recibiendo el backend
+
     # 🔹 Verificamos que los campos requeridos están presentes
     required_fields = ["title", "description", "price", "location", "image_url", "property_type", "user_id"]
     for field in required_fields:
