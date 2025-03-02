@@ -22,7 +22,7 @@ export default function PropertiesPage() {
   const [error, setError] = useState<string | null>(null);
   
   // 🔹 Estado para los filtros avanzados
-  const [filters, setFilters] = useState({
+  const [filters, _setFilters] = useState({
     location: "",
     min_price: "",
     max_price: "",
@@ -63,8 +63,8 @@ export default function PropertiesPage() {
       const data = await response.json();
       console.log("📥 Propiedades recibidas:", data);
       setProperties(data);
-    } catch (err) {
-      console.error("❌ Error al cargar propiedades:", err);
+    } catch (error) {
+      console.error("❌ Error al cargar propiedades:", error);
       setError("Error al conectar con la API.");
     } finally {
       setLoading(false);

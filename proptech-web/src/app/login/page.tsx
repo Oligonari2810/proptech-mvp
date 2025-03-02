@@ -7,7 +7,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errororor, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -33,7 +33,7 @@ export default function LoginPage() {
       } else {
         setError(data.message || "Error en el inicio de sesión");
       }
-    } catch (err) {
+    } catch (error) {
       setError("Error al conectar con el servidor");
     }
 
