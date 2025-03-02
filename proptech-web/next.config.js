@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // experimental: {
-  //   appDir: true,  // Si este genera error, elimínalo temporalmente
-  // },
   reactStrictMode: true,
-  output: 'standalone', // Esto es clave para que funcione en Vercel
+  output: "standalone", // Permite mejor compatibilidad con Vercel
+  compiler: {
+    styledComponents: true, // ✅ Agregado para mejor compatibilidad con estilos
+  },
 };
 
 module.exports = nextConfig;

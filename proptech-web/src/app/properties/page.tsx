@@ -19,10 +19,10 @@ interface Property {
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // ✅ Tipo explícito para evitar errores
+  const [error, setError] = useState<string | null>(null);
   
   // 🔹 Estado para los filtros avanzados
-  const [filters] = useState({
+  const [filters, setFilters] = useState({
     location: "",
     min_price: "",
     max_price: "",
@@ -97,7 +97,7 @@ export default function PropertiesPage() {
               <p>📍 {prop.location}</p>
               <p>💰 ${prop.price}</p>
               <p>🛏 {prop.bedrooms} hab. | 🚿 {prop.bathrooms} baños</p>
-              <Image src={prop.image_url} alt={prop.title} width={500} height={300} className="w-full h-40 object-cover rounded mt-2" objectFit="cover" />
+              <Image src={prop.image_url} alt={prop.title} width={500} height={300} className="w-full h-40 object-cover rounded mt-2" />
             </li>
           ))}
         </ul>
