@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-import { NextRequest } from "next/server";
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get("auth_token"); // 🔐 Verificamos si hay un token de autenticación
+  const isAuthenticated = !!token; // ✅ Si hay token, el usuario está autenticado
+  
+  const adminRoutes = ["/admin", "/admin/properties/add"];
 
-export function middleware(request: NextRequest) {
-  const isAdmin = request.cookies.get("admin_token"); // 🔹 Si usas JWT, cambia esto
-  if (!isAdmin) {
-    return NextResponse.redirect(new URL("/", request.url)); // 🔹 Si no es admin, redirige a la página principal
+  if (adminRoutes.includes(req.nextUrl.pathname) && !isAuthenticated) {
+    return NextResponse.redirect(new URL("/login", req.url)); // 🚫 Redirige si no está autenticado
   }
-  return NextResponse.next();
+
+  return NextResponse.next(); // ✅ Permite continuar si está autenticado
 }
 
 export const config = {
-  matcher: ["/admin/:path*"], // 🔹 Aplica la restricción a todas las rutas dentro de /admin
+  matcher: ["/admin/:path*"] // 🔍 Aplica el middleware solo a rutas bajo `/admin/`
 };

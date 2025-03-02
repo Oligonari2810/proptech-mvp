@@ -15,6 +15,7 @@ export default function ClientButtons() {
     router.prefetch("/investment-tools");
     router.prefetch("/about");
     router.prefetch("/contact");
+    router.prefetch("/admin/properties/add"); // 🔹 Prefetch para optimizar navegación
   }, [router]);
 
   return (
@@ -32,7 +33,7 @@ export default function ClientButtons() {
       <Button
         text="Solicitar Tasación"
         className="bg-green-500 text-white hover:bg-green-600"
-        onClick={() => router.push("/appraisal")} // 🔥 Revisado: ruta corregida
+        onClick={() => router.push("/appraisal")}
       />
       <Button
         text="Herramientas de Inversión"
@@ -48,6 +49,12 @@ export default function ClientButtons() {
         text="Contáctanos"
         className="bg-red-500 text-white hover:bg-red-600"
         onClick={() => router.push("/contact")}
+      />
+      {/* 🔹 Nuevo botón para agregar propiedades */}
+      <Button
+        text="➕ Agregar Propiedad"
+        className="bg-green-700 text-white hover:bg-green-800"
+        onClick={() => router.push("/admin/properties/add")}
       />
     </div>
   );
