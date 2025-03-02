@@ -61,7 +61,14 @@ export default function ServicesPage() {
   );
 }
 
-function ServiceCard({ title, description, link, linkText }) {
+interface ServiceCardProps {
+  title: string;
+  description: string;
+  link: string;
+  linkText: string;
+}
+
+function ServiceCard({ title, description, link, linkText }: ServiceCardProps) {
   return (
     <div className="border p-4 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold">{title}</h2>
