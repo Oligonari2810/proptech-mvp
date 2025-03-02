@@ -1,6 +1,7 @@
 "use client"; // 🔥 Necesario para manejar estado y efectos en Next.js
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 
 interface Property {
@@ -55,7 +56,14 @@ export default function PropertyDetailPage() {
       <p className="text-lg">{property.description}</p>
       <p className="text-xl font-semibold">💰 Precio: ${property.price}</p>
       <p className="text-gray-600">📍 Ubicación: {property.location}</p>
-      <img src={property.image_url} alt={property.title} className="w-full max-w-lg mt-4 rounded-lg shadow-md" />
+<Image 
+  src={property.image_url} 
+  alt={property.title} 
+  width={500}  // Ajusta el tamaño según necesites
+  height={300} 
+  className="w-full max-w-lg mt-4 rounded-lg shadow-md" 
+  objectFit="cover" 
+/>
     </div>
   );
 }
