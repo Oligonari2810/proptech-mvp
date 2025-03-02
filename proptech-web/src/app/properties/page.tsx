@@ -22,7 +22,7 @@ export default function PropertiesPage() {
   const [error, setError] = useState<string | null>(null);
   
   // 🔹 Estado para los filtros avanzados
-  const [filters] = useState({
+  const [filters, setFilters] = useState({
     location: "",
     min_price: "",
     max_price: "",
@@ -79,6 +79,16 @@ export default function PropertiesPage() {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">🏡 Propiedades en Venta</h1>
+
+      {/* 🔹 Filtros avanzados */}
+      <div className="bg-gray-100 p-4 rounded-md mb-6">
+        <h2 className="text-lg font-semibold mb-2">🔍 Filtros Avanzados</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <input type="text" name="location" placeholder="Ubicación" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })} className="border p-2 rounded" />
+          <input type="number" name="min_price" placeholder="Precio Mínimo" value={filters.min_price} onChange={(e) => setFilters({ ...filters, min_price: e.target.value })} className="border p-2 rounded" />
+          <input type="number" name="max_price" placeholder="Precio Máximo" value={filters.max_price} onChange={(e) => setFilters({ ...filters, max_price: e.target.value })} className="border p-2 rounded" />
+        </div>
+      </div>
 
       {/* 🔹 Resultados */}
       {loading ? (
