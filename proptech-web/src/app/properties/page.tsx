@@ -19,7 +19,7 @@ interface Property {
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // ✅ Cambio aquí: Inicializar en null
+  const [error, setError] = useState<string | null>(null); // ✅ Tipo explícito para evitar errores
   
   // 🔹 Estado para los filtros avanzados
   const [filters] = useState({
@@ -45,7 +45,7 @@ export default function PropertiesPage() {
   // ✅ Función para obtener propiedades desde la API con los filtros seleccionados
   const fetchProperties = useCallback(async () => {
     setLoading(true);
-    setError(null); // ✅ Cambio aquí: Inicializar en null
+    setError(null);
 
     // 🔹 Construimos la URL con los filtros seleccionados
     const queryParams = new URLSearchParams();
