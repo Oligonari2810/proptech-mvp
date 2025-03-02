@@ -1,6 +1,15 @@
+// src/app/services/page.tsx
+
 "use client";
 
 import Link from "next/link";
+
+type ServiceCardProps = {
+  title: string;
+  description: string;
+  link: string;
+  linkText: string;
+};
 
 export default function ServicesPage() {
   return (
@@ -56,16 +65,15 @@ export default function ServicesPage() {
           link="/services/market-research"
           linkText="Ver análisis"
         />
+        <ServiceCard 
+          title="🏠 iBuying - Venta Inmediata"
+          description="Vende tu propiedad de forma rápida con nuestra plataforma de compra instantánea."
+          link="/services/ibuying"
+          linkText="Vender ahora"
+        />
       </div>
     </div>
   );
-}
-
-interface ServiceCardProps {
-  title: string;
-  description: string;
-  link: string;
-  linkText: string;
 }
 
 function ServiceCard({ title, description, link, linkText }: ServiceCardProps) {
