@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 // Definir el tipo correcto para `Property`
 interface Property {
@@ -19,7 +20,7 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  
   // 🔹 Estado para los filtros avanzados
   const [filters, setFilters] = useState({
     location: "",
@@ -73,60 +74,11 @@ export default function PropertiesPage() {
   // ✅ Cargar propiedades al inicio
   useEffect(() => {
     fetchProperties();
-  }, []);
-
-  // ✅ Manejar cambios en los filtros
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  }, [fetchProperties]);
 
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">🏡 Propiedades en Venta</h1>
-
-      {/* 🔹 Formulario de filtros */}
-      <div className="bg-gray-100 p-4 rounded-md mb-6">
-        <h2 className="text-lg font-semibold mb-2">🔍 Filtros Avanzados</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <input type="text" name="location" placeholder="Ubicación" value={filters.location} onChange={handleFilterChange} className="border p-2 rounded" />
-          <input type="number" name="min_price" placeholder="Precio Mínimo" value={filters.min_price} onChange={handleFilterChange} className="border p-2 rounded" />
-          <input type="number" name="max_price" placeholder="Precio Máximo" value={filters.max_price} onChange={handleFilterChange} className="border p-2 rounded" />
-          <input type="number" name="bedrooms" placeholder="Habitaciones" value={filters.bedrooms} onChange={handleFilterChange} className="border p-2 rounded" />
-          <input type="number" name="bathrooms" placeholder="Baños" value={filters.bathrooms} onChange={handleFilterChange} className="border p-2 rounded" />
-          <select name="property_type" value={filters.property_type} onChange={handleFilterChange} className="border p-2 rounded">
-            <option value="">Tipo de Propiedad</option>
-            <option value="apartment">Apartamento</option>
-            <option value="house">Casa</option>
-            <option value="land">Terreno</option>
-            <option value="commercial">Local Comercial</option>
-          </select>
-          <label className="flex items-center space-x-2">
-            <input type="checkbox" name="has_pool" checked={filters.has_pool} onChange={handleFilterChange} />
-            <span>Piscina</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input type="checkbox" name="has_garage" checked={filters.has_garage} onChange={handleFilterChange} />
-            <span>Garaje</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input type="checkbox" name="has_elevator" checked={filters.has_elevator} onChange={handleFilterChange} />
-            <span>Ascensor</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input type="checkbox" name="is_luxury" checked={filters.is_luxury} onChange={handleFilterChange} />
-            <span>Propiedad de Lujo</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input type="checkbox" name="is_bank_owned" checked={filters.is_bank_owned} onChange={handleFilterChange} />
-            <span>Propiedad de Banco</span>
-          </label>
-        </div>
-        <button onClick={fetchProperties} className="bg-blue-500 text-white px-4 py-2 rounded mt-4">Buscar</button>
-      </div>
 
       {/* 🔹 Resultados */}
       {loading ? (
@@ -145,7 +97,7 @@ export default function PropertiesPage() {
               <p>📍 {prop.location}</p>
               <p>💰 ${prop.price}</p>
               <p>🛏 {prop.bedrooms} hab. | 🚿 {prop.bathrooms} baños</p>
-              <img src={prop.image_url} alt={prop.title} className="w-full h-40 object-cover rounded mt-2" />
+              <Image src={prop.image_url} alt={prop.title} width={500} height={300} className="w-full h-40 object-cover rounded mt-2" objectFit="cover" />
             </li>
           ))}
         </ul>
