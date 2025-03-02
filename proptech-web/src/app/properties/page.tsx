@@ -22,7 +22,7 @@ export default function PropertiesPage() {
   const [error, setError] = useState<string | null>(null);
   
   // 🔹 Estado para los filtros avanzados
-  const [filters, _setFilters] = useState({
+  const [filters] = useState({
     location: "",
     min_price: "",
     max_price: "",

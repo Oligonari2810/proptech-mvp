@@ -33,7 +33,7 @@ export default function LoginPage() {
       } else {
         setError(data.message || "Error en el inicio de sesión");
       }
-    } catch (error) {
+    } catch (err) {
       setError("Error al conectar con el servidor");
     }
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="bg-white p-6 shadow-md rounded-lg w-96">
         <h2 className="text-xl font-bold text-center mb-4">Iniciar Sesión</h2>
-        {error !== null && <p className="text-red-600 text-center">{error}</p>} {/* ✅ Corrección del uso de error */}
+        {error && <p className="text-red-600 text-center">{error}</p>} {/* ✅ Corrección del uso de error */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
