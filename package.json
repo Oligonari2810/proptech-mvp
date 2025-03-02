@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "react-map-gl": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/react-map-gl": "^6.1.7"
+  }
+}
