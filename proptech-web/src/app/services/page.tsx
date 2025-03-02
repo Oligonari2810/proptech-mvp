@@ -69,6 +69,12 @@ export default function ServicesPage() {
           link="/services/ibuying"
           linkText="Vender ahora"
         />
+        <ServiceCard 
+          title="🗺️ Búsqueda por Mapa"
+          description="Explora propiedades directamente en un mapa interactivo."
+          link="/services/map-search"
+          linkText="Ver mapa"
+        />
       </div>
     </div>
   );

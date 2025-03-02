@@ -11,9 +11,11 @@
   "dependencies": {
     "autoprefixer": "^10.4.20",
     "mapbox-gl": "^3.10.0",
+    "maplibre-gl": "^4.7.1",
     "next": "15.1.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-map-gl": "^7.1.9"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
