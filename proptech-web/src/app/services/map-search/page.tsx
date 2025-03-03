@@ -5,6 +5,7 @@ import Map, { Marker, Popup } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+console.log("🔑 Mapbox token:", MAPBOX_TOKEN);
 
 export default function MapSearchPage() {
   interface Property {
