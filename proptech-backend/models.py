@@ -27,6 +27,8 @@ class Property(db.Model):
     title = Column(String(255), nullable=False)
     price = Column(Float, nullable=False)
     location = Column(String(255), nullable=False)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     description = Column(Text, nullable=False)
     image_url = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="available")
