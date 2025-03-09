@@ -1,9 +1,4 @@
-# Proptech MVP
-Aquí tienes el contenido listo para copiar y pegar en tu archivo `README.md` en Visual Studio Code:  
 
----
-
-```markdown
 # 🏡 Proptech MVP
 
 **Proptech MVP** es una plataforma innovadora que digitaliza la compra, venta y gestión de propiedades. Su objetivo es revolucionar el sector inmobiliario con tecnología avanzada.
