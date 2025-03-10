@@ -30,8 +30,24 @@ export default function MapSearchPage() {
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/properties`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("✅ Propiedades cargadas:", data);
-        setProperties(data);
+        console.log("✅ Propiedades cargadas en el frontend:", data);
+
+        // 🔹 Validar coordenadas antes de almacenarlas en el estado
+        const validProperties = data.filter((prop: Property) => {
+          const isValid =
+            typeof prop.latitude === "number" &&
+            typeof prop.longitude === "number" &&
+            !isNaN(prop.latitude) &&
+            !isNaN(prop.longitude);
+
+          if (!isValid) {
+            console.warn(`❌ Propiedad con coordenadas inválidas:`, prop);
+          }
+
+          return isValid;
+        });
+
+        setProperties(validProperties);
       })
       .catch((error) => console.error("❌ Error al cargar propiedades:", error));
   }, []);
@@ -58,7 +74,7 @@ export default function MapSearchPage() {
           </Marker>
         ))}
 
-        {selectedProperty && (
+        {selectedProperty && !isNaN(selectedProperty.latitude) && !isNaN(selectedProperty.longitude) && (
           <Popup
             latitude={selectedProperty.latitude}
             longitude={selectedProperty.longitude}
@@ -71,7 +87,11 @@ export default function MapSearchPage() {
               <h2 className="font-bold">{selectedProperty.title}</h2>
               <p>{selectedProperty.location}</p>
               <p>💰 ${selectedProperty.price}</p>
-              <img src={selectedProperty.image_url} alt={selectedProperty.title} className="w-40 h-24 object-cover rounded" />
+              <img
+                src={selectedProperty.image_url}
+                alt={selectedProperty.title}
+                className="w-40 h-24 object-cover rounded"
+              />
             </div>
           </Popup>
         )}
