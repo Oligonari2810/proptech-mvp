@@ -8,6 +8,7 @@ from routes.valuation import valuation_bp
 from routes.contracts import contracts_bp
 from routes.contact import contact_bp
 from config import Config
+import logging
 
 def create_app():
     # ✅ Inicializar la aplicación Flask
@@ -44,7 +45,5 @@ def create_app():
 
     return app
 
-# ✅ Ejecutar el servidor solo si es el archivo principal
-if __name__ == "__main__":
-    app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+# ✅ Crear la app para Gunicorn
+app = create_app()
