@@ -28,9 +28,8 @@ interface AppraisalFormData {
   seguridad: string;
   tendencia_mercado: string;
   anios_futuro: string;
-  tipo: string;
-}
-
+    tipo: "casa" | "apartamento" | "comercial";
+  }
 export default function AppraisalRequest() {
   const [formData, setFormData] = useState<AppraisalFormData>({
     metros_cuadrados: "",
