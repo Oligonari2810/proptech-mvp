@@ -1,36 +1,58 @@
 import Logo from "@/components/Logo";
-import TokenBanner from "@/components/TokenBanner"; // 🎯 Nuevo banner para tokenización
 import ClientButtons from "@/components/ClientButtons";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        {/* ✅ Logo Central */}
-        <Logo />
-        
-        {/* 🎯 Nuevo Mensaje Enfocado en Tokenización */}
-        <h1 className="text-4xl font-bold text-center sm:text-left">
-          Automatiza la Venta y Tokenización de Propiedades en 7 Días
-        </h1>
-        <p className="text-lg text-center sm:text-left text-gray-700">
-          HábitatProRD transforma el mercado inmobiliario con tecnología avanzada para brokers e inversionistas.
-        </p>
+    <div
+      className="relative min-h-screen bg-cover bg-center"
+      style={{
+        backgroundImage: "url('/images/tokenizacion-bg.png')", // 🎯 Nueva imagen de fondo
+      }}
+    >
+      {/* 📡 Overlay Oscuro para Resaltar Contenido */}
+      <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <main className="text-center text-white space-y-6">
+          {/* 🎉 Logo Centrado */}
+          <Logo />
+          
+          {/* 📝 Mensaje Principal */}
+          <h1 className="text-5xl font-bold">
+            Automatiza la Venta y Tokenización de Propiedades en 7 Días
+          </h1>
+          <p className="text-lg text-gray-200 max-w-lg mx-auto">
+            Invierte desde USD $10,000 en propiedades tokenizadas utilizando criptomonedas o dinero fiat.
+          </p>
 
-        {/* 🚀 Nuevo Banner de Tokenización */}
-        <TokenBanner />
+          {/* 🚀 Botón Principal */}
+          <a
+            href="/tokenizacion"
+            className="bg-blue-500 text-white px-8 py-3 rounded-lg shadow-lg hover:bg-blue-700"
+          >
+            Conoce Más
+          </a>
 
-        {/* 🟢 Botones de Registro para Brokers/Inmobiliarias/Desarrolladores */}
-        <ClientButtons />
+          {/* 📢 Beneficios Destacados */}
+          <div className="mt-8 flex flex-wrap justify-center gap-8">
+            <div className="p-4 bg-white bg-opacity-20 rounded-lg shadow-md w-60">
+              <h4 className="text-xl font-bold">🔗 Tokenización Segura</h4>
+              <p className="text-sm">Invierte en propiedades de lujo fraccionadas desde USD $10,000.</p>
+            </div>
+            <div className="p-4 bg-white bg-opacity-20 rounded-lg shadow-md w-60">
+              <h4 className="text-xl font-bold">⚡️ Automatización Total</h4>
+              <p className="text-sm">Publica, tokeniza y vende propiedades sin esfuerzo.</p>
+            </div>
+            <div className="p-4 bg-white bg-opacity-20 rounded-lg shadow-md w-60">
+              <h4 className="text-xl font-bold">📈 Rentabilidad Garantizada</h4>
+              <p className="text-sm">Obtén retornos anuales con propiedades tokenizadas.</p>
+            </div>
+          </div>
 
-        {/* 📢 Footer con enlaces adicionales */}
-        <footer className="flex gap-6 flex-wrap items-center justify-center mt-10">
-          <a href="/about" className="text-blue-500 hover:underline">Acerca de HábitatProRD</a>
-          <a href="/contact" className="text-blue-500 hover:underline">Contáctanos</a>
-          <a href="/guide" className="text-blue-500 hover:underline">Guía de Inversión</a>
-          <a href="/tokenizacion" className="text-blue-500 hover:underline">Tokenización</a>
-        </footer>
-      </main>
+          {/* 🟢 Botones Secundarios */}
+          <div className="mt-8">
+            <ClientButtons />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
