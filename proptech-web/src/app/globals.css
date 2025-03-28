@@ -1,3 +1,4 @@
+/* Estilos Globales para Proptech-Web */
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
@@ -7,6 +8,7 @@
   --foreground: #171717;
 }
 
+/* 🌙 Modo Oscuro */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -14,8 +16,18 @@
   }
 }
 
+/* 🎨 Estilo General del Body */
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 🎯 Estilo para Fondo de Tokenización */
+.bg-tokenizacion {
+  background-image: url('/images/tokenizacion-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh; /* Altura completa */
 }
