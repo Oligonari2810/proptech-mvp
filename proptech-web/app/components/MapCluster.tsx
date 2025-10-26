@@ -54,20 +54,128 @@ export const MapCluster = ({ listings = [] }: MapClusterProps) => {
         });
 
         map.on('load', () => {
-          // Simple markers instead of complex clustering
-          listings.forEach(listing => {
-            new mapboxgl.Marker()
-              .setLngLat([listing.longitude, listing.latitude])
-              .setPopup(
-                new mapboxgl.Popup()
-                  .setHTML(`
-                    <div class="p-2">
-                      <h3 class="font-semibold">${listing.title}</h3>
-                      <p class="text-blue-600 font-bold">$${listing.price.toLocaleString()}</p>
-                    </div>
-                  `)
-              )
+          // Add source with clustering
+          map.addSource('properties', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: listings.map(listing => ({
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [listing.longitude, listing.latitude]
+                },
+                properties: {
+                  id: listing.id,
+                  title: listing.title,
+                  price: listing.price
+                }
+              }))
+            },
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50
+          });
+
+          // Add cluster circles
+          map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'properties',
+            filter: ['has', 'point_count'],
+            paint: {
+              'circle-color': [
+                'step',
+                ['get', 'point_count'],
+                '#51bbd6',
+                10,
+                '#f1f075',
+                30,
+                '#f28cb1'
+              ],
+              'circle-radius': [
+                'step',
+                ['get', 'point_count'],
+                20,
+                10,
+                30,
+                30,
+                40
+              ]
+            }
+          });
+
+          // Add cluster count labels
+          map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'properties',
+            filter: ['has', 'point_count'],
+            layout: {
+              'text-field': '{point_count_abbreviated}',
+              'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+              'text-size': 12
+            }
+          });
+
+          // Add unclustered points
+          map.addLayer({
+            id: 'unclustered-point',
+            type: 'circle',
+            source: 'properties',
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+              'circle-color': '#11b4da',
+              'circle-radius': 8,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+
+          // Click on cluster to zoom in
+          map.on('click', 'clusters', (e) => {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource('properties').getClusterExpansionZoom(
+              clusterId,
+              (err, zoom) => {
+                if (err) return;
+                map.easeTo({
+                  center: features[0].geometry.coordinates,
+                  zoom: zoom
+                });
+              }
+            );
+          });
+
+          // Click on individual point to show popup
+          map.on('click', 'unclustered-point', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const { title, price } = e.features[0].properties;
+
+            new mapboxgl.Popup()
+              .setLngLat(coordinates)
+              .setHTML(`
+                <div class="p-3 max-w-xs">
+                  <h3 class="font-semibold text-lg">${title}</h3>
+                  <p class="text-blue-600 font-bold text-xl">$${Number(price).toLocaleString()}</p>
+                </div>
+              `)
               .addTo(map);
+          });
+
+          // Change cursor on hover
+          map.on('mouseenter', 'clusters', () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+          map.on('mouseleave', 'clusters', () => {
+            map.getCanvas().style.cursor = '';
+          });
+          map.on('mouseenter', 'unclustered-point', () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+          map.on('mouseleave', 'unclustered-point', () => {
+            map.getCanvas().style.cursor = '';
           });
         });
 

@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Image from 'next/image'
+import { WhatsApp } from 'lucide-react'
 import { Property } from '../hooks/useProperties'
 
 interface PropertyCardProps {
@@ -9,6 +10,12 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
+  const handleWhatsAppClick = () => {
+    const message = `Hola, me interesa la propiedad: ${property.title} - ${property.price.toLocaleString('es-ES')}`;
+    const url = `https://wa.me/+18091234567?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
       {/* Imagen de la propiedad */}
@@ -98,9 +105,18 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </div>
         )}
 
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200">
-          Ver Detalles
-        </button>
+        <div className="flex gap-2">
+          <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200">
+            Ver Detalles
+          </button>
+          <button 
+            onClick={handleWhatsAppClick}
+            className="flex items-center justify-center bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors"
+            title="Contactar por WhatsApp"
+          >
+            <WhatsApp size={20} />
+          </button>
+        </div>
       </div>
     </div>
   )
