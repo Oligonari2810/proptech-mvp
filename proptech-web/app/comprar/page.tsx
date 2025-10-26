@@ -1,191 +1,76 @@
-'use client';
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { MapCluster } from '../components/MapCluster';
-import { LeadSticky } from '../components/LeadSticky';
-import { mockApi } from '../lib/mock-api';
+import { PropertyCard } from '../components/PropertyCard';
 
-const PropertyMap = dynamic(() => import('@/components/maps/PropertyMap'), {
-  ssr: false,
-  loading: () => <div className="h-96 bg-gray-200 rounded-lg flex items-center justify-center">Cargando mapa...</div>
-});
-import SearchFilters from '@/components/search/SearchFilters';
-import PropertyCardWithChat from '@/components/properties/PropertyCardWithChat';
-// import { PropertyCard } from '@/components/ui';
-// import { PropertyGrid } from '../components/PropertyGrid';
-
-interface Property {
-  id: number;
-  title: string;
-  price: number;
-  location: string;
-  image: string;
-  bedrooms: number;
-  bathrooms: number;
-  square_meters: number;
-  latitude: number;
-  longitude: number;
-  brokerId: number;
+async function getProperties() {
+  try {
+    const backendUrl = 'https://habitatpro-backend.onrender.com';
+    const response = await fetch(`${backendUrl}/api/properties`, { cache: 'no-store' });
+    
+    if (!response.ok) throw new Error('API failed');
+    const data = await response.json();
+    return data.properties || [];
+  } catch (error) {
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: `fallback-${i}`,
+      title: `Propiedad ${i+1} en Santo Domingo`,
+      price: Math.floor(Math.random() * 500000) + 50000,
+      location: `Santo Domingo ${i+1}`,
+      bedrooms: Math.floor(Math.random() * 4) + 1,
+      bathrooms: Math.floor(Math.random() * 3) + 1,
+      area: Math.floor(Math.random() * 200) + 80,
+      images: [`https://picsum.photos/800/600?random=${i}`],
+      features: ['Piscina', 'Estacionamiento', 'Seguridad 24/7']
+    }));
+  }
 }
 
-export default function ComprarPage() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
-  const [filters, setFilters] = useState({
-    type: '',
-    min_price: '',
-    max_price: '',
-    min_bedrooms: '',
-    location: ''
-  });
-
-  // Cargar propiedades con fallback a mock data
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        // Intentar backend real primero
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://habitatpro-backend.onrender.com';
-        const response = await fetch(`${backendUrl}/api/properties/`);
-        if (response.ok) {
-          const data = await response.json();
-          // El backend devuelve un array directo, no un objeto con 'properties'
-          const propertiesList = Array.isArray(data) ? data : data.properties || [];
-          setProperties(propertiesList);
-          setFilteredProperties(propertiesList);
-        } else {
-          throw new Error('Backend not available');
-        }
-      } catch (error) {
-        // Usar mock data si backend falla
-        console.log('Using mock data:', error);
-        const data = await mockApi.getListings();
-        setProperties(data.listings || []);
-        setFilteredProperties(data.listings || []);
-      }
-    };
-
-    fetchProperties();
-  }, []);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handlePropertyClick = (property: any) => {
-    setSelectedProperty(property);
-  };
-
-  const handleFiltersChange = (newFilters: Record<string, string>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters
-    }));
-    // Aquí se podría implementar la lógica de filtrado
-  };
+export default async function ComprarPage() {
+  const properties = await getProperties();
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Encuentra tu hogar, encuentra tu historia</h1>
-            <p className="text-gray-600 mt-2">
-              {filteredProperties.length} casas esperando por ti
-            </p>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Encuentra tu Propiedad Ideal</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-lg font-semibold mb-4">Filtros</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Precio Máximo</label>
+                  <select className="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option>Hasta $100,000</option>
+                    <option>Hasta $250,000</option>
+                    <option>Hasta $500,000</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones</label>
+                  <select className="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option>Cualquiera</option>
+                    <option>1+</option>
+                    <option>2+</option>
+                    <option>3+</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
           
-          {/* View Toggle */}
-          <div className="flex space-x-2 bg-white rounded-lg p-1 border border-gray-200">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                viewMode === 'grid' 
-                  ? 'bg-purple-500 text-white' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              📋 Lista
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                viewMode === 'map' 
-                  ? 'bg-purple-500 text-white' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              🗺️ Mapa
-            </button>
-          </div>
-        </div>
-
-        {/* Filtros de Búsqueda */}
-        <SearchFilters onFiltersChange={handleFiltersChange} />
-
-        {/* Contenido Principal */}
-        {viewMode === 'map' ? (
-          /* Vista Mapa */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <PropertyMap 
-                properties={filteredProperties}
-                onPropertyClick={handlePropertyClick}
-              />
+          <div className="lg:col-span-3">
+            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+              <MapCluster properties={properties} />
             </div>
             
-            {/* Panel de detalles */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {selectedProperty ? 'Detalles de la Propiedad' : 'Selecciona una propiedad'}
-              </h3>
-              
-              {selectedProperty ? (
-                <div className="space-y-4">
-                  <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">Imagen de propiedad</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-gray-900">{selectedProperty.title}</h4>
-                    <p className="text-green-600 font-semibold text-xl">
-                      ${selectedProperty.price.toLocaleString()}
-                    </p>
-                    <p className="text-gray-600">{selectedProperty.location}</p>
-                    <div className="flex space-x-4 text-sm text-gray-500 mt-2">
-                      <span>🛏️ {selectedProperty.bedrooms} hab</span>
-                      <span>🚿 {selectedProperty.bathrooms} baños</span>
-                      <span>📏 {selectedProperty.square_meters}m²</span>
-                    </div>
-                  </div>
-                  <button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
-                    Contactar Broker
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <div className="text-4xl mb-2">🏠</div>
-                  <p>Haz clic en un marcador del mapa para ver los detalles</p>
-                </div>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {properties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
             </div>
           </div>
-        ) : (
-          /* Vista Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => (
-              <PropertyCardWithChat
-                key={property.id}
-                property={{
-                  ...property,
-                  brokerId: property.brokerId || 1 // Default broker ID
-                }}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </div>
-      
-      {/* WhatsApp Sticky Button */}
-      <LeadSticky listingId="comprar" />
     </div>
   );
 }

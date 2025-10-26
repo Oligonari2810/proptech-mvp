@@ -3,7 +3,24 @@
 import React from 'react'
 import Image from 'next/image'
 import { WhatsApp } from 'lucide-react'
-import { Property } from '../hooks/useProperties'
+
+interface Property {
+  id: number | string
+  title: string
+  price: number
+  location: string
+  bedrooms?: number
+  bathrooms?: number
+  area?: number
+  square_meters?: number
+  images?: string[]
+  image?: string
+  features?: string[]
+  description?: string
+  type?: string
+  operation?: 'compra' | 'alquiler'
+  emotional_tags?: string[]
+}
 
 interface PropertyCardProps {
   property: Property
@@ -16,13 +33,19 @@ export function PropertyCard({ property }: PropertyCardProps) {
     window.open(url, '_blank');
   };
 
+  // Get the image URL
+  const imageUrl = property.images?.[0] || property.image || '';
+  const area = property.area || property.square_meters || 0;
+  const bedrooms = property.bedrooms || 0;
+  const bathrooms = property.bathrooms || 0;
+
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
       {/* Imagen de la propiedad */}
       <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg relative">
-        {property.images && property.images.length > 0 ? (
+        {imageUrl ? (
           <Image 
-            src={property.images[0]} 
+            src={imageUrl} 
             alt={property.title}
             width={400}
             height={192}
@@ -32,7 +55,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         ) : (
           <div className="text-center">
             <div className="text-4xl mb-2">🏠</div>
-            <div>{property.type}</div>
+            <div>{property.type || 'Propiedad'}</div>
           </div>
         )}
         <div className="absolute top-4 right-4 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-semibold shadow-md">
@@ -45,12 +68,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-xl font-bold text-gray-900 line-clamp-2">{property.title}</h3>
           <span className="text-2xl font-bold text-blue-600 whitespace-nowrap ml-2">
-            {property.operation === 'compra' ? '€' : '€/mes'}
-            {property.price.toLocaleString('es-ES')}
+            ${property.price.toLocaleString('es-ES')}
           </span>
         </div>
         
-        <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{property.description}</p>
+        {property.description && (
+          <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{property.description}</p>
+        )}
         
         <div className="flex items-center text-sm text-gray-500 mb-4">
           <span className="mr-4 flex items-center">
@@ -61,14 +85,16 @@ export function PropertyCard({ property }: PropertyCardProps) {
         <div className="flex justify-between text-sm text-gray-600 mb-4">
           <div className="flex space-x-4">
             <span className="flex items-center">
-              🛏️ {property.bedrooms} hab.
+              🛏️ {bedrooms} hab.
             </span>
             <span className="flex items-center">
-              🚿 {property.bathrooms} baños
+              🚿 {bathrooms} baños
             </span>
-            <span className="flex items-center">
-              📐 {property.area} m²
-            </span>
+            {area > 0 && (
+              <span className="flex items-center">
+                📐 {area} m²
+              </span>
+            )}
           </div>
         </div>
 

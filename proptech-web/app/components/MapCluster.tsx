@@ -14,7 +14,7 @@ const MapFallback = ({ listingsCount }: { listingsCount: number }) => (
 );
 
 interface Listing {
-  id: number;
+  id: number | string;
   title: string;
   price: number;
   latitude: number;
@@ -23,9 +23,12 @@ interface Listing {
 
 interface MapClusterProps {
   listings?: Listing[];
+  properties?: Listing[];
 }
 
-export const MapCluster = ({ listings = [] }: MapClusterProps) => {
+export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) => {
+  // Use properties if provided, otherwise use listings
+  const items = properties.length > 0 ? properties : listings;
   const mapContainer = useRef<HTMLDivElement>(null);
   const [mapError, setMapError] = useState(false);
 
@@ -75,6 +78,23 @@ export const MapCluster = ({ listings = [] }: MapClusterProps) => {
             cluster: true,
             clusterMaxZoom: 14,
             clusterRadius: 50
+          });
+
+          // Update source data if items change
+          map.getSource('properties').setData({
+            type: 'FeatureCollection',
+            features: items.map(item => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [item.longitude, item.latitude]
+              },
+              properties: {
+                id: item.id,
+                title: item.title,
+                price: item.price
+              }
+            }))
           });
 
           // Add cluster circles
@@ -139,16 +159,35 @@ export const MapCluster = ({ listings = [] }: MapClusterProps) => {
             map.getSource('properties').getClusterExpansionZoom(
               clusterId,
               (err, zoom) => {
-                if (err) return;
-                map.easeTo({
-                  center: features[0].geometry.coordinates,
-                  zoom: zoom
-                });
-              }
-            );
-          });
+                        if (err) return;
+        map.easeTo({
+          center: features[0].geometry.coordinates,
+          zoom: zoom
+        });
+      }
+    );
+  });
 
-          // Click on individual point to show popup
+  // Update source when items change
+  if (items.length > 0) {
+    map.getSource('properties')?.setData({
+      type: 'FeatureCollection',
+      features: items.map(item => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [item.longitude, item.latitude]
+        },
+        properties: {
+          id: item.id,
+          title: item.title,
+          price: item.price
+        }
+      }))
+    });
+  }
+
+  // Click on individual point to show popup
           map.on('click', 'unclustered-point', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const { title, price } = e.features[0].properties;
@@ -187,11 +226,11 @@ export const MapCluster = ({ listings = [] }: MapClusterProps) => {
       }
     };
 
-    initializeMap();
-  }, [listings, mapError]);
+              initializeMap();
+        }, [items, mapError]);
 
   if (mapError || !process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-    return <MapFallback listingsCount={listings.length} />;
+    return <MapFallback listingsCount={items.length} />;
   }
 
   return <div ref={mapContainer} className="w-full h-96 rounded-lg border" />;
