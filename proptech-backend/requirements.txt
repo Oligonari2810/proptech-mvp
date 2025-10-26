@@ -1,6 +1,6 @@
 # Core Flask
 Flask==2.3.3
-Flask-Cors==4.0.0
+flask-cors==4.0.0
 python-dotenv==1.0.0
 
 # Production Server
@@ -8,26 +8,3 @@ gunicorn==21.2.0
 
 # Database
 psycopg2-binary==2.9.7
-SQLAlchemy==2.0.20
-
-# Security (SOLO UNA versión de bcrypt)
-bcrypt==4.0.1
-
-# Flask Extensions
-Flask-SQLAlchemy==3.0.5
-Flask-Migrate==4.0.4
-Flask-Limiter==2.8.1
-Flask-SocketIO==5.3.6
-
-# Authentication
-PyJWT==2.7.0
-authlib==1.6.5
-
-# Redis (optional)
-redis==4.5.5
-
-# Migration
-alembic==1.14.1
-
-# Additional utilities
-requests==2.31.0

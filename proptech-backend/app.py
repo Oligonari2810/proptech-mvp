@@ -4,9 +4,8 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 import redis
 from datetime import datetime
-import numpy as np
-from sklearn.neighbors import NearestNeighbors
-from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.neighbors import NearestNeighbors
+# from sklearn.feature_extraction.text import TfidfVectorizer
 import json
 import os
 
@@ -90,11 +89,11 @@ class Interaction(db.Model):
     emotional_response = db.Column(db.JSON, default=dict)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# IA EMOCIONAL REAL - ALGORITMOS FUNCIONALES
+# IA EMOCIONAL - TEMPORALMENTE DESHABILITADO (requiere numpy)
 class EmotionAwareRecommender:
     def __init__(self):
-        self.vectorizer = TfidfVectorizer(max_features=50, stop_words=['spanish'])
-        self.knn_model = NearestNeighbors(n_neighbors=5, metric='cosine')
+        # self.vectorizer = TfidfVectorizer(max_features=50, stop_words=['spanish'])
+        # self.knn_model = NearestNeighbors(n_neighbors=5, metric='cosine')
         self.is_trained = False
         
     def extract_property_features(self, property_data):
@@ -125,68 +124,14 @@ class EmotionAwareRecommender:
     
     def fit(self, properties):
         """Entrena el modelo con propiedades existentes"""
-        if not properties:
-            self.is_trained = False
-            return
-            
-        feature_vectors = []
-        for prop in properties:
-            features = self.extract_property_features(prop)
-            feature_vectors.append(features)
-            
-        if feature_vectors:
-            self.knn_model.fit(feature_vectors)
-            self.is_trained = True
-            print(f"✅ IA Emocional entrenada con {len(feature_vectors)} propiedades")
+        # TEMPORALMENTE DESHABILITADO
+        self.is_trained = False
+        return
     
     def recommend(self, user_profile, available_properties, top_n=5):
         """Genera recomendaciones basadas en perfil emocional del usuario"""
-        if not self.is_trained or not available_properties:
-            return available_properties[:top_n]
-            
-        # Extraer preferencias del usuario
-        user_prefs = user_profile.get('preferences', {})
-        emotional_profile = user_profile.get('emotional_profile', {})
-        
-        # Crear vector de usuario basado en sus preferencias
-        user_vector = [
-            user_prefs.get('max_price', 300000) / 500000,
-            user_prefs.get('min_bedrooms', 2) / 5.0,
-            user_prefs.get('min_area', 80) / 300.0,
-            emotional_profile.get('family_friendly', 0.5),
-            emotional_profile.get('luxury_preference', 0.3),
-            emotional_profile.get('modern_taste', 0.4),
-            emotional_profile.get('investment_focus', 0.6),
-            1.0 if user_prefs.get('garden', False) else 0.0,
-            1.0 if user_prefs.get('pool', False) else 0.0,
-            1.0 if user_prefs.get('garage', False) else 0.0,
-        ]
-        
-        # Generar vectores de propiedades disponibles
-        property_vectors = []
-        valid_properties = []
-        
-        for prop in available_properties:
-            prop_vector = self.extract_property_features(prop)
-            property_vectors.append(prop_vector)
-            valid_properties.append(prop)
-        
-        if not property_vectors:
-            return available_properties[:top_n]
-            
-        # Encontrar propiedades más similares
-        distances, indices = self.knn_model.kneighbors([user_vector])
-        
-        # Ordenar por similitud
-        recommendations = []
-        for idx in indices[0]:
-            if idx < len(valid_properties):
-                prop = valid_properties[idx]
-                # Añadir score de similitud
-                prop['similarity_score'] = float(1 - distances[0][idx])
-                recommendations.append(prop)
-                
-        return recommendations[:top_n]
+        # TEMPORALMENTE: Retornar propiedades sin IA
+        return available_properties[:top_n]
 
 # INICIALIZAR IA
 emotion_engine = EmotionAwareRecommender()
