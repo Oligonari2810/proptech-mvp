@@ -76,6 +76,26 @@ class Property(db.Model):
     owner = relationship("User", back_populates="properties")
     valuations = relationship("Valuation", back_populates="property", lazy=True)
     contracts = relationship("SmartContract", back_populates="property", lazy=True)
+    
+    def to_dict(self):
+        """Convierte el modelo a diccionario para JSON"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'price': self.price,
+            'location': self.location,
+            'latitude': self.latitude if self.latitude is not None else 0,
+            'longitude': self.longitude if self.longitude is not None else 0,
+            'image_url': self.image_url,
+            'images': [self.image_url] if self.image_url else [],
+            'bedrooms': self.bedrooms if self.bedrooms is not None else 0,
+            'bathrooms': self.bathrooms if self.bathrooms is not None else 0,
+            'features': [],
+            'habitaScore': 450,  # Default score
+            'status': self.status,
+            'square_meters': self.surface if self.surface is not None else 0,
+            'brokerId': 1  # Default broker
+        }
 
 # ✅ Modelo de Tasación Inteligente
 class Valuation(db.Model):

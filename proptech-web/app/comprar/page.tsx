@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { MapCluster } from '../components/MapCluster';
+import { LeadSticky } from '../components/LeadSticky';
+import { mockApi } from '../lib/mock-api';
 
 const PropertyMap = dynamic(() => import('@/components/maps/PropertyMap'), {
   ssr: false,
@@ -38,10 +41,11 @@ export default function ComprarPage() {
     location: ''
   });
 
-  // Cargar propiedades reales del backend
+  // Cargar propiedades con fallback a mock data
   useEffect(() => {
     const fetchProperties = async () => {
       try {
+        // Intentar backend real primero
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
         const response = await fetch(`${backendUrl}/api/properties/`);
         if (response.ok) {
@@ -49,14 +53,14 @@ export default function ComprarPage() {
           setProperties(data.properties || []);
           setFilteredProperties(data.properties || []);
         } else {
-          // Si el backend no responde, mostrar estado vacío
-          setProperties([]);
-          setFilteredProperties([]);
+          throw new Error('Backend not available');
         }
       } catch (error) {
-        // Manejo silencioso de errores para producción
-        setProperties([]);
-        setFilteredProperties([]);
+        // Usar mock data si backend falla
+        console.log('Using mock data:', error);
+        const data = await mockApi.getListings();
+        setProperties(data.listings || []);
+        setFilteredProperties(data.listings || []);
       }
     };
 
@@ -177,6 +181,9 @@ export default function ComprarPage() {
           </div>
         )}
       </div>
+      
+      {/* WhatsApp Sticky Button */}
+      <LeadSticky listingId="comprar" />
     </div>
   );
 }
