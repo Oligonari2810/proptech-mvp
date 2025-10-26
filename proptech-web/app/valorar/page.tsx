@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { calculateHabitaScore, getScoreDescription, PropertyInput, ValuationResult } from '../lib/avm/habitascore';
 import { LeadSticky } from '../components/LeadSticky';
 
-export default function ValorarPage() {
+export default async function ValorarPage() {
   const [formData, setFormData] = useState<PropertyInput>({
     area: 100,
     bedrooms: 3,
