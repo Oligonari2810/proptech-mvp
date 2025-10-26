@@ -1,0 +1,107 @@
+'use client'
+
+import React from 'react'
+import Image from 'next/image'
+import { Property } from '../hooks/useProperties'
+
+interface PropertyCardProps {
+  property: Property
+}
+
+export function PropertyCard({ property }: PropertyCardProps) {
+  return (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
+      {/* Imagen de la propiedad */}
+      <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg relative">
+        {property.images && property.images.length > 0 ? (
+          <Image 
+            src={property.images[0]} 
+            alt={property.title}
+            width={400}
+            height={192}
+            className="w-full h-full object-cover"
+            priority
+          />
+        ) : (
+          <div className="text-center">
+            <div className="text-4xl mb-2">🏠</div>
+            <div>{property.type}</div>
+          </div>
+        )}
+        <div className="absolute top-4 right-4 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-semibold shadow-md">
+          {property.operation === 'compra' ? 'Venta' : 'Alquiler'}
+        </div>
+      </div>
+      
+      {/* Detalles de la propiedad */}
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="text-xl font-bold text-gray-900 line-clamp-2">{property.title}</h3>
+          <span className="text-2xl font-bold text-blue-600 whitespace-nowrap ml-2">
+            {property.operation === 'compra' ? '€' : '€/mes'}
+            {property.price.toLocaleString('es-ES')}
+          </span>
+        </div>
+        
+        <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{property.description}</p>
+        
+        <div className="flex items-center text-sm text-gray-500 mb-4">
+          <span className="mr-4 flex items-center">
+            📍 {property.location}
+          </span>
+        </div>
+
+        <div className="flex justify-between text-sm text-gray-600 mb-4">
+          <div className="flex space-x-4">
+            <span className="flex items-center">
+              🛏️ {property.bedrooms} hab.
+            </span>
+            <span className="flex items-center">
+              🚿 {property.bathrooms} baños
+            </span>
+            <span className="flex items-center">
+              📐 {property.area} m²
+            </span>
+          </div>
+        </div>
+
+        {/* Tags emocionales */}
+        {property.emotional_tags && property.emotional_tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {property.emotional_tags.map((tag: string, index: number) => (
+              <span 
+                key={index}
+                className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium capitalize"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Características */}
+        {property.features && property.features.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {property.features.slice(0, 3).map((feature: string, index: number) => (
+              <span 
+                key={index}
+                className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
+              >
+                {feature}
+              </span>
+            ))}
+            {property.features.length > 3 && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                +{property.features.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
+        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200">
+          Ver Detalles
+        </button>
+      </div>
+    </div>
+  )
+}

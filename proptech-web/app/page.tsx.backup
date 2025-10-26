@@ -1,0 +1,91 @@
+'use client'
+
+import React from 'react'
+import Link from 'next/link'
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            Bienvenido a <span className="text-blue-600">HabitatPro</span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            La plataforma inmobiliaria más avanzada con IA emocional para encontrar tu hogar perfecto
+          </p>
+          
+          {/* Navigation Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+            <Link href="/comprar" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-200 group-hover:border-blue-300">
+                <div className="text-4xl mb-4">🏠</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Comprar</h3>
+                <p className="text-gray-600 text-sm">Encuentra tu hogar ideal</p>
+              </div>
+            </Link>
+            
+            <Link href="/alquilar" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-200 group-hover:border-green-300">
+                <div className="text-4xl mb-4">🔑</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Alquilar</h3>
+                <p className="text-gray-600 text-sm">Renta con las mejores condiciones</p>
+              </div>
+            </Link>
+            
+            <Link href="/invertir" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-200 group-hover:border-purple-300">
+                <div className="text-4xl mb-4">📈</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Invertir</h3>
+                <p className="text-gray-600 text-sm">Oportunidades de inversión</p>
+              </div>
+            </Link>
+            
+            <Link href="/vender" className="group">
+              <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-200 group-hover:border-orange-300">
+                <div className="text-4xl mb-4">💰</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Vender</h3>
+                <p className="text-gray-600 text-sm">Vende al mejor precio</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+            ¿Por qué elegir HabitatPro?
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-5xl mb-4">🤖</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">IA Emocional</h3>
+              <p className="text-gray-600">Nuestra IA entiende tus emociones y preferencias para recomendarte las mejores propiedades</p>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl mb-4">⚡</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Búsqueda Inteligente</h3>
+              <p className="text-gray-600">Filtros avanzados y búsqueda semántica para encontrar exactamente lo que buscas</p>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl mb-4">📊</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Datos en Tiempo Real</h3>
+              <p className="text-gray-600">Información actualizada del mercado inmobiliario y métricas en tiempo real</p>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="text-center">
+          <Link 
+            href="/comprar" 
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg text-lg transition-colors duration-200"
+          >
+            Comenzar a Buscar
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

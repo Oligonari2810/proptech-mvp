@@ -1,0 +1,124 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import NotificationBell from '@/components/notifications/NotificationBell'
+
+export function Header() {
+  const pathname = usePathname()
+
+  return (
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="text-2xl font-bold text-blue-600">🏠</div>
+            <span className="text-xl font-bold text-gray-900">HabitatPro</span>
+          </Link>
+
+          {/* Navegación Principal */}
+          <nav className="hidden md:flex space-x-8">
+            <Link 
+              href="/comprar" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                pathname === '/comprar' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              Comprar
+            </Link>
+            <Link 
+              href="/alquilar" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                pathname === '/alquilar' 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'text-gray-600 hover:text-green-600 hover:bg-gray-50'
+              }`}
+            >
+              Alquilar
+            </Link>
+            <Link 
+              href="/invertir" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                pathname === '/invertir' 
+                  ? 'bg-purple-100 text-purple-700' 
+                  : 'text-gray-600 hover:text-purple-600 hover:bg-gray-50'
+              }`}
+            >
+              Invertir
+            </Link>
+            <Link 
+              href="/vender" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                pathname === '/vender' 
+                  ? 'bg-orange-100 text-orange-700' 
+                  : 'text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+              }`}
+            >
+              Vender
+            </Link>
+          </nav>
+
+          {/* Botón Home y Notificaciones */}
+          <div className="flex items-center space-x-4">
+            <NotificationBell />
+            <Link 
+              href="/"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              🏠 Inicio
+            </Link>
+          </div>
+        </div>
+
+        {/* Navegación Móvil */}
+        <div className="md:hidden pb-4">
+          <div className="grid grid-cols-2 gap-2">
+            <Link 
+              href="/comprar" 
+              className={`px-3 py-2 rounded-md text-sm font-medium text-center transition-colors ${
+                pathname === '/comprar' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              🏠 Comprar
+            </Link>
+            <Link 
+              href="/alquilar" 
+              className={`px-3 py-2 rounded-md text-sm font-medium text-center transition-colors ${
+                pathname === '/alquilar' 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'text-gray-600 hover:text-green-600 hover:bg-gray-50'
+              }`}
+            >
+              🔑 Alquilar
+            </Link>
+            <Link 
+              href="/invertir" 
+              className={`px-3 py-2 rounded-md text-sm font-medium text-center transition-colors ${
+                pathname === '/invertir' 
+                  ? 'bg-purple-100 text-purple-700' 
+                  : 'text-gray-600 hover:text-purple-600 hover:bg-gray-50'
+              }`}
+            >
+              📈 Invertir
+            </Link>
+            <Link 
+              href="/vender" 
+              className={`px-3 py-2 rounded-md text-sm font-medium text-center transition-colors ${
+                pathname === '/vender' 
+                  ? 'bg-orange-100 text-orange-700' 
+                  : 'text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+              }`}
+            >
+              💰 Vender
+            </Link>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
