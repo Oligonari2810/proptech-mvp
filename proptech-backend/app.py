@@ -37,7 +37,8 @@ db = SQLAlchemy(app)
 allowed_origins = [
     'https://habitatprord.com',
     'https://www.habitatprord.com',
-    'https://*.vercel.app',
+    'https://habitatprord.vercel.app',
+    'https://proptech-mvp.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001'
 ]
