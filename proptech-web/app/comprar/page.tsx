@@ -46,12 +46,14 @@ export default function ComprarPage() {
     const fetchProperties = async () => {
       try {
         // Intentar backend real primero
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://habitatpro-backend.onrender.com';
         const response = await fetch(`${backendUrl}/api/properties/`);
         if (response.ok) {
           const data = await response.json();
-          setProperties(data.properties || []);
-          setFilteredProperties(data.properties || []);
+          // El backend devuelve un array directo, no un objeto con 'properties'
+          const propertiesList = Array.isArray(data) ? data : data.properties || [];
+          setProperties(propertiesList);
+          setFilteredProperties(propertiesList);
         } else {
           throw new Error('Backend not available');
         }

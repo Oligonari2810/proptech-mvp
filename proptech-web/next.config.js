@@ -2,7 +2,7 @@
 const nextConfig = {
   // Variables de entorno
   env: {
-    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000',
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://habitatpro-backend.onrender.com',
   },
   
   reactStrictMode: true,
