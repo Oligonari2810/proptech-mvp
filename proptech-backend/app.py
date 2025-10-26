@@ -333,6 +333,7 @@ def initialize_sample_data():
 
 # APIS RESTFUL REALES
 @app.route('/api/properties', methods=['GET'])
+@limiter.limit("60/minute")
 def get_properties():
     """API REAL: Obtener propiedades con filtros avanzados"""
     try:
@@ -512,6 +513,7 @@ def get_ai_recommendations():
 
 # HEALTH CHECK MEJORADO
 @app.route('/api/health', methods=['GET'])
+@limiter.exempt
 def health_check():
     """Health check completo del sistema"""
     health_status = {
@@ -555,6 +557,7 @@ def health_check():
 
 # VERSION ENDPOINT
 @app.route('/version', methods=['GET'])
+@limiter.exempt
 def get_version():
     """Returns application version information"""
     return jsonify({
@@ -615,6 +618,18 @@ def get_admin_metrics():
             }
         }
         return jsonify(fallback_metrics), 500
+
+# RATE LIMITING
+from rate_limiting import setup_rate_limiting, limiter
+
+setup_rate_limiting(app)
+
+# SENTRY
+try:
+    from sentry_config import init_sentry
+    init_sentry()
+except ImportError:
+    print("⚠️ Sentry no configurado - continuando sin monitoring")
 
 # CONFIGURACIÓN WEBSOCKET CORREGIDA
 @socketio.on('connect')

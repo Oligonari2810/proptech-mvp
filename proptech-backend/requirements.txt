@@ -21,3 +21,4 @@ redis==4.5.5
 
 # SocketIO
 flask-socketio==5.3.6
+slowapi==0.1.9
