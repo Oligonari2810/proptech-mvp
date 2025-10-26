@@ -74,7 +74,8 @@ export default function NotificationBell({ userId = 1 }: NotificationBellProps) 
 
   const markAsRead = async (notificationId: number) => {
     try {
-      const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/notifications/mark-read', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/notifications/mark-read`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

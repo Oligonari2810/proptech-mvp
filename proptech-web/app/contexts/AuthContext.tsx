@@ -40,7 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = async (authToken: string) => {
     try {
-      const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/auth/me', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -64,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/auth/login', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -88,7 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
-      const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/auth/register', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -20,7 +20,8 @@ export default function MapPage() {
 
   useEffect(() => {
     // Cargar propiedades desde el backend
-            fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/properties')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    fetch(`${backendUrl}/api/properties`)
       .then(res => res.json())
       .then(data => setProperties(data.properties || []))
       .catch(err => console.error('Error loading properties:', err));

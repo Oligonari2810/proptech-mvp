@@ -24,7 +24,8 @@ export default function AdminPage() {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/admin/metrics');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const response = await fetch(`${backendUrl}/api/admin/metrics`);
       const data = await response.json();
       
       if (data.status === 'success') {

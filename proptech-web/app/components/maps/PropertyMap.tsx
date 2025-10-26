@@ -34,7 +34,8 @@ export default function PropertyMap({ properties, onPropertyClick, onPropertySel
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/properties/?include_coordinates=true');
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const response = await fetch(`${backendUrl}/api/properties/?include_coordinates=true`);
         if (response.ok) {
           const data = await response.json();
         }

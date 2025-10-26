@@ -91,7 +91,8 @@ export default function PropertyCardWithChat({ property }: PropertyCardWithChatP
     };
 
     try {
-      const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/chat/send', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/chat/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +169,7 @@ export default function PropertyCardWithChat({ property }: PropertyCardWithChatP
       {/* Imagen de la propiedad */}
       <div className="relative h-48 overflow-hidden">
         <Image
-          src={property.image || 'https://woodrow-intersonant-roughly.ngrok-free.dev/api/placeholder/400/300'}
+          src={property.image || '/placeholder.svg'}
           alt={property.title}
           width={400}
           height={300}

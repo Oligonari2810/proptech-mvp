@@ -18,7 +18,8 @@ export default function PropertiesTable() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await fetch('https://woodrow-intersonant-roughly.ngrok-free.dev/api/properties');
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const response = await fetch(`${backendUrl}/api/properties`);
         const data = await response.json();
         setProperties(data.properties || []);
       } catch (error) {
