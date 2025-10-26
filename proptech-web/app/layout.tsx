@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { Header } from './components/Header'
+import { generateOrganizationSchema } from '../lib/seo/schema'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,8 +17,16 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const organizationSchema = generateOrganizationSchema()
+  
   return (
     <html lang="es">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+      </head>
       <body className={inter.className}>
         <Header />
         {children}
