@@ -11,7 +11,18 @@ import json
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///habitatpro.db'
+
+# Configuración de base de datos - PostgreSQL en producción, SQLite en desarrollo
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
+    # Parse PostgreSQL URL para SQLAlchemy
+    if DATABASE_URL.startswith('postgresql://'):
+        DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+else:
+    # Fallback a SQLite para desarrollo local
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///habitatpro.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'habitatpro-super-secret-2024')
 
@@ -23,8 +34,21 @@ app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET', 'your-git
 
 db = SQLAlchemy(app)
 CORS(app)
+
+# Redis configuration - manejar fallback si no está disponible
+try:
+    redis_client = redis.Redis(
+        host=os.getenv('REDIS_HOST', 'localhost'),
+        port=int(os.getenv('REDIS_PORT', 6379)),
+        db=0,
+        decode_responses=True
+    )
+    redis_client.ping()
+except:
+    redis_client = None
+    print("⚠️ Redis no disponible - continuando sin cache")
+
 socketio = SocketIO(app, cors_allowed_origins="*")
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # Importar modelos desde models.py
 from models import User, Property
@@ -564,8 +588,11 @@ def health_check():
     
     try:
         # Verificar Redis
-        redis_client.ping()
-        health_status['services']['redis'] = 'healthy'
+        if redis_client:
+            redis_client.ping()
+            health_status['services']['redis'] = 'healthy'
+        else:
+            health_status['services']['redis'] = 'unhealthy'
     except:
         health_status['services']['redis'] = 'unhealthy'
         health_status['status'] = 'degraded'

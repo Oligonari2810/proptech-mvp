@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: habitatpro-backend
+    env: python
+    plan: free
+    branch: main
+    rootDir: proptech-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: habitatpro
+          property: connectionString
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 8000
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: habitatpro-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: habitatpro-redis
+          property: port
+
+databases:
+  - name: habitatpro
+    plan: free
+    databaseName: habitatpro
+    user: habitatpro_user
+
+# Nota: Redis deberá crearse manualmente en Render o ser opcional
