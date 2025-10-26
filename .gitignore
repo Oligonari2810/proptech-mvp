@@ -1,86 +1,35 @@
-# Dependencias
+# Dependencies
 node_modules/
-.next/
-.vercel/
+.venv/
+venv/
+__pycache__/
+*.pyc
 
-# Archivos de configuración y entornos
+# Next.js
+.next/
+out/
+build/
+
+# Environment
 .env
 .env.local
-.DS_Store
-
-# Archivos de compilación
-/out/
-.build/
-
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environments
-venv/
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff
+.env.production
 *.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
 
-# Flask stuff
-instance/
-.webassets-cache
+# IDE
+.DS_Store
+*.swp
+.vscode/
+.idea/
 
-# Scrapy stuff
-.scrapy
-proptech-backend/venv/
-backup-*.zip
-backup-*.zip
-backup-*.zip
-.vercel
+# Logs
+logs/
+*.log
+/tmp/
+
+# Testing
+coverage/
+.nyc_output/
+
+# OS
+Thumbs.db
