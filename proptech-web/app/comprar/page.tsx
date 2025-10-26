@@ -10,11 +10,14 @@ async function getProperties() {
     const data = await response.json();
     return data.properties || [];
   } catch (error) {
+    console.log('🔧 Using fallback mock data - Backend unavailable');
     return Array.from({ length: 20 }, (_, i) => ({
       id: `fallback-${i}`,
       title: `Propiedad ${i+1} en Santo Domingo`,
       price: Math.floor(Math.random() * 500000) + 50000,
       location: `Santo Domingo ${i+1}`,
+      latitude: 18.4861 + (Math.random() - 0.5) * 0.1, // Centrado en Santo Domingo
+      longitude: -69.9312 + (Math.random() - 0.5) * 0.1,
       bedrooms: Math.floor(Math.random() * 4) + 1,
       bathrooms: Math.floor(Math.random() * 3) + 1,
       area: Math.floor(Math.random() * 200) + 80,
