@@ -32,7 +32,16 @@ app.config['GITHUB_CLIENT_ID'] = os.getenv('GITHUB_CLIENT_ID', 'your-github-clie
 app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET', 'your-github-client-secret')
 
 db = SQLAlchemy(app)
-CORS(app)
+
+# CORS configuration for production
+allowed_origins = [
+    'https://habitatprord.com',
+    'https://www.habitatprord.com',
+    'https://*.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001'
+]
+CORS(app, origins=allowed_origins, supports_credentials=True)
 
 # Redis configuration - manejar fallback si no está disponible
 try:
@@ -543,6 +552,17 @@ def health_check():
         health_status['status'] = 'degraded'
     
     return jsonify(health_status)
+
+# VERSION ENDPOINT
+@app.route('/version', methods=['GET'])
+def get_version():
+    """Returns application version information"""
+    return jsonify({
+        'name': 'habitatpro-backend',
+        'version': '2024.10.26',
+        'status': 'active',
+        'timestamp': datetime.utcnow().isoformat()
+    })
 
 # INICIALIZACIÓN AL ARRANCAR
 def initialize_app():
