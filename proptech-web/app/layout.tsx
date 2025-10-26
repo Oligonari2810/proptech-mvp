@@ -20,16 +20,25 @@ export default function RootLayout({
   const organizationSchema = generateOrganizationSchema()
   
   return (
-    <html lang="es">
+    <html lang="es-DO">
       <head>
+        <link rel="canonical" href="https://habitatprord.com" />
+        <link rel="alternate" hrefLang="es" href="https://habitatprord.com" />
+        <link rel="alternate" hrefLang="es-DO" href="https://habitatprord.com" />
+        <link rel="alternate" hrefLang="x-default" href="https://habitatprord.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
       <body className={inter.className}>
+        <a href="#main-content" className="skip-link">
+          Saltar al contenido principal
+        </a>
         <Header />
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
       </body>
     </html>
   )

@@ -1,8 +1,25 @@
 import { MetadataRoute } from 'next'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://habitatprord.com'
   
+  // Obtener propiedades dinámicamente
+  let properties = []
+  try {
+    const response = await fetch('https://habitatpro-backend.onrender.com/api/properties')
+    const data = await response.json()
+    properties = data.properties || []
+  } catch (error) {
+    console.error('Error fetching properties for sitemap:', error)
+  }
+
+  const propertyEntries = properties.map((property: any) => ({
+    url: `${baseUrl}/comprar/${property.id}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }))
+
   return [
     {
       url: baseUrl,
@@ -40,5 +57,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    ...propertyEntries,
   ]
 }
