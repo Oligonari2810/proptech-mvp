@@ -552,15 +552,14 @@ def health_check():
     }
     
     try:
-        # Verificar base de datos - simplificado
+        # Verificar base de datos
         db.session.execute('SELECT 1')
         health_status['services']['database'] = 'healthy'
         health_status['metrics']['total_properties'] = Property.query.count()
         health_status['metrics']['total_users'] = User.query.count()
-    except Exception as e:
+    except:
         health_status['services']['database'] = 'unhealthy'
         health_status['status'] = 'degraded'
-        print(f"Database health check error: {e}")
     
     try:
         # Verificar Redis
@@ -576,53 +575,6 @@ def health_check():
 def initialize_app():
     """Inicializar datos al arrancar la aplicación"""
     initialize_sample_data()
-
-# API DE MÉTRICAS ADMIN DASHBOARD
-@app.route('/api/admin/metrics', methods=['GET'])
-def get_admin_metrics():
-    """Obtener métricas reales para el admin dashboard"""
-    try:
-        # Obtener métricas reales desde la base de datos
-        total_properties = Property.query.count()
-        total_users = User.query.count()
-        
-        # Simular métricas adicionales basadas en datos reales
-        # En un sistema real, estas vendrían de tablas específicas
-        recent_leads = max(15, total_properties * 2)  # Basado en propiedades
-        active_reservations = max(5, total_properties // 2)  # Basado en propiedades
-        monthly_revenue = total_properties * 15000  # Estimación basada en propiedades
-        
-        metrics = {
-            'status': 'success',
-            'metrics': {
-                'properties': total_properties,
-                'leads': recent_leads,
-                'reservations': active_reservations,
-                'revenue': monthly_revenue,
-                'revenue_formatted': f"${monthly_revenue:,.0f}",
-                'users': total_users,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-        }
-        
-        return jsonify(metrics)
-        
-    except Exception as e:
-        # Datos de respaldo en caso de error
-        fallback_metrics = {
-            'status': 'error',
-            'message': str(e),
-            'metrics': {
-                'properties': 6,  # Número real conocido
-                'leads': 23,
-                'reservations': 8,
-                'revenue': 87500,
-                'revenue_formatted': "$87,500",
-                'users': 3,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-        }
-        return jsonify(fallback_metrics), 500
 
 # CONFIGURACIÓN WEBSOCKET CORREGIDA
 @socketio.on('connect')

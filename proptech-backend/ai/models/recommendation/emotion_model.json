@@ -1,0 +1,32 @@
+{
+  "emotion_weights": {
+    "happy": {
+      "has_pool": 0.8,
+      "has_garden": 0.7,
+      "location_score": 0.6
+    },
+    "excited": {
+      "price_range": 0.9,
+      "property_type": 0.8
+    },
+    "calm": {
+      "location_score": 0.9,
+      "has_garden": 0.8
+    },
+    "analytical": {
+      "price_range": 0.7,
+      "bedrooms": 0.6
+    },
+    "sad": {
+      "location_score": 0.7,
+      "price_range": 0.5
+    }
+  },
+  "base_weights": {
+    "location_score": 0.3,
+    "bedrooms": 0.2,
+    "bathrooms": 0.1,
+    "has_pool": 0.15,
+    "has_garden": 0.1
+  }
+}

@@ -1,0 +1,61 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements e instalar dependencias Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Instalar dependencias específicas para autenticación
+RUN pip install flask-jwt-extended bcrypt
+
+# Copiar código del servicio de autenticación
+COPY routes/auth.py .
+COPY models.py .
+COPY config.py .
+COPY services/auth_service.py ./services/
+
+# Crear archivo de servicio de autenticación
+RUN echo 'from flask import Flask\n\
+from flask_cors import CORS\n\
+from flask_jwt_extended import JWTManager\n\
+from routes.auth import auth_bp\n\
+from models import db\n\
+from config import Config\n\
+import os\n\
+\n\
+def create_auth_service():\n\
+    app = Flask(__name__)\n\
+    app.config.from_object(Config)\n\
+    \n\
+    CORS(app)\n\
+    JWTManager(app)\n\
+    \n\
+    db.init_app(app)\n\
+    \n\
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")\n\
+    \n\
+    @app.route("/health")\n\
+    def health():\n\
+        return {"status": "healthy", "service": "auth-service"}\n\
+    \n\
+    return app\n\
+\n\
+if __name__ == "__main__":\n\
+    app = create_auth_service()\n\
+    port = int(os.getenv("PORT", 8001))\n\
+    app.run(host="0.0.0.0", port=port, debug=False)\n\
+' > auth_service.py
+
+# Exponer puerto
+EXPOSE 8001
+
+# Comando de inicio
+CMD ["python", "auth_service.py"]

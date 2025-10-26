@@ -6,14 +6,36 @@ import datetime
 
 db = SQLAlchemy()
 
-# ✅ Modelo de Usuario
+# ✅ Modelo de Usuario Enterprise
 class User(db.Model):
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
     email = Column(String(120), unique=True, nullable=False)
-    password_hash = Column(String(256), nullable=False)
-    role = Column(String(50), nullable=False, default="user")
+    password_hash = Column(String(256), nullable=True)  # Nullable para OAuth users
+    role = Column(String(50), nullable=False, default="user")  # user, broker, admin, super_admin
+    
+    # ✅ Campos de perfil
+    name = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    avatar_url = Column(String(255), nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    last_login = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # ✅ OAuth Integration
+    oauth_provider = Column(String(50), nullable=True)  # google, github, etc.
+    oauth_id = Column(String(100), nullable=True)  # ID del proveedor OAuth
+    oauth_data = Column(Text, nullable=True)  # JSON con datos del proveedor
+    
+    # ✅ Campos de suscripción para monetización
+    subscription_type = Column(String(50), nullable=True, default="free")  # free, broker_basic, broker_pro
+    subscription_status = Column(String(50), nullable=True, default="inactive")  # active, inactive, cancelled
+    stripe_customer_id = Column(String(255), nullable=True)
+    subscription_start = Column(DateTime, nullable=True)
+    subscription_end = Column(DateTime, nullable=True)
 
     properties = relationship("Property", back_populates="owner", lazy=True)
     buyer_contracts = relationship("SmartContract", foreign_keys="SmartContract.buyer_id", back_populates="buyer", lazy=True)
