@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { Header } from './components/Header'
+import { FrontendMonitoring } from './components/Monitoring'
 import { generateOrganizationSchema } from '../lib/seo/schema'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -32,6 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <FrontendMonitoring />
         <a href="#main-content" className="skip-link">
           Saltar al contenido principal
         </a>

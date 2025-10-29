@@ -147,6 +147,14 @@ class EmotionAwareRecommender:
 # INICIALIZAR IA
 emotion_engine = EmotionAwareRecommender()
 
+# Monitoring (Prometheus & logging estructurado)
+try:
+    from monitoring.metrics import monitor_requests, generate_latest, REGISTRY, FRONTEND_PERFORMANCE, ERROR_COUNT
+    from monitoring.business_metrics import update_properties_count, ROI_CALCULATIONS
+    monitor_requests(app)
+except Exception as _e:
+    print(f"⚠️ Monitoring básico no inicializado: {_e}")
+
 # DATOS DE PRUEBA REALES
 def initialize_sample_data():
     """Inicializar base de datos con datos reales de prueba"""
@@ -697,34 +705,80 @@ def get_admin_metrics():
         }
         return jsonify(fallback_metrics), 500
 
+# MÉTRICAS PROMETHEUS
+@app.route('/metrics')
+def metrics_endpoint():
+    try:
+        # Actualizar métricas de negocio ligeras
+        update_properties_count(Property)
+        return generate_latest(REGISTRY), 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# RECEPCIÓN DE MÉTRICAS FRONTEND
+@app.route('/api/metrics/frontend', methods=['POST'])
+def receive_frontend_metrics():
+    try:
+        data = request.get_json() or {}
+        mtype = data.get('type')
+        path = data.get('path', 'unknown')
+        if mtype == 'page_load' and data.get('duration') is not None:
+            try:
+                seconds = float(data.get('duration')) / 1000.0
+                FRONTEND_PERFORMANCE.labels(path=path, type='page_load').observe(seconds)
+            except Exception:
+                pass
+        elif mtype == 'error':
+            try:
+                ERROR_COUNT.labels(path, 'frontend_js').inc()
+            except Exception:
+                pass
+        return jsonify({'success': True})
+    except Exception:
+        # No romper al frontend si falla monitoring
+        return jsonify({'success': False}), 200
+
 # ANALYTICS: ROI endpoint
 @app.route('/api/analytics/roi', methods=['GET'])
 def get_roi_analytics():
-    """Cálculos reales de ROI a partir de una propiedad"""
+    """Cálculos reales de ROI a partir de una propiedad (defensivo en prod)"""
     try:
         property_id = request.args.get('property_id', type=int)
         if not property_id:
             return jsonify({'success': False, 'error': 'Falta property_id'}), 400
 
-        prop = Property.query.get_or_404(property_id)
+        prop = Property.query.get(property_id)
+        if not prop:
+            return jsonify({
+                'success': False,
+                'error': f'Property {property_id} not found',
+                'available_properties': [p.id for p in Property.query.limit(20).all()]
+            }), 404
 
-        # Supuestos simples (mejorables):
-        # renta mensual ~ 0.5% del precio; costes operativos ~ 0.2% del precio
-        # apreciación anual del 3%
         purchase_price = float(prop.price or 0)
-        estimated_rent_month = purchase_price * 0.005
-        operating_costs_month = purchase_price * 0.002
-        annual_appreciation = purchase_price * 0.03
+        if purchase_price <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Property price is invalid or zero',
+                'property_id': prop.id,
+                'current_price': prop.price
+            }), 400
+
+        # Supuestos simples (mejorables) en base a precio
+        estimated_rent_month = purchase_price * 0.005  # 0.5% mensual
+        operating_costs_month = purchase_price * 0.002  # 0.2% mensual
+        annual_appreciation = purchase_price * 0.03      # 3% anual
 
         annual_rent = estimated_rent_month * 12
         annual_costs = operating_costs_month * 12
-        rental_yield = (annual_rent / purchase_price) if purchase_price else 0.0
-        total_roi = ((annual_rent - annual_costs + annual_appreciation) / purchase_price) if purchase_price else 0.0
+        rental_yield = annual_rent / purchase_price
+        total_roi = (annual_rent - annual_costs + annual_appreciation) / purchase_price
         cash_flow = (estimated_rent_month - operating_costs_month) * 12
 
         roi_data = {
             'success': True,
             'property_id': prop.id,
+            'property_title': prop.title,
             'purchase_price': purchase_price,
             'estimated_rent': round(annual_rent, 2),
             'operating_costs': round(annual_costs, 2),
@@ -735,9 +789,13 @@ def get_roi_analytics():
             'comparison': []
         }
 
-        return jsonify(roi_data)
+        return jsonify(roi_data), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': f'Internal server error: {str(e)}',
+            'property_id': property_id
+        }), 500
 
 # API MARKETPLACE ENDPOINTS (K82)
 @app.route('/api/marketplace/endpoints', methods=['GET'])
