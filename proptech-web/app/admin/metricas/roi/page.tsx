@@ -11,6 +11,7 @@ interface MarketComparison {
 interface ROIMetrics {
   success: boolean;
   property_id: number;
+  property_title?: string;
   purchase_price: number;
   estimated_rent: number;
   operating_costs: number;
@@ -19,22 +20,61 @@ interface ROIMetrics {
   total_roi: number;
   cash_flow: number;
   comparison: MarketComparison[];
+  error?: string;
+  available_properties?: number[];
+}
+
+interface Property {
+  id: number;
+  title: string;
+  price: number;
+  location: string;
 }
 
 export default function ROIDashboard() {
   const [roiData, setRoiData] = useState<ROIMetrics | null>(null);
-  const [propertyId, setPropertyId] = useState<string>("1");
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Cargar lista de propiedades disponibles
   useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const res = await fetch(`${base}/properties`);
+        if (!res.ok) throw new Error("Error cargando propiedades");
+        const data = await res.json();
+        const list: Property[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data.properties)
+            ? data.properties
+            : [];
+        setProperties(list);
+        if (list.length > 0) setSelectedPropertyId(String(list[0].id));
+        setError(null);
+      } catch (e) {
+        setError("No se pudieron cargar las propiedades");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProperties();
+  }, []);
+
+  // Cargar ROI al cambiar selección
+  useEffect(() => {
+    if (!selectedPropertyId) return;
     const fetchROI = async () => {
       try {
         setLoading(true);
         const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const res = await fetch(`${base}/analytics/roi?property_id=${propertyId}`);
-        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+        const res = await fetch(`${base}/analytics/roi?property_id=${selectedPropertyId}`);
         const data = await res.json();
+        if (!res.ok || data.success === false) {
+          throw new Error(data.error || `Error ${res.status}`);
+        }
         setRoiData(data);
         setError(null);
       } catch (e) {
@@ -45,20 +85,36 @@ export default function ROIDashboard() {
       }
     };
     fetchROI();
-  }, [propertyId]);
+  }, [selectedPropertyId]);
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard ROI - Análisis de Inversión</h1>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">ID Propiedad</label>
-          <input
-            value={propertyId}
-            onChange={(e) => setPropertyId(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
-          />
-        </div>
+      </div>
+
+      {/* Selector dinámico de propiedad */}
+      <div className="flex items-center gap-3">
+        <label className="text-sm text-gray-700">Seleccionar Propiedad</label>
+        <select
+          className="border rounded px-2 py-1 text-sm min-w-56"
+          value={selectedPropertyId}
+          onChange={(e) => setSelectedPropertyId(e.target.value)}
+          disabled={properties.length === 0}
+        >
+          {properties.length === 0 ? (
+            <option value="">No hay propiedades</option>
+          ) : (
+            properties.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title} — €{(p.price || 0).toLocaleString()}
+              </option>
+            ))
+          )}
+        </select>
+        {properties.length > 0 && (
+          <span className="text-xs text-gray-500">{properties.length} disponible(s)</span>
+        )}
       </div>
 
       {loading && (
