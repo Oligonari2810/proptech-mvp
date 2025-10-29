@@ -1,4 +1,4 @@
-import { Search, Home, WhatsApp } from 'lucide-react';
+import { Search, Home, MessageCircle } from 'lucide-react';
 
 interface EmptyStateProps {
   title?: string;
@@ -83,7 +83,7 @@ export const EmptyState = ({
             onClick={handleWhatsAppClick}
             className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center gap-2"
           >
-            <WhatsApp size={20} />
+            <MessageCircle size={20} />
             Contactar por WhatsApp
           </button>
         )}

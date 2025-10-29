@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import MetricsCards from '@/components/admin/MetricsCards';
-import PropertiesTable from '@/components/admin/PropertiesTable';
-import UsersManagement from '@/components/admin/UsersManagement';
-import AnalyticsCharts from '@/components/admin/AnalyticsCharts';
+import { MetricsCards } from '../../components/admin/MetricsCards';
+import { PropertiesTable } from '../../components/admin/PropertiesTable';
+import { UsersManagement } from '../../components/admin/UsersManagement';
+import { AnalyticsCharts } from '../../components/admin/AnalyticsCharts';
 
 interface DashboardData {
   totalProperties: number;
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       {/* Contenido Principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Métricas */}
-        <MetricsCards data={dashboardData} />
+        <MetricsCards />
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Gráficos */}

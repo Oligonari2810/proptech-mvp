@@ -1,36 +1,31 @@
 'use client';
+
 import { useEffect, useRef, useState } from 'react';
 
-// Fallback si Mapbox no carga
-const MapFallback = ({ listingsCount }: { listingsCount: number }) => (
-  <div className="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
-    <div className="text-center">
-      <div className="text-gray-500">Mapa cargando...</div>
-      <div className="text-sm text-gray-400 mt-2">
-        Mostrando {listingsCount} propiedades en República Dominicana
-      </div>
-    </div>
-  </div>
-);
-
-interface Listing {
-  id: number | string;
+interface Property {
+  id: string;
   title: string;
   price: number;
   latitude: number;
   longitude: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: number;
+  images?: string[];
 }
 
 interface MapClusterProps {
-  listings?: Listing[];
-  properties?: Listing[];
+  listings?: Property[];
+  properties?: Property[];
 }
 
 export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) => {
-  // Use properties if provided, otherwise use listings
-  const items = properties.length > 0 ? properties : listings;
   const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
   const [mapError, setMapError] = useState(false);
+
+  // Use properties if available, otherwise use listings
+  const items = properties.length > 0 ? properties : listings;
 
   useEffect(() => {
     if (!mapContainer.current || mapError) return;
@@ -42,19 +37,17 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
         if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
           throw new Error('Mapbox token not configured');
         }
-        
-        if (!mapContainer.current) {
-          throw new Error('Map container not found');
-        }
 
         mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
         const map = new mapboxgl.Map({
-          container: mapContainer.current,
+          container: mapContainer.current!,
           style: 'mapbox://styles/mapbox/light-v10',
-          center: [-69.9, 18.5],
+          center: [-69.9, 18.5], // República Dominicana
           zoom: 9
         });
+
+        mapRef.current = map;
 
         map.on('load', () => {
           // Add source with clustering
@@ -62,39 +55,24 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
             type: 'geojson',
             data: {
               type: 'FeatureCollection',
-              features: listings.map(listing => ({
+              features: items.map(item => ({
                 type: 'Feature',
                 geometry: {
                   type: 'Point',
-                  coordinates: [listing.longitude, listing.latitude]
+                  coordinates: [item.longitude, item.latitude]
                 },
                 properties: {
-                  id: listing.id,
-                  title: listing.title,
-                  price: listing.price
+                  id: item.id,
+                  title: item.title,
+                  price: item.price,
+                  bedrooms: item.bedrooms,
+                  bathrooms: item.bathrooms
                 }
               }))
             },
             cluster: true,
             clusterMaxZoom: 14,
             clusterRadius: 50
-          });
-
-          // Update source data if items change
-          map.getSource('properties').setData({
-            type: 'FeatureCollection',
-            features: items.map(item => ({
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [item.longitude, item.latitude]
-              },
-              properties: {
-                id: item.id,
-                title: item.title,
-                price: item.price
-              }
-            }))
           });
 
           // Add cluster circles
@@ -108,18 +86,18 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
                 'step',
                 ['get', 'point_count'],
                 '#51bbd6',
-                10,
+                100,
                 '#f1f075',
-                30,
+                750,
                 '#f28cb1'
               ],
               'circle-radius': [
                 'step',
                 ['get', 'point_count'],
                 20,
-                10,
+                100,
                 30,
-                30,
+                750,
                 40
               ]
             }
@@ -148,56 +126,46 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
               'circle-color': '#11b4da',
               'circle-radius': 8,
               'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
+              'circle-stroke-color': '#fff'
             }
           });
 
-          // Click on cluster to zoom in
+          // Add click handlers
           map.on('click', 'clusters', (e) => {
             const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-            const clusterId = features[0].properties.cluster_id;
-            map.getSource('properties').getClusterExpansionZoom(
-              clusterId,
-              (err, zoom) => {
-                        if (err) return;
-        map.easeTo({
-          center: features[0].geometry.coordinates,
-          zoom: zoom
-        });
-      }
-    );
-  });
+            if (features.length > 0) {
+              const clusterId = features[0].properties?.cluster_id;
+              const source = map.getSource('properties') as any;
+              if (source && source.getClusterExpansionZoom) {
+                source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+                  if (err) return;
+                  map.easeTo({
+                    center: (e.lngLat as any),
+                    zoom: zoom
+                  });
+                });
+              }
+            }
+          });
 
-  // Update source when items change
-  if (items.length > 0) {
-    map.getSource('properties')?.setData({
-      type: 'FeatureCollection',
-      features: items.map(item => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [item.longitude, item.latitude]
-        },
-        properties: {
-          id: item.id,
-          title: item.title,
-          price: item.price
-        }
-      }))
-    });
-  }
-
-  // Click on individual point to show popup
           map.on('click', 'unclustered-point', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            const { title, price } = e.features[0].properties;
+            const coordinates = (e.features?.[0].geometry as any).coordinates.slice();
+            const properties = e.features?.[0].properties;
+            
+            // Ensure that if the map is zoomed out such that multiple
+            // copies of the feature are visible, the popup appears
+            // over the copy being pointed to.
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
 
             new mapboxgl.Popup()
               .setLngLat(coordinates)
               .setHTML(`
-                <div class="p-3 max-w-xs">
-                  <h3 class="font-semibold text-lg">${title}</h3>
-                  <p class="text-blue-600 font-bold text-xl">$${Number(price).toLocaleString()}</p>
+                <div class="p-3">
+                  <h3 class="font-semibold text-lg">${properties?.title}</h3>
+                  <p class="text-blue-600 font-bold text-xl">$${properties?.price?.toLocaleString()}</p>
+                  ${properties?.bedrooms ? `<p class="text-sm text-gray-600">${properties.bedrooms} hab, ${properties.bathrooms || 0} baños</p>` : ''}
                 </div>
               `)
               .addTo(map);
@@ -207,12 +175,15 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
           map.on('mouseenter', 'clusters', () => {
             map.getCanvas().style.cursor = 'pointer';
           });
+
           map.on('mouseleave', 'clusters', () => {
             map.getCanvas().style.cursor = '';
           });
+
           map.on('mouseenter', 'unclustered-point', () => {
             map.getCanvas().style.cursor = 'pointer';
           });
+
           map.on('mouseleave', 'unclustered-point', () => {
             map.getCanvas().style.cursor = '';
           });
@@ -226,11 +197,26 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
       }
     };
 
-              initializeMap();
-        }, [items, mapError]);
+    initializeMap();
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+      }
+    };
+  }, [items, mapError]);
 
   if (mapError || !process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-    return <MapFallback listingsCount={items.length} />;
+    return (
+      <div className="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-500">Mapa cargando...</div>
+          <div className="text-sm text-gray-400 mt-2">
+            Mostrando {items.length} propiedades en República Dominicana
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return <div ref={mapContainer} className="w-full h-96 rounded-lg border" />;

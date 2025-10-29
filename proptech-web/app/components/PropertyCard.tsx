@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Image from 'next/image'
-import { WhatsApp } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 
 interface Property {
   id: number | string
@@ -18,7 +18,7 @@ interface Property {
   features?: string[]
   description?: string
   type?: string
-  operation?: 'compra' | 'alquiler'
+  operation?: string
   emotional_tags?: string[]
 }
 
@@ -140,7 +140,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             className="flex items-center justify-center bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors"
             title="Contactar por WhatsApp"
           >
-            <WhatsApp size={20} />
+            <MessageCircle size={20} />
           </button>
         </div>
       </div>

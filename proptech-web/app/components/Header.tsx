@@ -13,7 +13,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import NotificationBell from "@/components/notifications/NotificationBell";
+import { NotificationBell } from "./notifications/NotificationBell";
 
 export function Header() {
   const pathname = usePathname();

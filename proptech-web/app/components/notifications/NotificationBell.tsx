@@ -1,254 +1,148 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Bell, X } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { Bell } from 'lucide-react'
 
 interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: string;
-  read: boolean;
-  userId: number;
+  id: string
+  title: string
+  message: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  timestamp: string
+  read: boolean
 }
 
-interface NotificationBellProps {
-  userId?: number;
-}
+export function NotificationBell() {
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
-export default function NotificationBell({ userId = 1 }: NotificationBellProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Cargar notificaciones del backend
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch(`/api/notifications/user/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.notifications?.filter((n: Notification) => !n.read).length || 0);
-        }
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        // Datos de ejemplo si el backend no responde
-        const sampleNotifications: Notification[] = [
-          {
-            id: 1,
-            title: 'Nueva propiedad disponible',
-            message: 'Se ha añadido una nueva propiedad en tu zona de interés',
-            type: 'info',
-            timestamp: new Date().toISOString(),
-            read: false,
-            userId: 1
-          },
-          {
-            id: 2,
-            title: 'Cita confirmada',
-            message: 'Tu cita para ver la propiedad en Madrid Centro ha sido confirmada',
-            type: 'success',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            read: false,
-            userId: 1
-          },
-          {
-            id: 3,
-            title: 'Precio actualizado',
-            message: 'El precio de la propiedad que sigues ha bajado un 5%',
-            type: 'warning',
-            timestamp: new Date(Date.now() - 7200000).toISOString(),
-            read: true,
-            userId: 1
-          }
-        ];
-        setNotifications(sampleNotifications);
-        setUnreadCount(sampleNotifications.filter(n => !n.read).length);
+    // Simular notificaciones enterprise
+    const mockNotifications: Notification[] = [
+      {
+        id: '1',
+        title: 'Nueva Propiedad',
+        message: 'Se ha agregado una nueva propiedad en Santo Domingo',
+        type: 'info',
+        timestamp: '2024-10-28T10:30:00Z',
+        read: false
+      },
+      {
+        id: '2',
+        title: 'Lead Generado',
+        message: 'Nuevo lead desde WhatsApp para propiedad #123',
+        type: 'success',
+        timestamp: '2024-10-28T09:15:00Z',
+        read: false
+      },
+      {
+        id: '3',
+        title: 'Propiedad Vendida',
+        message: 'La propiedad en Punta Cana ha sido vendida',
+        type: 'success',
+        timestamp: '2024-10-27T16:45:00Z',
+        read: true
       }
-    };
+    ]
+    
+    setNotifications(mockNotifications)
+    setUnreadCount(mockNotifications.filter(n => !n.read).length)
+  }, [])
 
-    fetchNotifications();
-  }, [userId]);
-
-  const markAsRead = async (notificationId: number) => {
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      const response = await fetch(`${backendUrl}/api/notifications/mark-read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          notificationId
-        })
-      });
-
-      if (response.ok) {
-        setNotifications(prev => 
-          prev.map(n => 
-            n.id === notificationId ? { ...n, read: true } : n
-          )
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
+  const markAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === id 
+          ? { ...notification, read: true }
+          : notification
+      )
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
+  }
 
   const markAllAsRead = () => {
-    notifications.forEach(notification => {
-      if (!notification.read) {
-        markAsRead(notification.id);
-      }
-    });
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return '✅';
-      case 'warning':
-        return '⚠️';
-      case 'error':
-        return '❌';
-      default:
-        return 'ℹ️';
-    }
-  };
-
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'success':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'error':
-        return 'text-red-600 bg-red-50 border-red-200';
-      default:
-        return 'text-blue-600 bg-blue-50 border-blue-200';
-    }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Ahora';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-    return `${Math.floor(diffInMinutes / 1440)}d`;
-  };
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, read: true }))
+    )
+    setUnreadCount(0)
+  }
 
   return (
     <div className="relative">
-      {/* Botón de notificaciones */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
-        aria-label="Notificaciones"
+        className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full"
       >
-        <Bell className="h-6 w-6" />
+        <Bell size={20} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount}
           </span>
         )}
       </button>
 
-      {/* Panel de notificaciones */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
-            <div className="flex space-x-2">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
+          <div className="p-4 border-b">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-sm text-indigo-600 hover:text-indigo-900"
                 >
                   Marcar todas como leídas
                 </button>
               )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
           </div>
-
-          {/* Lista de notificaciones */}
+          
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p>No hay notificaciones</p>
+                No hay notificaciones
               </div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                  onClick={() => markAsRead(notification.id)}
+                  className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
                     !notification.read ? 'bg-blue-50' : ''
                   }`}
-                  onClick={() => markAsRead(notification.id)}
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="text-lg">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {notification.title}
-                        </h4>
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                      </div>
+                  <div className="flex items-start">
+                    <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
+                      notification.type === 'success' ? 'bg-green-500' :
+                      notification.type === 'warning' ? 'bg-yellow-500' :
+                      notification.type === 'error' ? 'bg-red-500' :
+                      'bg-blue-500'
+                    }`} />
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-gray-900">
+                        {notification.title}
+                      </h4>
                       <p className="text-sm text-gray-600 mt-1">
                         {notification.message}
                       </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-500">
-                          {formatTimestamp(notification.timestamp)}
-                        </span>
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getNotificationColor(notification.type)}`}>
-                          {notification.type}
-                        </div>
-                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(notification.timestamp).toLocaleString()}
+                      </p>
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="p-4 border-t border-gray-200">
-              <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Ver todas las notificaciones
-              </button>
-            </div>
-          )}
+          
+          <div className="p-4 border-t">
+            <button className="w-full text-sm text-indigo-600 hover:text-indigo-900">
+              Ver todas las notificaciones
+            </button>
+          </div>
         </div>
       )}
-
-      {/* Overlay para cerrar al hacer clic fuera */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
     </div>
-  );
+  )
 }

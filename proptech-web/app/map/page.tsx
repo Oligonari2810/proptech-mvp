@@ -48,9 +48,9 @@ export default function MapPage() {
 
     const initMap = () => {
       if (typeof window !== 'undefined' && window.mapboxgl) {
-        window.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
+        (window as any).mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
         
-        const map = new window.mapboxgl.Map({
+        const map = new (window as any).mapboxgl.Map({
           container: 'map-container',
           style: 'mapbox://styles/mapbox/streets-v12',
           center: [-3.7038, 40.4168], // Madrid

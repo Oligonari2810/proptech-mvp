@@ -1,56 +1,71 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
 interface Property {
-  id: number;
-  title: string;
-  price: number;
-  type: string;
-  status: string;
-  location: string;
+  id: string
+  title: string
+  price: number
+  location: string
+  status: 'active' | 'pending' | 'sold'
+  created_at: string
 }
 
-export default function PropertiesTable() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+export function PropertiesTable() {
+  const [properties, setProperties] = useState<Property[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const response = await fetch(`${backendUrl}/api/properties`);
-        const data = await response.json();
-        setProperties(data.properties || []);
-      } catch (error) {
-        console.error('Error fetching properties:', error);
-      } finally {
-        setLoading(false);
+    // Simular datos enterprise
+    setProperties([
+      {
+        id: '1',
+        title: 'Casa en Santo Domingo',
+        price: 250000,
+        location: 'Santo Domingo',
+        status: 'active',
+        created_at: '2024-10-25'
+      },
+      {
+        id: '2',
+        title: 'Apartamento en Punta Cana',
+        price: 180000,
+        location: 'Punta Cana',
+        status: 'pending',
+        created_at: '2024-10-24'
+      },
+      {
+        id: '3',
+        title: 'Villa en Bávaro',
+        price: 350000,
+        location: 'Bávaro',
+        status: 'sold',
+        created_at: '2024-10-23'
       }
-    };
-
-    fetchProperties();
-  }, []);
+    ])
+    setLoading(false)
+  }, [])
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="text-center text-gray-600">Cargando propiedades...</div>
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded"></div>
+          </div>
+        </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Gestión de Propiedades
-        </h2>
-        <p className="text-gray-600 text-sm mt-1">
-          {properties.length} propiedades en la plataforma
-        </p>
+    <div className="bg-white rounded-lg shadow-sm border">
+      <div className="px-6 py-4 border-b">
+        <h3 className="text-lg font-semibold text-gray-900">Gestión de Propiedades</h3>
       </div>
-
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -62,13 +77,13 @@ export default function PropertiesTable() {
                 Precio
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tipo
+                Ubicación
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ubicación
+                Fecha
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
@@ -77,37 +92,32 @@ export default function PropertiesTable() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {properties.map((property) => (
-              <tr key={property.id} className="hover:bg-gray-50">
+              <tr key={property.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {property.title}
-                  </div>
+                  <div className="text-sm font-medium text-gray-900">{property.title}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    €{property.price.toLocaleString()}
-                  </div>
+                  <div className="text-sm text-gray-900">${property.price.toLocaleString()}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    {property.type}
+                  <div className="text-sm text-gray-900">{property.location}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    property.status === 'active' ? 'bg-green-100 text-green-800' :
+                    property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {property.status === 'active' ? 'Activa' :
+                     property.status === 'pending' ? 'Pendiente' : 'Vendida'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    {property.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {property.location}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {new Date(property.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-blue-600 hover:text-blue-900 mr-3">
-                    Editar
-                  </button>
-                  <button className="text-red-600 hover:text-red-900">
-                    Eliminar
-                  </button>
+                  <button className="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
+                  <button className="text-red-600 hover:text-red-900">Eliminar</button>
                 </td>
               </tr>
             ))}
@@ -115,5 +125,5 @@ export default function PropertiesTable() {
         </table>
       </div>
     </div>
-  );
+  )
 }
