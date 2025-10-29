@@ -1,9 +1,9 @@
 'use client';
 
-import HeroSection from '@/components/redesign/HeroSection';
-import ActionTiles from '@/components/redesign/ActionTiles';
-import '../../styles/redesign/globals.css';
-import '../../styles/redesign/theme.css';
+import HeroSection from '../components/redesign/HeroSection';
+import ActionTiles from '../components/redesign/ActionTiles';
+import '../styles/redesign/globals.css';
+import '../styles/redesign/theme.css';
 
 export default function RedesignHomePage() {
   return (

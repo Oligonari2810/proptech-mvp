@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Card from '@/components/redesign/Card';
-import Button from '@/components/redesign/Button';
-import '../../../styles/redesign/globals.css';
-import '../../../styles/redesign/theme.css';
+import Card from '../../components/redesign/Card';
+import Button from '../../components/redesign/Button';
+import '../../styles/redesign/globals.css';
+import '../../styles/redesign/theme.css';
 
 interface InvestmentProperty {
   id: number;
