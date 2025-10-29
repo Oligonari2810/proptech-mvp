@@ -1,9 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
+import PropertyForm from '../components/PropertyForm'
 
 export default function VenderPage() {
-  const [activeTab, setActiveTab] = useState('valoracion')
+  const [activeTab, setActiveTab] = useState('publicacion')
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -113,30 +116,30 @@ export default function VenderPage() {
 
             {activeTab === 'publicacion' && (
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Publicación Premium</h3>
-                <p className="text-gray-600">
-                  Llega a miles de compradores potenciales con nuestra plataforma.
-                </p>
+                {/* Mensajes de éxito/error */}
+                {successMessage && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex">
+                      <div className="text-green-600 text-lg mr-3">✅</div>
+                      <div className="text-green-800 text-sm font-semibold">
+                        {successMessage}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Título de la publicación</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ej: Espectacular ático con vistas al mar..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex">
+                      <div className="text-red-600 text-lg mr-3">❌</div>
+                      <div className="text-red-800 text-sm font-semibold">
+                        {errorMessage}
+                      </div>
+                    </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                    <textarea 
-                      rows={4}
-                      placeholder="Describe las características más importantes de tu propiedad..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
+                )}
 
+                {/* Tip antes del formulario */}
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex">
                     <div className="text-yellow-600 text-lg mr-3">💡</div>
@@ -146,6 +149,20 @@ export default function VenderPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Formulario real de PropertyForm */}
+                <PropertyForm
+                  onSuccess={(property) => {
+                    setSuccessMessage(`¡Propiedad "${property?.title}" publicada exitosamente!`)
+                    setErrorMessage(null)
+                    // Scroll a top
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }}
+                  onError={(error) => {
+                    setErrorMessage(error)
+                    setSuccessMessage(null)
+                  }}
+                />
               </div>
             )}
 

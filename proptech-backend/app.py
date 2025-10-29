@@ -405,6 +405,61 @@ def get_properties():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/properties', methods=['POST'])
+def create_property():
+    """API REAL: Crear nueva propiedad"""
+    try:
+        data = request.get_json()
+        
+        # Validar campos requeridos
+        required_fields = ['title', 'price', 'type', 'operation', 'location']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Campo requerido: {field}'}), 400
+        
+        # Crear propiedad
+        property = Property(
+            title=data['title'],
+            description=data.get('description', ''),
+            price=data['price'],
+            type=data['type'],
+            operation=data['operation'],
+            location=data['location'],
+            bedrooms=data.get('bedrooms'),
+            bathrooms=data.get('bathrooms'),
+            area=data.get('area'),
+            features=data.get('features', []),
+            emotional_tags=data.get('emotional_tags', []),
+            images=data.get('images', []),
+            is_active=True
+        )
+        
+        db.session.add(property)
+        db.session.commit()
+        
+        property_data = {
+            'id': property.id,
+            'title': property.title,
+            'description': property.description,
+            'price': property.price,
+            'type': property.type,
+            'operation': property.operation,
+            'location': property.location,
+            'bedrooms': property.bedrooms,
+            'bathrooms': property.bathrooms,
+            'area': property.area,
+            'features': property.features or [],
+            'emotional_tags': property.emotional_tags or [],
+            'images': property.images or [],
+            'created_at': property.created_at.isoformat()
+        }
+        
+        return jsonify({'success': True, 'property': property_data}), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 @app.route('/api/properties/<int:property_id>', methods=['GET'])
 def get_property_detail(property_id):
     """API REAL: Obtener detalles de una propiedad específica"""
