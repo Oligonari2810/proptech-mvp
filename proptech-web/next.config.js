@@ -48,10 +48,6 @@ const nextConfig = {
   experimental: {
     scrollRestoration: true,
   },
-  
-  sentry: {
-    hideSourceMaps: false,
-  },
 };
 
 module.exports = nextConfig;
