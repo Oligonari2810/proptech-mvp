@@ -156,9 +156,8 @@ try:
 except Exception as _e:
     print(f"⚠️ Monitoring básico no inicializado: {_e}")
 
-# Crear tablas automáticamente en el primer request (fallback a migraciones)
-@app.before_first_request
-def create_tables():
+# Crear tablas automáticamente al iniciar la app (fallback a migraciones)
+with app.app_context():
     try:
         db.create_all()
         print("✅ Tablas verificadas/creadas correctamente")
