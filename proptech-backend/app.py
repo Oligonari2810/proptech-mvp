@@ -639,7 +639,8 @@ def home():
             'health': '/api/health',
             'properties': '/api/properties',
             'version': '/version',
-            'admin': '/api/admin/metrics'
+            'admin': '/api/admin/metrics',
+            'roi': '/api/analytics/roi'
         },
         'timestamp': datetime.utcnow().isoformat()
     })
@@ -695,6 +696,73 @@ def get_admin_metrics():
             }
         }
         return jsonify(fallback_metrics), 500
+
+# ANALYTICS: ROI endpoint
+@app.route('/api/analytics/roi', methods=['GET'])
+def get_roi_analytics():
+    """Cálculos reales de ROI a partir de una propiedad"""
+    try:
+        property_id = request.args.get('property_id', type=int)
+        if not property_id:
+            return jsonify({'success': False, 'error': 'Falta property_id'}), 400
+
+        prop = Property.query.get_or_404(property_id)
+
+        # Supuestos simples (mejorables):
+        # renta mensual ~ 0.5% del precio; costes operativos ~ 0.2% del precio
+        # apreciación anual del 3%
+        purchase_price = float(prop.price or 0)
+        estimated_rent_month = purchase_price * 0.005
+        operating_costs_month = purchase_price * 0.002
+        annual_appreciation = purchase_price * 0.03
+
+        annual_rent = estimated_rent_month * 12
+        annual_costs = operating_costs_month * 12
+        rental_yield = (annual_rent / purchase_price) if purchase_price else 0.0
+        total_roi = ((annual_rent - annual_costs + annual_appreciation) / purchase_price) if purchase_price else 0.0
+        cash_flow = (estimated_rent_month - operating_costs_month) * 12
+
+        roi_data = {
+            'success': True,
+            'property_id': prop.id,
+            'purchase_price': purchase_price,
+            'estimated_rent': round(annual_rent, 2),
+            'operating_costs': round(annual_costs, 2),
+            'annual_appreciation': round(annual_appreciation, 2),
+            'rental_yield': round(rental_yield, 4),
+            'total_roi': round(total_roi, 4),
+            'cash_flow': round(cash_flow, 2),
+            'comparison': []
+        }
+
+        return jsonify(roi_data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# API MARKETPLACE ENDPOINTS (K82)
+@app.route('/api/marketplace/endpoints', methods=['GET'])
+def list_api_endpoints():
+    try:
+        return jsonify({
+            'available_apis': [
+                {
+                    'name': 'Property Valuation API',
+                    'endpoint': '/api/valuation',
+                    'description': 'AI-powered property valuation',
+                    'rate_limit': '1000/day',
+                    'authentication': 'JWT'
+                },
+                {
+                    'name': 'Market Analytics API',
+                    'endpoint': '/api/analytics/market',
+                    'description': 'Real-time market trends and insights',
+                    'rate_limit': '500/day',
+                    'authentication': 'API Key'
+                }
+            ]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # RATE LIMITING - Temporarily disabled
 # from rate_limiting import setup_rate_limiting, limiter

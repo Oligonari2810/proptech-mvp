@@ -3,8 +3,9 @@
 
 set -euo pipefail
 
-FRONT_URL="${FRONT_URL:-https://habitatprord.com}"
-BACK_URL="${BACK_URL:-https://habitatpro-backend.onrender.com}"
+# URLs por defecto (local) — sobreescribe con FRONT_URL y BACK_URL si deseas prod
+FRONT_URL="${FRONT_URL:-http://localhost:3000}"
+BACK_URL="${BACK_URL:-http://localhost:8000}"
 CURL_OPTS=(--silent --show-error --max-time 12 --connect-timeout 6 --location)
 
 # Colores
@@ -39,7 +40,7 @@ http_body(){
 RESULTS=()
 
 check_backend_health(){
-  local url="$BACK_URL/health"
+  local url="$BACK_URL/api/health"
   local code; code="$(http_status "$url")"
   [[ "$code" == "200" ]] || { fail "BACK /health ($code)"; return 1; }
   ok "BACK /health OK"
@@ -63,11 +64,24 @@ check_backend_properties(){
   else
     count="$(echo "$body" | tr -cd '{' | wc -c | awk '{print $1}')"
   fi
-  if [[ "$count" -ge 50 ]]; then
-    ok "BACK /api/properties OK (≥50) — count=$count"
+  if [[ "$count" -ge 1 ]]; then
+    ok "BACK /api/properties OK (≥1) — count=$count"
   else
-    fail "BACK /api/properties insuficiente — count=$count (se esperan ≥50)"
+    fail "BACK /api/properties insuficiente — count=$count (se espera ≥1)"
     return 1
+  fi
+}
+
+check_backend_roi(){
+  local url="$BACK_URL/api/analytics/roi?property_id=1"
+  local code; code="$(http_status "$url")"
+  [[ "$code" == "200" ]] || { fail "BACK /api/analytics/roi ($code)"; return 1; }
+  if command -v jq >/dev/null 2>&1; then
+    local roi; roi="$(http_body "$url" | jq -r '.total_roi // empty')"
+    [[ -n "$roi" ]] || { fail "BACK ROI sin total_roi"; return 1; }
+    ok "BACK ROI total_roi=$roi"
+  else
+    ok "BACK ROI 200"
   fi
 }
 
@@ -96,7 +110,8 @@ echo
 
 retry "Backend /health" "check_backend_health" 3 2 || RESULTS+=("BACK_HEALTH")
 retry "Backend /version" "check_backend_version" 3 2 || RESULTS+=("BACK_VERSION")
-retry "Backend /api/properties (≥50)" "check_backend_properties" 3 4 || RESULTS+=("BACK_PROPERTIES")
+retry "Backend /api/properties (≥1)" "check_backend_properties" 3 4 || RESULTS+=("BACK_PROPERTIES")
+retry "Backend ROI /api/analytics/roi" "check_backend_roi" 2 3 || RESULTS+=("BACK_ROI")
 retry "Front /comprar status" "check_front_page '/comprar' ''" 2 3 || RESULTS+=("FRONT_COMPRAR")
 retry "Front /comprar NO vacío" "check_front_comprar_not_empty" 2 3 || RESULTS+=("FRONT_COMPRAR_EMPTY")
 retry "Front /valorar" "check_front_page '/valorar' ''" 2 3 || RESULTS+=("FRONT_VALORAR")

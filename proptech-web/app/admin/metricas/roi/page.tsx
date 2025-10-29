@@ -1,0 +1,164 @@
+"use client";
+import { useEffect, useState } from "react";
+
+interface MarketComparison {
+  zone: string;
+  avg_roi: number;
+  avg_price: number;
+  demand_level: string;
+}
+
+interface ROIMetrics {
+  success: boolean;
+  property_id: number;
+  purchase_price: number;
+  estimated_rent: number;
+  operating_costs: number;
+  annual_appreciation: number;
+  rental_yield: number;
+  total_roi: number;
+  cash_flow: number;
+  comparison: MarketComparison[];
+}
+
+export default function ROIDashboard() {
+  const [roiData, setRoiData] = useState<ROIMetrics | null>(null);
+  const [propertyId, setPropertyId] = useState<string>("1");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchROI = async () => {
+      try {
+        setLoading(true);
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const res = await fetch(`${base}/analytics/roi?property_id=${propertyId}`);
+        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        setRoiData(data);
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "No se pudo cargar ROI");
+        setRoiData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchROI();
+  }, [propertyId]);
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Dashboard ROI - Análisis de Inversión</h1>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600">ID Propiedad</label>
+          <input
+            value={propertyId}
+            onChange={(e) => setPropertyId(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          />
+        </div>
+      </div>
+
+      {loading && (
+        <div className="p-6 flex justify-center items-center h-40">
+          <div className="text-lg">Cargando análisis ROI...</div>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+          <h2 className="text-red-800 font-bold">Error al cargar datos ROI</h2>
+          <p className="text-red-600">{error}</p>
+          <p className="text-sm text-red-500 mt-2">
+            Verifica que el backend esté ejecutándose en {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}
+          </p>
+        </div>
+      )}
+
+      {!error && !loading && roiData && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard title="ROI Total" value={`${(roiData.total_roi * 100).toFixed(1)}%`} />
+            <MetricCard title="Rental Yield" value={`${(roiData.rental_yield * 100).toFixed(1)}%`} />
+            <MetricCard title="Cash Flow Anual" value={`€${roiData.cash_flow.toLocaleString()}`} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ROIBreakdown data={roiData} />
+            <ComparisonTable comparisons={roiData.comparison} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="bg-white p-4 rounded-lg shadow border">
+      <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+      <p className="text-2xl font-bold text-green-600 mt-1">{value}</p>
+    </div>
+  );
+}
+
+function ROIBreakdown({ data }: { data: ROIMetrics }) {
+  const items = [
+    { label: "Precio Compra", value: `€${data.purchase_price.toLocaleString()}` },
+    { label: "Renta Anual Est.", value: `€${data.estimated_rent.toLocaleString()}` },
+    { label: "Costes Operativos", value: `€${data.operating_costs.toLocaleString()}` },
+    { label: "Apreciación Anual", value: `€${data.annual_appreciation.toLocaleString()}` },
+  ];
+  return (
+    <div className="bg-white p-4 rounded-lg shadow border">
+      <h3 className="text-lg font-semibold mb-3">Desglose</h3>
+      <div className="space-y-2">
+        {items.map((it) => (
+          <div key={it.label} className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">{it.label}</span>
+            <span className="font-medium">{it.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ComparisonTable({ comparisons }: { comparisons: MarketComparison[] }) {
+  const rows = comparisons && comparisons.length > 0 ? comparisons : [];
+  return (
+    <div className="bg-white p-4 rounded-lg shadow border">
+      <h3 className="text-lg font-semibold mb-3">Comparativa de Mercado</h3>
+      {rows.length === 0 ? (
+        <p className="text-sm text-gray-500">Sin datos de comparación</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-600">
+                <th className="py-2 pr-3">Zona</th>
+                <th className="py-2 pr-3">ROI Medio</th>
+                <th className="py-2 pr-3">Precio Medio</th>
+                <th className="py-2">Demanda</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, idx) => (
+                <tr key={idx} className="border-t">
+                  <td className="py-2 pr-3">{r.zone}</td>
+                  <td className="py-2 pr-3">{(r.avg_roi * 100).toFixed(1)}%</td>
+                  <td className="py-2 pr-3">€{r.avg_price.toLocaleString()}</td>
+                  <td className="py-2">{r.demand_level}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+

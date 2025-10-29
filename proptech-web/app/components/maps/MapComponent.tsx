@@ -1,16 +1,6 @@
-'use client';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix para iconos de markers
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+"use client";
+import Map, { Marker, Popup, NavigationControl } from "react-map-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 interface MapProperty {
   id: number;
@@ -31,44 +21,30 @@ interface MapComponentProps {
 }
 
 export default function MapComponent({ properties, onPropertyClick, mapCenter }: MapComponentProps) {
+  const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  const [lat, lng] = mapCenter;
   return (
-    <MapContainer
-      center={mapCenter}
-      zoom={12}
-      style={{ height: '100%', width: '100%' }}
-      scrollWheelZoom={false}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      
-      {properties.map((property) => (
-        <Marker
-          key={property.id}
-          position={[property.latitude, property.longitude]}
-          eventHandlers={{
-            click: () => onPropertyClick?.(property),
-          }}
-        >
-          <Popup>
-            <div className="p-2">
-              <h3 className="font-bold text-lg">{property.title}</h3>
-              <p className="text-green-600 font-semibold">€{property.price.toLocaleString()}</p>
-              <p className="text-gray-600">{property.location}</p>
-              <p className="text-sm text-gray-500">
-                {property.bedrooms} hab • {property.bathrooms} baños • {property.square_meters}m²
-              </p>
-              <button 
-                className="mt-2 w-full bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 transition-colors"
-                onClick={() => onPropertyClick?.(property)}
-              >
-                Ver Detalles
-              </button>
+    <div className="h-full w-full">
+      <Map
+        initialViewState={{ latitude: lat, longitude: lng, zoom: 12 }}
+        style={{ width: "100%", height: "100%" }}
+        mapStyle="mapbox://styles/mapbox/streets-v11"
+        mapboxAccessToken={MAPBOX_TOKEN}
+      >
+        <NavigationControl position="top-left" />
+        {properties.map((p) => (
+          <Marker key={p.id} latitude={p.latitude} longitude={p.longitude} anchor="bottom">
+            <div
+              onClick={() => onPropertyClick?.(p)}
+              style={{ cursor: "pointer", fontSize: 22 }}
+              title={p.title}
+            >
+              📍
             </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+          </Marker>
+        ))}
+        {/* Popup sencillo: mostrar al hacer click externo si se requiere */}
+      </Map>
+    </div>
   );
 }

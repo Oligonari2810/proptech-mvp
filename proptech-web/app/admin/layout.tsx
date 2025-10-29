@@ -21,10 +21,13 @@ export default function AdminLayout({
           <nav className="p-4 space-y-2">
             {[
               { name: 'Dashboard', href: '/admin', icon: '📊' },
+              { name: 'Métricas', href: '/admin/metricas', icon: '📈' },
+              { name: 'Reportes', href: '/admin/reports', icon: '🧾' },
+              { name: 'Branding', href: '/admin/branding', icon: '🎯' },
+              { name: 'API Marketplace', href: '/admin/api-marketplace', icon: '🧩' },
               { name: 'Usuarios', href: '/admin/users', icon: '👥' },
               { name: 'Propiedades', href: '/admin/properties', icon: '🏠' },
               { name: 'Assets Visuales', href: '/admin/assets', icon: '🎨' },
-              { name: 'Métricas', href: '/admin/metrics', icon: '📈' },
               { name: 'Configuración', href: '/admin/settings', icon: '⚙️' },
             ].map((item) => (
               <a
