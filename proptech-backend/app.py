@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from werkzeug.security import generate_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from flask_cors import CORS
@@ -737,6 +738,61 @@ def receive_frontend_metrics():
     except Exception:
         # No romper al frontend si falla monitoring
         return jsonify({'success': False}), 200
+
+# BRANDING TENANT (modelo simple)
+class TenantBranding(db.Model):
+    __tablename__ = 'tenant_branding'
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_slug = db.Column(db.String(100), unique=True, nullable=False)
+    primary_color = db.Column(db.String(7), default='#1A8571')
+    company_name = db.Column(db.String(200))
+    logo_url = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'tenant_slug': self.tenant_slug,
+            'primary_color': self.primary_color,
+            'company_name': self.company_name,
+            'logo_url': self.logo_url,
+        }
+
+# PATCH user password
+@app.route('/api/admin/users/<email>', methods=['PATCH'])
+def update_user_password(email):
+    try:
+        data = request.get_json() or {}
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        if 'password' in data and data['password']:
+            user.password_hash = generate_password_hash(data['password'])
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'User updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# POST branding
+@app.route('/api/admin/branding', methods=['POST'])
+def set_tenant_branding():
+    try:
+        data = request.get_json() or {}
+        tenant_slug = data.get('tenant_slug')
+        if not tenant_slug:
+            return jsonify({'error': 'tenant_slug required'}), 400
+        branding = TenantBranding.query.filter_by(tenant_slug=tenant_slug).first()
+        if not branding:
+            branding = TenantBranding(tenant_slug=tenant_slug)
+        branding.primary_color = data.get('primary_color', branding.primary_color or '#1A8571')
+        branding.company_name = data.get('company_name', branding.company_name or '')
+        branding.logo_url = data.get('logo_url', branding.logo_url or '')
+        db.session.add(branding)
+        db.session.commit()
+        return jsonify({'success': True, 'branding': branding.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 # ONBOARDING: crear demo para un cliente (sin esquema multi-tenant estricto)
 @app.route('/api/admin/onboarding', methods=['POST'])
