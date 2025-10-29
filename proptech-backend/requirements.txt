@@ -25,3 +25,4 @@ slowapi==0.1.9
 
 # Monitoring
 sentry-sdk==1.39.2
+prometheus_client==0.20.0
