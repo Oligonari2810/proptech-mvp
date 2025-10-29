@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from flask_cors import CORS
+from sqlalchemy import text
 import redis
 from datetime import datetime
 # from sklearn.neighbors import NearestNeighbors
@@ -533,8 +534,8 @@ def health_check():
     }
     
     try:
-        # Verificar base de datos - simplificado
-        db.session.execute('SELECT 1')
+        # Verificar base de datos - CORREGIDO para SQLAlchemy 2.0
+        db.session.execute(text('SELECT 1'))
         health_status['services']['database'] = 'healthy'
         health_status['metrics']['total_properties'] = Property.query.count()
         health_status['metrics']['total_users'] = User.query.count()
@@ -544,15 +545,17 @@ def health_check():
         print(f"Database health check error: {e}")
     
     try:
-        # Verificar Redis
+        # Verificar Redis - MEJORADO con logging
         if redis_client:
             redis_client.ping()
             health_status['services']['redis'] = 'healthy'
         else:
-            health_status['services']['redis'] = 'unhealthy'
-    except:
+            health_status['services']['redis'] = 'unavailable'
+            print("⚠️ Redis no disponible - continuando sin cache")
+    except Exception as e:
         health_status['services']['redis'] = 'unhealthy'
         health_status['status'] = 'degraded'
+        print(f"Redis health check error: {e}")
     
     return jsonify(health_status)
 
@@ -565,6 +568,24 @@ def get_version():
         'name': 'habitatpro-backend',
         'version': '2024.10.26',
         'status': 'active',
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+# ROOT ENDPOINT
+@app.route('/', methods=['GET'])
+def home():
+    """Root endpoint - API information"""
+    return jsonify({
+        'app': 'HabitatPro',
+        'version': '2.0.0-enterprise',
+        'status': 'operational',
+        'description': 'Real Estate Platform with AI',
+        'endpoints': {
+            'health': '/api/health',
+            'properties': '/api/properties',
+            'version': '/version',
+            'admin': '/api/admin/metrics'
+        },
         'timestamp': datetime.utcnow().isoformat()
     })
 
