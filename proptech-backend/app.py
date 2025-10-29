@@ -156,14 +156,6 @@ try:
 except Exception as _e:
     print(f"⚠️ Monitoring básico no inicializado: {_e}")
 
-# Crear tablas automáticamente al iniciar la app (fallback a migraciones)
-with app.app_context():
-    try:
-        db.create_all()
-        print("✅ Tablas verificadas/creadas correctamente")
-    except Exception as e:
-        print(f"⚠️ Error creando tablas: {e}")
-
 # DATOS DE PRUEBA REALES
 def initialize_sample_data():
     """Inicializar base de datos con datos reales de prueba"""
@@ -764,6 +756,14 @@ class TenantBranding(db.Model):
             'company_name': self.company_name,
             'logo_url': self.logo_url,
         }
+
+# Crear todas las tablas automáticamente después de definir todos los modelos
+with app.app_context():
+    try:
+        db.create_all()
+        print("✅ Tablas verificadas/creadas correctamente (incluyendo TenantBranding)")
+    except Exception as e:
+        print(f"⚠️ Error creando tablas: {e}")
 
 # PATCH user password
 @app.route('/api/admin/users/<email>', methods=['PATCH'])
