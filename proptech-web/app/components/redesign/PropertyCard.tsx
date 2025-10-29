@@ -3,36 +3,34 @@
 import React from 'react';
 import Image from 'next/image';
 
-interface Property {
-  id: number | string;
-  title: string;
-  price: number;
-  location: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
-  square_meters?: number;
-  images?: string[];
-  image?: string;
-  features?: string[];
-  description?: string;
-  type?: string;
-  operation?: string;
-  emotional_tags?: string[];
-}
-
-interface RedesignPropertyCardProps {
-  property: Property;
+export interface PropertyCardProps {
+  property: {
+    id: string | number;
+    title: string;
+    price: number;
+    location: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    area?: number;
+    square_meters?: number;
+    images?: string[];
+    image?: string;
+    features?: string[];
+    description?: string;
+    type?: string;
+    operation?: string;
+    emotional_tags?: string[];
+  };
   onClick?: () => void;
+  className?: string;
 }
 
-export default function RedesignPropertyCard({ property, onClick }: RedesignPropertyCardProps) {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick, className = '' }) => {
   const imageUrl = property.images?.[0] || property.image || '/images/placeholder-property.jpg';
   const area = property.area || property.square_meters || 0;
 
   return (
-    <div className="redesign-card bg-white overflow-hidden cursor-pointer" onClick={onClick}>
-      {/* IMAGEN CON OVERLAY DE GRADIENTE */}
+    <div className={`redesign-card bg-white overflow-hidden cursor-pointer ${className}`} onClick={onClick}>
       <div className="relative h-48 w-full">
         <Image
           src={imageUrl}
@@ -42,13 +40,9 @@ export default function RedesignPropertyCard({ property, onClick }: RedesignProp
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-        
-        {/* ETIQUETAS */}
         <div className="absolute top-3 left-3 flex gap-2">
           {property.features?.includes('new') && (
-            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-              Nuevo
-            </span>
+            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">Nuevo</span>
           )}
           {property.operation && (
             <span className="bg-white text-gray-800 px-2 py-1 rounded-full text-xs font-medium shadow-md">
@@ -58,9 +52,7 @@ export default function RedesignPropertyCard({ property, onClick }: RedesignProp
         </div>
       </div>
 
-      {/* CONTENIDO */}
       <div className="p-4 space-y-3">
-        {/* PRECIO PRINCIPAL */}
         <div className="flex justify-between items-start">
           <h3 className="text-lg font-semibold text-gray-900 line-clamp-1 flex-1 mr-2">{property.title}</h3>
           <p className="primary-teal font-bold text-xl whitespace-nowrap">
@@ -68,13 +60,11 @@ export default function RedesignPropertyCard({ property, onClick }: RedesignProp
           </p>
         </div>
 
-        {/* UBICACIÓN */}
         <p className="text-gray-600 text-sm flex items-center gap-1">
           <span>📍</span>
           <span>{property.location}</span>
         </p>
 
-        {/* CARACTERÍSTICAS */}
         <div className="flex items-center gap-4 text-sm text-gray-500">
           {property.bedrooms && property.bedrooms > 0 && (
             <div className="flex items-center gap-1">
@@ -96,22 +86,17 @@ export default function RedesignPropertyCard({ property, onClick }: RedesignProp
           )}
         </div>
 
-        {/* TAGS EMOCIONALES */}
         {property.emotional_tags && property.emotional_tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {property.emotional_tags.slice(0, 3).map((tag: string, index: number) => (
-              <span 
-                key={index}
-                className="px-2 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium capitalize"
-              >
+              <span key={index} className="px-2 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium capitalize">
                 {tag}
               </span>
             ))}
           </div>
         )}
 
-        {/* BOTÓN DE ACCIÓN */}
-        <button 
+        <button
           className="w-full bg-primary-teal text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
           onClick={(e) => {
             e.stopPropagation();
@@ -123,5 +108,7 @@ export default function RedesignPropertyCard({ property, onClick }: RedesignProp
       </div>
     </div>
   );
-}
+};
+
+export default PropertyCard;
 
