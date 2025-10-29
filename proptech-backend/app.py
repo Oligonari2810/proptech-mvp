@@ -738,6 +738,67 @@ def receive_frontend_metrics():
         # No romper al frontend si falla monitoring
         return jsonify({'success': False}), 200
 
+# ONBOARDING: crear demo para un cliente (sin esquema multi-tenant estricto)
+@app.route('/api/admin/onboarding', methods=['POST'])
+def onboarding_tenant():
+    try:
+        data = request.get_json() or {}
+        name = data.get('name', 'Caribbean Luxury Estates')
+        slug = data.get('slug', 'caribbean-luxury')
+        primary_color = data.get('primary_color', '#1FBF9B')
+        logo_url = data.get('logo_url', '')
+        admin_email = data.get('admin_email', 'admin@caribbeanluxury.com')
+
+        # Crear/asegurar usuario admin
+        admin = User.query.filter_by(email=admin_email).first()
+        if not admin:
+            admin = User(email=admin_email, name=f"Admin {name}")
+            admin.preferences = {'role': 'tenant_admin', 'tenant': slug, 'primary_color': primary_color, 'logo_url': logo_url}
+            db.session.add(admin)
+
+        # Insertar propiedades demo con marca de tenant en features
+        demo_props = [
+            {
+                'title': 'Villa frente al mar - Punta Cana',
+                'type': 'house', 'operation': 'compra', 'price': 850000,
+                'location': 'Punta Cana, Dominican Republic', 'bedrooms': 4, 'bathrooms': 3, 'area': 320,
+                'features': ['tenant:'+slug, 'pool', 'beach_access', 'garden', 'parking'],
+                'emotional_tags': ['lujoso', 'premium', 'caribe']
+            },
+            {
+                'title': 'Apartamento premium - Santo Domingo',
+                'type': 'apartment', 'operation': 'compra', 'price': 275000,
+                'location': 'Santo Domingo Este', 'bedrooms': 2, 'bathrooms': 2, 'area': 110,
+                'features': ['tenant:'+slug, 'concierge', 'gym', 'pool', 'security'],
+                'emotional_tags': ['urbano', 'moderno', 'premium']
+            }
+        ]
+
+        created = 0
+        for p in demo_props:
+            exists = Property.query.filter_by(title=p['title']).first()
+            if exists:
+                continue
+            prop = Property(
+                title=p['title'], description='', price=p['price'], type=p['type'], operation=p['operation'],
+                location=p['location'], bedrooms=p['bedrooms'], bathrooms=p['bathrooms'], area=p['area'],
+                features=p['features'], emotional_tags=p['emotional_tags'], is_active=True
+            )
+            db.session.add(prop)
+            created += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'tenant': {'name': name, 'slug': slug, 'primary_color': primary_color, 'logo_url': logo_url},
+            'admin': {'email': admin_email},
+            'demo_properties_created': created
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ANALYTICS: ROI endpoint
 @app.route('/api/analytics/roi', methods=['GET'])
 def get_roi_analytics():
