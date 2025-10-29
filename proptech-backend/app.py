@@ -156,6 +156,15 @@ try:
 except Exception as _e:
     print(f"⚠️ Monitoring básico no inicializado: {_e}")
 
+# Crear tablas automáticamente en el primer request (fallback a migraciones)
+@app.before_first_request
+def create_tables():
+    try:
+        db.create_all()
+        print("✅ Tablas verificadas/creadas correctamente")
+    except Exception as e:
+        print(f"⚠️ Error creando tablas: {e}")
+
 # DATOS DE PRUEBA REALES
 def initialize_sample_data():
     """Inicializar base de datos con datos reales de prueba"""
@@ -781,6 +790,11 @@ def set_tenant_branding():
         tenant_slug = data.get('tenant_slug')
         if not tenant_slug:
             return jsonify({'error': 'tenant_slug required'}), 400
+        # Intentar acceso, crear tablas si no existen
+        try:
+            _ = TenantBranding.query.first()
+        except Exception:
+            db.create_all()
         branding = TenantBranding.query.filter_by(tenant_slug=tenant_slug).first()
         if not branding:
             branding = TenantBranding(tenant_slug=tenant_slug)
