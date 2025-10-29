@@ -334,7 +334,7 @@ def initialize_sample_data():
 
 # APIS RESTFUL REALES
 @app.route('/api/properties', methods=['GET'])
-# @limiter.limit("60/minute")
+# # @limiter.limit("60/minute")
 def get_properties():
     """API REAL: Obtener propiedades con filtros avanzados"""
     try:
