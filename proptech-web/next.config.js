@@ -2,7 +2,7 @@
 const nextConfig = {
   // Variables de entorno
   env: {
-    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://habitatpro-backend.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com',
   },
   
   reactStrictMode: true,

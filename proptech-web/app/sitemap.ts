@@ -6,7 +6,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Obtener propiedades dinámicamente
   let properties = []
   try {
-    const response = await fetch('https://habitatpro-backend.onrender.com/api/properties')
+    const response = await fetch('https://proptech-mvp-1.onrender.com/api/properties')
     const data = await response.json()
     properties = data.properties || []
   } catch (error) {
