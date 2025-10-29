@@ -3,7 +3,7 @@ import { PropertyCard } from '../components/PropertyCard';
 
 async function getProperties() {
   try {
-    const backendUrl = 'https://habitatpro-backend.onrender.com';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
     const response = await fetch(`${backendUrl}/api/properties`, { cache: 'no-store' });
     
     if (!response.ok) throw new Error('API failed');

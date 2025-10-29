@@ -1,0 +1,53 @@
+/* SISTEMA DISEÑO CARIBBEAN CHIC - COMPLETAMENTE AISLADO */
+:root {
+  /* PALETA PRINCIPAL - CARIBBEAN CHIC */
+  --primary-teal: #1FBF9B;
+  --sand-light: #F5E9D8;
+  --dark-green: #1A2D24;
+  --warm-bg: #FFF8F1;
+  --coral-accent: #FF6B6B;
+  
+  /* ESPACIADO UNIFICADO */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+}
+
+/* CLASES UTILITARIAS AISLADAS */
+.redesign-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.redesign-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.primary-teal { 
+  color: var(--primary-teal); 
+}
+
+.bg-primary-teal {
+  background-color: var(--primary-teal);
+}
+
+.bg-sand-light { 
+  background-color: var(--sand-light); 
+}
+
+.bg-warm-bg {
+  background-color: var(--warm-bg);
+}
+
+.text-dark-green {
+  color: var(--dark-green);
+}
+
+.bg-dark-green {
+  background-color: var(--dark-green);
+}
+

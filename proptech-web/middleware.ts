@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https:;
     font-src 'self' https://fonts.gstatic.com;
-    connect-src 'self' https://habitatpro-backend.onrender.com https://api.mapbox.com;
+    connect-src 'self' https://proptech-mvp-1.onrender.com https://api.mapbox.com;
     frame-src 'none';
     base-uri 'self';
     form-action 'self';
