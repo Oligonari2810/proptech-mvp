@@ -8,7 +8,7 @@ db = SQLAlchemy()
 
 # ✅ Modelo de Usuario Enterprise
 class User(db.Model):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     email = Column(String(120), unique=True, nullable=False)
@@ -43,7 +43,7 @@ class User(db.Model):
 
 # ✅ Modelo de Propiedad
 class Property(db.Model):
-    __tablename__ = "property"
+    __tablename__ = "properties"
 
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
