@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import RedesignPropertyCard from '@/components/redesign/PropertyCard';
-import '../../../styles/redesign/theme.css';
+import RedesignPropertyCard from '../../components/redesign/PropertyCard';
+import '../../styles/redesign/globals.css';
+import '../../styles/redesign/theme.css';
 
 interface Property {
   id: number | string;
