@@ -4,6 +4,7 @@ import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { Header } from './components/Header'
 import { FrontendMonitoring } from './components/Monitoring'
+import { SessionProviderWrapper } from './providers/SessionProviderWrapper'
 import { generateOrganizationSchema } from '../lib/seo/schema'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -33,14 +34,16 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <FrontendMonitoring />
-        <a href="#main-content" className="skip-link">
-          Saltar al contenido principal
-        </a>
-        <Header />
-        <main id="main-content">
-          {children}
-        </main>
+        <SessionProviderWrapper>
+          <FrontendMonitoring />
+          <a href="#main-content" className="skip-link">
+            Saltar al contenido principal
+          </a>
+          <Header />
+          <main id="main-content">
+            {children}
+          </main>
+        </SessionProviderWrapper>
       </body>
     </html>
   )

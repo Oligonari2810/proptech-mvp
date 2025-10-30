@@ -1,18 +1,28 @@
 // hooks/useFavorites.ts
-// Hook personalizado para manejo de favoritos
+// Hook personalizado para manejo de favoritos usando NextAuth
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { addFavorite as addFavoriteAPI, removeFavorite as removeFavoriteAPI, getFavorites as getFavoritesAPI } from '../lib/favoritesAPI'
 
-export function useFavorites(userId?: number) {
+export function useFavorites() {
+  const { data: session } = useSession()
+  const router = useRouter()
   const [favorites, setFavorites] = useState<number[]>([])
   const [loading, setLoading] = useState(false)
 
+  const userId = (session?.user as any)?.id ? parseInt((session.user as any).id) : undefined
+
   useEffect(() => {
-    loadFavorites()
+    if (userId) {
+      loadFavorites()
+    }
   }, [userId])
 
   const loadFavorites = async () => {
+    if (!userId) return
+    
     try {
       setLoading(true)
       const favs = await getFavoritesAPI(userId)
@@ -25,24 +35,40 @@ export function useFavorites(userId?: number) {
   }
 
   const toggleFavorite = async (propertyId: number) => {
+    // Verificar autenticación con NextAuth
+    if (!session) {
+      const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/'
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(returnUrl)}`)
+      return
+    }
+
+    if (!userId) {
+      console.error('No user ID available')
+      return
+    }
+
     const isFav = favorites.includes(propertyId)
     
-    if (isFav) {
-      await removeFavoriteAPI(propertyId, userId)
-      setFavorites(favorites.filter(id => id !== propertyId))
-    } else {
-      await addFavoriteAPI(propertyId, userId)
-      setFavorites([...favorites, propertyId])
+    try {
+      if (isFav) {
+        await removeFavoriteAPI(propertyId, userId)
+        setFavorites(favorites.filter(id => id !== propertyId))
+      } else {
+        await addFavoriteAPI(propertyId, userId)
+        setFavorites([...favorites, propertyId])
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
     }
   }
 
-  const isFavorites = (propertyId: number) => favorites.includes(propertyId)
+  const isFavorite = (propertyId: number) => favorites.includes(propertyId)
 
   return {
     favorites,
     loading,
     toggleFavorite,
-    isFavorites
+    isFavorite
   }
 }
 
