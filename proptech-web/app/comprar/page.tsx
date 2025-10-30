@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
+import PropertyComparator from '../components/comparator/PropertyComparator';
 
 interface ListingProperty {
   id: string | number;

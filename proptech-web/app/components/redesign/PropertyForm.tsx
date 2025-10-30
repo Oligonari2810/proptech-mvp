@@ -59,16 +59,80 @@ export default function PropertyForm() {
     }));
   };
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Validación paso 1: Información básica
+    if (!formData.title || formData.title.trim().length < 5) {
+      errors.title = 'El título debe tener al menos 5 caracteres';
+    }
+
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      errors.price = 'El precio debe ser mayor a 0';
+    }
+
+    if (!formData.location || formData.location.trim().length < 3) {
+      errors.location = 'La ubicación debe tener al menos 3 caracteres';
+    }
+
+    // Validación paso 2: Detalles
+    if (formData.bedrooms && (parseInt(formData.bedrooms) < 0 || parseInt(formData.bedrooms) > 20)) {
+      errors.bedrooms = 'El número de dormitorios debe ser entre 0 y 20';
+    }
+
+    if (formData.bathrooms && (parseInt(formData.bathrooms) < 0 || parseInt(formData.bathrooms) > 20)) {
+      errors.bathrooms = 'El número de baños debe ser entre 0 y 20';
+    }
+
+    if (formData.area && (parseFloat(formData.area) <= 0 || parseFloat(formData.area) > 10000)) {
+      errors.area = 'El área debe ser entre 1 y 10,000 m²';
+    }
+
+    if (formData.description && formData.description.length < 20) {
+      errors.description = 'La descripción debe tener al menos 20 caracteres';
+    }
+
+    // Validación paso 3: Imágenes
+    if (formData.images && formData.images.length > 0) {
+      const invalidUrls = formData.images.filter(url => {
+        try {
+          new URL(url);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+      if (invalidUrls.length > 0) {
+        errors.images = 'Algunas URLs de imágenes no son válidas';
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
     if (!session?.user) {
       router.push('/auth/signin?callbackUrl=/redesign/vender');
       return;
     }
 
-    // Validaciones básicas
-    if (!formData.title || !formData.price || !formData.location) {
-      alert('Por favor completa todos los campos requeridos (Título, Precio, Ubicación)');
-      return;
+    // Validación completa
+    if (!validateForm()) {
+      // Mostrar errores del paso actual
+      const stepErrors = Object.keys(validationErrors).filter(key => {
+        if (step === 1) return ['title', 'price', 'location'].includes(key);
+        if (step === 2) return ['bedrooms', 'bathrooms', 'area', 'description'].includes(key);
+        if (step === 3) return ['images'].includes(key);
+        return false;
+      });
+      
+      if (stepErrors.length > 0) {
+        alert(`Por favor corrige los siguientes errores:\n${stepErrors.map(k => `- ${validationErrors[k]}`).join('\n')}`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -138,9 +202,14 @@ export default function PropertyForm() {
           type="text"
           value={formData.title}
           onChange={(e) => handleChange('title', e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal focus:border-transparent"
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-teal focus:border-transparent ${
+            validationErrors.title ? 'border-red-500' : 'border-gray-300'
+          }`}
           placeholder="Ej: Apartamento luminoso en zona céntrica"
         />
+        {validationErrors.title && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.title}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -178,9 +247,14 @@ export default function PropertyForm() {
             type="number"
             value={formData.price}
             onChange={(e) => handleChange('price', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-teal ${
+              validationErrors.price ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="150000"
           />
+          {validationErrors.price && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.price}</p>
+          )}
         </div>
 
         <div>
@@ -189,9 +263,14 @@ export default function PropertyForm() {
             type="text"
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-teal ${
+              validationErrors.location ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Santo Domingo, Distrito Nacional"
           />
+          {validationErrors.location && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.location}</p>
+          )}
         </div>
       </div>
     </div>
@@ -321,7 +400,23 @@ export default function PropertyForm() {
           </Button>
           
           {step < 3 ? (
-            <Button variant="primary" onClick={() => setStep(step + 1)}>
+            <Button 
+              variant="primary" 
+              onClick={() => {
+                // Validar paso actual antes de avanzar
+                const stepValid = step === 1
+                  ? formData.title && formData.price && formData.location
+                  : step === 2
+                  ? formData.bedrooms || formData.bathrooms || formData.area
+                  : true;
+                
+                if (stepValid) {
+                  setStep(step + 1);
+                } else {
+                  alert('Por favor completa los campos requeridos antes de continuar');
+                }
+              }}
+            >
               Siguiente →
             </Button>
           ) : (
