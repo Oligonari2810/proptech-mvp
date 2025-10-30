@@ -128,6 +128,66 @@ def delete_property(property_id):
 
     return jsonify({"message": "Propiedad eliminada exitosamente"}), 200
 
+# ✅ Ruta para crear una nueva propiedad
+@properties_bp.route('/', methods=['POST'])
+def create_property():
+    """Crear una nueva propiedad"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "Datos insuficientes"}), 400
+        
+        # Validaciones básicas
+        if not data.get('title'):
+            return jsonify({"error": "El título es requerido"}), 400
+        if not data.get('price'):
+            return jsonify({"error": "El precio es requerido"}), 400
+        if not data.get('location'):
+            return jsonify({"error": "La ubicación es requerida"}), 400
+        
+        # Obtener user_id del request (debe venir del token JWT o session)
+        user_id = data.get('user_id') or data.get('brokerId') or 1  # Fallback a 1 si no se envía
+        
+        # Crear nueva propiedad
+        new_property = Property(
+            title=data.get('title'),
+            price=float(data.get('price', 0)),
+            location=data.get('location'),
+            description=data.get('description', ''),
+            image_url=data.get('image_url') or data.get('images', [None])[0] or 'https://via.placeholder.com/600x400',
+            property_type=data.get('property_type') or data.get('type', 'apartment'),
+            surface=float(data.get('surface') or data.get('area', 0)),
+            bedrooms=int(data.get('bedrooms', 0)) if data.get('bedrooms') else None,
+            bathrooms=int(data.get('bathrooms', 0)) if data.get('bathrooms') else None,
+            latitude=float(data.get('latitude')) if data.get('latitude') else None,
+            longitude=float(data.get('longitude')) if data.get('longitude') else None,
+            status=data.get('status', 'available'),
+            user_id=user_id,
+            # Características booleanas desde features array
+            has_pool='Piscina' in data.get('features', []),
+            has_garage='Garaje' in data.get('features', []),
+            has_elevator='Ascensor' in data.get('features', [])
+        )
+        
+        db.session.add(new_property)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Propiedad creada exitosamente",
+            "property": {
+                "id": new_property.id,
+                "title": new_property.title,
+                "price": new_property.price,
+                "location": new_property.location,
+                "status": new_property.status
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 # ✅ Ruta para actualizar una propiedad por ID
 @properties_bp.route('/<int:property_id>', methods=['PUT'])
 def update_property(property_id):

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Button from './Button';
 import Card from './Card';
 
@@ -24,7 +26,10 @@ interface PropertyData {
 }
 
 export default function PropertyForm() {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<PropertyData>({
     title: '',
     type: 'apartamento',
@@ -55,9 +60,72 @@ export default function PropertyForm() {
   };
 
   const handleSubmit = async () => {
-    // Aquí iría la lógica de envío al backend
-    console.log('Datos a enviar:', formData);
-    alert('¡Propiedad publicada exitosamente!');
+    if (!session?.user) {
+      router.push('/auth/signin?callbackUrl=/redesign/vender');
+      return;
+    }
+
+    // Validaciones básicas
+    if (!formData.title || !formData.price || !formData.location) {
+      alert('Por favor completa todos los campos requeridos (Título, Precio, Ubicación)');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const userId = parseInt((session.user as any).id) || 1;
+
+      // Preparar datos para el backend
+      const payload = {
+        title: formData.title,
+        type: formData.type,
+        property_type: formData.type === 'apartamento' ? 'apartment' : formData.type === 'casa' ? 'house' : formData.type,
+        price: parseFloat(formData.price),
+        location: formData.location,
+        description: formData.description || 'Sin descripción',
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+        area: formData.area ? parseFloat(formData.area) : null,
+        surface: formData.area ? parseFloat(formData.area) : null,
+        features: formData.features,
+        images: formData.images,
+        image_url: formData.images.length > 0 ? formData.images[0] : undefined,
+        status: 'available',
+        user_id: userId,
+        brokerId: userId
+      };
+
+      const response = await fetch(`${backendUrl}/api/properties`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al publicar la propiedad');
+      }
+
+      const result = await response.json();
+      
+      // Redirigir a la propiedad creada o al listado
+      if (result.property?.id) {
+        alert('¡Propiedad publicada exitosamente!');
+        router.push(`/comprar?new=${result.property.id}`);
+      } else {
+        alert('¡Propiedad publicada exitosamente!');
+        router.push('/comprar');
+      }
+    } catch (error) {
+      console.error('Error al publicar propiedad:', error);
+      alert(error instanceof Error ? error.message : 'Error al publicar la propiedad. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStep1 = () => (
@@ -257,8 +325,8 @@ export default function PropertyForm() {
               Siguiente →
             </Button>
           ) : (
-            <Button variant="primary" onClick={handleSubmit}>
-              Publicar Propiedad
+            <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Publicando...' : 'Publicar Propiedad'}
             </Button>
           )}
         </div>
