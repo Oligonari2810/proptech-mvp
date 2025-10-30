@@ -81,4 +81,30 @@ cat /tmp/backend*.log
 
 ---
 
-**Estado**: 🟡 Desarrollo activo / Backend pendiente reactivación
+---
+
+## 🚀 Producción
+
+### URLs Oficiales
+- **Frontend**: https://habitatprord.com
+- **Backend API**: https://proptech-mvp-1.onrender.com
+
+### Estado de Servicios
+- ✅ Frontend: Operativo (Vercel)
+- ✅ Backend: Operativo (Render)
+- ✅ Database: Operativa (PostgreSQL)
+
+### Health Check
+```bash
+# Verificación rápida
+./quick-health-check.sh
+
+# Validación completa
+./validate-production.sh
+```
+
+Para más detalles, ver: [PRODUCTION_URLS.md](./PRODUCTION_URLS.md)
+
+---
+
+**Estado**: 🟢 **Producción activa**
