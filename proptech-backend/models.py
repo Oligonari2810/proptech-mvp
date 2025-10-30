@@ -123,3 +123,15 @@ class SmartContract(db.Model):
     property = relationship("Property", back_populates="contracts")
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer_contracts")
     seller = relationship("User", foreign_keys=[seller_id], back_populates="seller_contracts")
+
+# ✅ Modelo de Favoritos
+class Favorite(db.Model):
+    __tablename__ = "favorites"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'property_id', name='unique_user_property_favorite'),)
