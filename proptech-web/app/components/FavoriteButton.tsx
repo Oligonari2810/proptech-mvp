@@ -5,13 +5,13 @@ import { useFavorites } from '../hooks/useFavorites'
 
 interface FavoriteButtonProps {
   propertyId: number
-  userId?: number
+  userId?: number  // Mantener para compatibilidad, pero ya no se usa
   className?: string
 }
 
-export default function FavoriteButton({ propertyId, userId, className }: FavoriteButtonProps) {
-  const { isFavorites, toggleFavorite, loading } = useFavorites(userId)
-  const isFavorite = isFavorites(propertyId)
+export default function FavoriteButton({ propertyId, className }: FavoriteButtonProps) {
+  const { isFavorite, toggleFavorite, loading } = useFavorites()
+  const isCurrentlyFavorite = isFavorite(propertyId)
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -24,12 +24,12 @@ export default function FavoriteButton({ propertyId, userId, className }: Favori
       onClick={handleClick}
       disabled={loading}
       className={`transition-all duration-200 ${className || ''}`}
-      aria-label={isFavorite ? 'Remover de favoritos' : 'Agregar a favoritos'}
+      aria-label={isCurrentlyFavorite ? 'Remover de favoritos' : 'Agregar a favoritos'}
     >
       <Heart
         size={24}
         className={`${
-          isFavorite
+          isCurrentlyFavorite
             ? 'fill-red-500 text-red-500'
             : 'text-gray-400 hover:text-red-500'
         } transition-all duration-200`}
