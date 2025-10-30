@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import { useState } from 'react';
 import { PropertyCard as OriginalPropertyCard } from '../ui/PropertyCard';
 import RedesignPropertyCard from '../redesign/PropertyCard';
 import { MapCluster } from '../MapCluster';
