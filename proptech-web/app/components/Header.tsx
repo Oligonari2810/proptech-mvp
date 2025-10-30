@@ -26,6 +26,7 @@ export function Header() {
     { href: "/vender", label: "Vender", icon: "📈" },
     { href: "/map", label: "Mapa", icon: "🗺️" },
     { href: "/admin", label: "Admin", icon: "⚙️" },
+    { href: "/auth/register", label: "Registrarse", icon: "👤" },
   ];
 
   return (

@@ -1,5 +1,10 @@
 from flask import Blueprint, request, jsonify
-from models import Favorite, db
+from models import Favorite
+from flask_sqlalchemy import SQLAlchemy
+
+# Importar db desde app.py (el blueprint se registrará en app.py)
+# Por ahora usamos la instancia global de db
+# Esta ruta se registra directamente en app.py, este archivo es de referencia
 
 favorites_bp = Blueprint('favorites', __name__, url_prefix='/api/favorites')
 

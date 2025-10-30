@@ -765,6 +765,85 @@ with app.app_context():
     except Exception as e:
         print(f"⚠️ Error creando tablas: {e}")
 
+# GET all users (admin only)
+@app.route('/api/admin/users', methods=['GET'])
+def list_users():
+    """Listar todos los usuarios (solo admin)"""
+    try:
+        role_filter = request.args.get('role')
+        search = request.args.get('search', '').strip().lower()
+        
+        query = User.query
+        
+        if role_filter:
+            query = query.filter_by(role=role_filter)
+        
+        if search:
+            query = query.filter(
+                db.or_(
+                    User.email.ilike(f'%{search}%'),
+                    User.name.ilike(f'%{search}%')
+                )
+            )
+        
+        users = query.order_by(User.created_at.desc()).limit(100).all()
+        
+        return jsonify({
+            'users': [{
+                'id': user.id,
+                'email': user.email,
+                'name': user.name,
+                'role': user.role,
+                'phone': user.phone,
+                'is_active': user.is_active,
+                'is_verified': user.is_verified,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'properties_count': len(user.properties) if hasattr(user, 'properties') else 0
+            } for user in users],
+            'total': len(users)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# PATCH user (by ID or email)
+@app.route('/api/admin/users/<int:user_id>', methods=['PATCH'])
+def update_user(user_id):
+    """Actualizar usuario por ID"""
+    try:
+        data = request.get_json() or {}
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # Actualizar campos permitidos
+        if 'role' in data:
+            user.role = data['role']
+        if 'is_active' in data:
+            user.is_active = data['is_active']
+        if 'name' in data:
+            user.name = data['name']
+        if 'phone' in data:
+            user.phone = data['phone']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Usuario actualizado exitosamente',
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name,
+                'role': user.role,
+                'is_active': user.is_active
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 # PATCH user password
 @app.route('/api/admin/users/<email>', methods=['PATCH'])
 def update_user_password(email):
