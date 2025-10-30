@@ -13,8 +13,6 @@ interface PropertyCardProps {
   onClick?: (id: string) => void;
 }
 
-import { useRouter } from 'next/navigation';
-
 export default function PropertyCard({
   id,
   title,
