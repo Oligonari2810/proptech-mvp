@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { MapCluster } from '../components/MapCluster';
-import { PropertyCard as OriginalPropertyCard } from '../components/PropertyCard';
-import RedesignPropertyCard from '../components/redesign/PropertyCard';
+import { useEffect, useState, useCallback } from 'react';
+import SmartFilters from '../components/search/SmartFilters';
+import PropertySplitView from '../components/split-view/PropertySplitView';
 
 interface ListingProperty {
   id: string | number;
@@ -20,110 +19,147 @@ interface ListingProperty {
   operation?: string;
 }
 
+interface FilterState {
+  minPrice?: number;
+  maxPrice?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  minArea?: number;
+  maxArea?: number;
+  location?: string;
+  propertyType?: string;
+  features?: string[];
+}
+
 export default function ComprarPage() {
-  const [properties, setProperties] = useState<ListingProperty[]>([]);
+  const [allProperties, setAllProperties] = useState<ListingProperty[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<ListingProperty[]>([]);
   const [useRedesign, setUseRedesign] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({});
+  const [loading, setLoading] = useState(true);
+
+  // Cargar propiedades del backend
+  const loadProperties = useCallback(async (filterParams?: FilterState) => {
+    setLoading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
+      
+      // Construir query params para filtros
+      const params = new URLSearchParams();
+      if (filterParams?.minPrice) params.append('min_price', filterParams.minPrice.toString());
+      if (filterParams?.maxPrice) params.append('max_price', filterParams.maxPrice.toString());
+      if (filterParams?.bedrooms) params.append('bedrooms', filterParams.bedrooms.toString());
+      if (filterParams?.bathrooms) params.append('bathrooms', filterParams.bathrooms.toString());
+      if (filterParams?.minArea) params.append('min_surface', filterParams.minArea.toString());
+      if (filterParams?.maxArea) params.append('max_surface', filterParams.maxArea.toString());
+      if (filterParams?.location) params.append('location', filterParams.location);
+      if (filterParams?.propertyType) params.append('property_type', filterParams.propertyType);
+      
+      // Filtros booleanos
+      if (filterParams?.features) {
+        if (filterParams.features.includes('Piscina')) params.append('has_pool', 'true');
+        if (filterParams.features.includes('Garaje')) params.append('has_garage', 'true');
+        if (filterParams.features.includes('Ascensor')) params.append('has_elevator', 'true');
+      }
+
+      const queryString = params.toString();
+      const url = `${backendUrl}/api/properties${queryString ? `?${queryString}` : ''}`;
+      
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('API failed');
+      
+      const data = await res.json();
+      const props = (data.properties || data || []) as ListingProperty[];
+      setAllProperties(props);
+      setFilteredProperties(props);
+    } catch (_e) {
+      // Fallback con datos de ejemplo
+      const fallback = Array.from({ length: 20 }, (_, i) => ({
+        id: `fallback-${i}`,
+        title: `Propiedad ${i+1} en Santo Domingo`,
+        price: Math.floor(Math.random() * 500000) + 50000,
+        location: `Santo Domingo ${i+1}`,
+        latitude: 18.4861 + (Math.random() - 0.5) * 0.1,
+        longitude: -69.9312 + (Math.random() - 0.5) * 0.1,
+        bedrooms: Math.floor(Math.random() * 4) + 1,
+        bathrooms: Math.floor(Math.random() * 3) + 1,
+        area: Math.floor(Math.random() * 200) + 80,
+        images: [`https://picsum.photos/800/600?random=${i}`],
+        features: ['Piscina', 'Estacionamiento', 'Seguridad 24/7']
+      }));
+      setAllProperties(fallback as unknown as ListingProperty[]);
+      setFilteredProperties(fallback as unknown as ListingProperty[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-        const res = await fetch(`${backendUrl}/api/properties`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('API failed');
-        const data = await res.json();
-        setProperties((data.properties || []) as ListingProperty[]);
-      } catch (_e) {
-        // Fallback
-        const fallback = Array.from({ length: 20 }, (_, i) => ({
-          id: `fallback-${i}`,
-          title: `Propiedad ${i+1} en Santo Domingo`,
-          price: Math.floor(Math.random() * 500000) + 50000,
-          location: `Santo Domingo ${i+1}`,
-          latitude: 18.4861 + (Math.random() - 0.5) * 0.1,
-          longitude: -69.9312 + (Math.random() - 0.5) * 0.1,
-          bedrooms: Math.floor(Math.random() * 4) + 1,
-          bathrooms: Math.floor(Math.random() * 3) + 1,
-          area: Math.floor(Math.random() * 200) + 80,
-          images: [`https://picsum.photos/800/600?random=${i}`],
-          features: ['Piscina', 'Estacionamiento', 'Seguridad 24/7']
-        }));
-        setProperties(fallback as unknown as ListingProperty[]);
-      }
-    };
-    load();
-
+    loadProperties();
+    
     // Feature flag: env o localStorage
     try {
       const byEnv = process.env.NEXT_PUBLIC_REDESIGN_ENABLED === 'true';
       const byLocal = typeof window !== 'undefined' && localStorage.getItem('redesign-enabled') === 'true';
       setUseRedesign(!!(byEnv || byLocal));
     } catch {}
-  }, []);
+  }, [loadProperties]);
+
+  // Aplicar filtros
+  const handleFilterChange = useCallback((newFilters: FilterState) => {
+    setFilters(newFilters);
+    loadProperties(newFilters);
+  }, [loadProperties]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          {useRedesign ? '🏝️ Descubre Propiedades Premium' : 'Encuentra tu Propiedad Ideal'}
-        </h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h2 className="text-lg font-semibold mb-4">Filtros</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Precio Máximo</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2">
-                    <option>Hasta $100,000</option>
-                    <option>Hasta $250,000</option>
-                    <option>Hasta $500,000</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2">
-                    <option>Cualquiera</option>
-                    <option>1+</option>
-                    <option>2+</option>
-                    <option>3+</option>
-                  </select>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header con Filtros */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {useRedesign ? '🏝️ Descubre Propiedades Premium' : 'Encuentra tu Propiedad Ideal'}
+            </h1>
+            
+            {/* Toggle de rediseño */}
+            <div className="bg-white p-2 rounded-lg shadow-sm border">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useRedesign}
+                  onChange={(e) => {
+                    setUseRedesign(e.target.checked);
+                    try { localStorage.setItem('redesign-enabled', e.target.checked.toString()); } catch {}
+                  }}
+                />
+                <span className="text-sm">🎨 Rediseño</span>
+              </label>
             </div>
           </div>
           
-          <div className="lg:col-span-3">
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-              <MapCluster properties={properties as any} />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map((property: ListingProperty) => (
-                useRedesign ? (
-                  <RedesignPropertyCard key={property.id} property={property} onClick={() => {}} />
-                ) : (
-                  <OriginalPropertyCard key={property.id} property={property as any} />
-                )
-              ))}
-            </div>
-          </div>
+          {/* Filtros Inteligentes */}
+          <SmartFilters onFilterChange={handleFilterChange} initialFilters={filters} />
         </div>
       </div>
 
-      {/* Toggle de prueba - se puede retirar tras validación */}
-      <div className="fixed bottom-4 right-4 bg-white p-3 rounded-lg shadow-lg border">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={useRedesign}
-            onChange={(e) => {
-              setUseRedesign(e.target.checked);
-              try { localStorage.setItem('redesign-enabled', e.target.checked.toString()); } catch {}
+      {/* Split View */}
+      <div className="flex-1">
+        {loading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando propiedades...</p>
+            </div>
+          </div>
+        ) : (
+          <PropertySplitView
+            properties={filteredProperties}
+            useRedesign={useRedesign}
+            onPropertySelect={(property) => {
+              console.log('Property selected:', property);
             }}
           />
-          <span className="text-sm">🎨 Rediseño Caribbean Chic</span>
-        </label>
+        )}
       </div>
     </div>
   );
