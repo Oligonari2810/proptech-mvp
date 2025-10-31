@@ -48,7 +48,7 @@ export function Header() {
             aria-label="HabitatPro — Inicio"
           >
             <Image
-              src="/file.svg"
+              src="/images/Logo.png"
               alt="HabitatPro logo"
               width={32}
               height={32}

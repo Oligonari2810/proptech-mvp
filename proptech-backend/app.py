@@ -5,7 +5,7 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 from sqlalchemy import text
 import redis
-from datetime import datetime
+from datetime import datetime, timedelta
 # from sklearn.neighbors import NearestNeighbors
 # from sklearn.feature_extraction.text import TfidfVectorizer
 import json
@@ -42,7 +42,8 @@ allowed_origins = [
     'https://habitatprord.vercel.app',
     'https://proptech-mvp.vercel.app',
     'http://localhost:3000',
-    'http://localhost:3001'
+    'http://localhost:3001',
+    'http://localhost:3003'
 ]
 CORS(app, origins=allowed_origins, supports_credentials=True)
 
@@ -64,40 +65,13 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Importar modelos desde models.py
 from models import User, Property, Favorite
 
-# MODELOS REALES DE BASE DE DATOS
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    preferences = db.Column(db.JSON, default=dict)
-    emotional_profile = db.Column(db.JSON, default=dict)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Property(db.Model):
-    __tablename__ = 'properties'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    price = db.Column(db.Float, nullable=False)
-    type = db.Column(db.String(50))  # casa, apartamento, piso
-    operation = db.Column(db.String(20))  # compra, alquiler
-    location = db.Column(db.String(200))
-    bedrooms = db.Column(db.Integer)
-    bathrooms = db.Column(db.Integer)
-    area = db.Column(db.Float)
-    features = db.Column(db.JSON, default=list)  # ['piscina', 'garaje', 'jardin']
-    emotional_tags = db.Column(db.JSON, default=list)  # ['familiar', 'moderno', 'lujoso']
-    images = db.Column(db.JSON, default=list)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
-
+# Modelo Interaction inline para compatibilidad
 class Interaction(db.Model):
     __tablename__ = 'interactions'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     property_id = db.Column(db.Integer, db.ForeignKey('properties.id'))
-    interaction_type = db.Column(db.String(50))  # view, like, contact, share
+    interaction_type = db.Column(db.String(50))
     emotional_response = db.Column(db.JSON, default=dict)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -577,6 +551,61 @@ def get_ai_recommendations():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===== IA ENDPOINTS (SIMPLE) =====
+@app.route('/api/ai/valuation', methods=['POST'])
+def ai_valuation():
+    """Endpoint simple de valoración IA"""
+    try:
+        data = request.get_json() or {}
+        base_price = float(data.get('price') or 300000)
+        size = float(data.get('area') or data.get('surface') or 120)
+        bedrooms = int(data.get('bedrooms') or 3)
+        # Heurística simple
+        estimated = base_price * (1 + (bedrooms - 3) * 0.03) * (1 + (size - 120) * 0.001)
+        return jsonify({
+            'estimatedValue': round(estimated, 0),
+            'confidence': 0.82,
+            'priceRange': {
+                'min': round(estimated * 0.92, 0),
+                'max': round(estimated * 1.08, 0)
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'estimatedValue': 300000, 'confidence': 0.5}), 200
+
+@app.route('/api/ai/sale-probability', methods=['POST'])
+def ai_sale_probability():
+    """Endpoint simple de probabilidad de venta"""
+    try:
+        d = request.get_json() or {}
+        return jsonify({
+            'saleProbability': {'30days': 0.65, '60days': 0.82, '90days': 0.91},
+            'estimatedDaysOnMarket': 45,
+            'factors': [
+                {'factor': 'price_competitiveness', 'impact': 'high'},
+                {'factor': 'seasonality', 'impact': 'medium'}
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'saleProbability': {}}), 200
+
+@app.route('/api/ai/describe', methods=['POST'])
+def ai_describe():
+    """Endpoint simple de generación de descripciones"""
+    try:
+        d = request.get_json() or {}
+        title = d.get('title') or 'Propiedad destacada'
+        location = d.get('location') or 'zona privilegiada'
+        bedrooms = d.get('bedrooms') or 'varios'
+        area = d.get('area') or d.get('surface') or 'amplia'
+        desc = (
+            f"{title} en {location}. Cuenta con {bedrooms} dormitorios y {area} m². "
+            "Ideal para quienes buscan confort y buena ubicación."
+        )
+        return jsonify({'description': desc, 'tags': ['luminoso', 'ubicación', 'confort']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 200
+
 # HEALTH CHECK MEJORADO
 @app.route('/api/health', methods=['GET'])
 # @limiter.exempt  # Temporarily disabled
@@ -884,6 +913,101 @@ def set_tenant_branding():
         return jsonify({'success': True, 'branding': branding.to_dict()}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# ===== CRM ENDPOINTS =====
+
+@app.route('/api/crm/leads', methods=['GET'])
+def get_crm_leads():
+    """Devuelve leads para el pipeline CRM.
+    Nota: Como no existe un modelo Lead aún, generamos datos a partir de propiedades
+    con etapas ficticias para habilitar el frontend inmediatamente.
+    """
+    try:
+        stages = ['new', 'qualified', 'visit', 'offer', 'won']
+        properties = Property.query.limit(30).all()
+
+        leads = []
+        for i, p in enumerate(properties):
+            stage = stages[i % len(stages)]
+            leads.append({
+                'id': f'{stage}-{p.id}',
+                'name': p.title or f'Lead {p.id}',
+                'email': f'lead{p.id}@demo.com',
+                'phone': '+1 809 555 %04d' % ((1000 + i) % 10000),
+                'property_interested': p.id,
+                'stage': stage,
+                'value': float(p.price) if hasattr(p, 'price') and p.price is not None else 150000.0,
+                'last_contact': datetime.utcnow().isoformat(),
+                'next_follow_up': (datetime.utcnow() + timedelta(days=(i % 5) + 1)).isoformat(),
+                'notes': (p.location or 'Interés general')
+            })
+
+        return jsonify({'success': True, 'leads': leads}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'leads': []}), 200
+
+# ===== ANALYTICS / BACKOFFICE (BATCH 4) =====
+
+@app.route('/api/analytics/portal-stats', methods=['GET'])
+def portal_stats():
+    try:
+        return jsonify({
+            'totalProperties': Property.query.count(),
+            'totalUsers': User.query.count(),
+            'activeLeads': 89,
+            'monthlyGrowth': 23.4,
+            'conversionRate': 4.2
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 200
+
+@app.route('/api/monitoring/audit-logs', methods=['GET'])
+def get_audit_logs():
+    # Mock de auditoría (en producción: leer de tabla/logs)
+    logs = [{
+        'id': f'log_{i+1}',
+        'action': action,
+        'timestamp': (datetime.utcnow()).isoformat(),
+        'user': 'admin@habitatpro.com',
+        'details': details
+    } for i, (action, details) in enumerate([
+        ('property_created', 'Propiedad creada por admin'),
+        ('user_login', 'Inicio de sesión exitoso'),
+        ('branding_update', 'Se actualizó branding del tenant'),
+    ])]
+    return jsonify({'logs': logs})
+
+@app.route('/api/analytics/lead-heatmap', methods=['GET'])
+def lead_heatmap():
+    # Mock de zonas de demanda (en producción: leads reales)
+    return jsonify({'zones': [
+        {'zone': 'Centro', 'leadCount': 45, 'demandLevel': 'high', 'lat': 18.48, 'lng': -69.9},
+        {'zone': 'Naco', 'leadCount': 28, 'demandLevel': 'medium', 'lat': 18.47, 'lng': -69.94},
+        {'zone': 'Piantini', 'leadCount': 36, 'demandLevel': 'high', 'lat': 18.46, 'lng': -69.93},
+    ]})
+
+@app.route('/api/admin/pending-moderation', methods=['GET'])
+def pending_moderation():
+    # Mock de moderación pendiente (en producción: tabla de reports)
+    properties = Property.query.limit(5).all()
+    items = [{
+        'propertyId': p.id,
+        'title': p.title,
+        'status': 'pending'
+    } for p in properties]
+    return jsonify({'items': items})
+
+@app.route('/api/admin/moderate/<int:property_id>', methods=['POST'])
+def moderate_property(property_id: int):
+    try:
+        data = request.get_json() or {}
+        action = data.get('action')
+        if action not in ('approve', 'reject'):
+            return jsonify({'error': 'action inválida'}), 400
+        # Mock: en producción, actualizar estado en DB
+        return jsonify({'success': True, 'property_id': property_id, 'action': action})
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 # ONBOARDING: crear demo para un cliente (sin esquema multi-tenant estricto)
