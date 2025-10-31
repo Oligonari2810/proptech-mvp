@@ -77,6 +77,7 @@ class Property(db.Model):
     has_virtual_tour = Column(Boolean, nullable=True, default=False)  # Tiene visita virtual
     is_active = Column(Boolean, nullable=True, default=True)  # Propiedad activa/públicada
     published_date = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de publicación
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de creación
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
 
