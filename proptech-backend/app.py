@@ -99,112 +99,148 @@ except Exception as e:
     print(f"⚠️ No se pudo registrar blueprint de autenticación: {e}")
     print("🔄 Implementando endpoints de auth directos como fallback...")
 
-# FALLBACK: Endpoints de auth directos si el blueprint falla
+# FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
+# Intentar importar AuthService, si falla usar werkzeug como fallback
 try:
     from auth import AuthService
-    from datetime import datetime
-    
-    @app.route('/api/auth/register', methods=['POST'])
-    def register_direct():
-        """Registro de usuario - endpoint directo"""
-        try:
-            data = request.get_json()
-            
-            if not data.get('email') or not data.get('password'):
-                return jsonify({'error': 'Email y contraseña son requeridos'}), 400
-            
-            if not data.get('name'):
-                return jsonify({'error': 'Nombre es requerido'}), 400
-            
-            # Verificar si el usuario ya existe
-            existing_user = User.query.filter_by(email=data['email']).first()
-            if existing_user:
-                return jsonify({'error': 'El usuario ya existe'}), 409
-            
-            # Crear nuevo usuario
-            user = User(
-                email=data['email'],
-                password_hash=AuthService.hash_password(data['password']),
-                name=data['name'],
-                role=data.get('role', 'user'),
-                phone=data.get('phone'),
-                is_active=True,
-                is_verified=False
-            )
-            
-            db.session.add(user)
-            db.session.commit()
-            
-            # Generar token
-            token = AuthService.generate_token(user.id, user.role)
-            
-            return jsonify({
-                'success': True,
-                'message': 'Usuario registrado exitosamente',
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'name': user.name,
-                    'role': user.role,
-                    'is_verified': user.is_verified
-                },
-                'token': token
-            }), 201
-            
-        except Exception as e:
-            db.session.rollback()
-            error_msg = sanitize_error(e, "Error al registrar usuario. Por favor, verifique los datos e inténtelo de nuevo.")
-            return jsonify({'error': f'Error en el registro: {error_msg}'}), 500
-    
-    @app.route('/api/auth/login', methods=['POST'])
-    def login_direct():
-        """Login con JWT token - endpoint directo"""
-        try:
-            data = request.get_json()
-            
-            if not data.get('email') or not data.get('password'):
-                return jsonify({'error': 'Email y contraseña son requeridos'}), 400
-            
-            # Buscar usuario
-            user = User.query.filter_by(email=data['email']).first()
-            if not user:
-                return jsonify({'error': 'Credenciales inválidas'}), 401
-            
-            # Verificar contraseña
-            if not user.password_hash or not AuthService.verify_password(data['password'], user.password_hash):
-                return jsonify({'error': 'Credenciales inválidas'}), 401
-            
-            # Verificar si está activo
-            if not user.is_active:
-                return jsonify({'error': 'Cuenta desactivada'}), 403
-            
-            # Actualizar último login
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            
-            # Generar token
-            token = AuthService.generate_token(user.id, user.role)
-            
-            return jsonify({
-                'success': True,
-                'message': 'Login exitoso',
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'name': user.name,
-                    'role': user.role,
-                    'is_verified': user.is_verified
-                },
-                'token': token
-            }), 200
-            
-        except Exception as e:
-            error_msg = sanitize_error(e, "Error al iniciar sesión. Por favor, verifique sus credenciales e inténtelo de nuevo.")
-            return jsonify({'error': f'Error en el login: {error_msg}'}), 500
-    
-    print("✅ Endpoints de auth directos registrados como fallback")
+    USE_AUTHSERVICE = True
+    print("✅ AuthService importado exitosamente")
 except Exception as e:
-    print(f"⚠️ No se pudieron registrar endpoints de auth directos: {e}")
+    print(f"⚠️ No se pudo importar AuthService, usando werkzeug: {e}")
+    USE_AUTHSERVICE = False
+    from werkzeug.security import generate_password_hash, check_password_hash
+    import jwt
+
+from datetime import datetime
+
+@app.route('/api/auth/register', methods=['POST'])
+def register_direct():
+    """Registro de usuario - endpoint directo"""
+    try:
+        data = request.get_json()
+        
+        if not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email y contraseña son requeridos'}), 400
+        
+        if not data.get('name'):
+            return jsonify({'error': 'Nombre es requerido'}), 400
+        
+        # Verificar si el usuario ya existe
+        existing_user = User.query.filter_by(email=data['email']).first()
+        if existing_user:
+            return jsonify({'error': 'El usuario ya existe'}), 409
+        
+        # Crear nuevo usuario
+        if USE_AUTHSERVICE:
+            password_hash = AuthService.hash_password(data['password'])
+        else:
+            password_hash = generate_password_hash(data['password'])
+        
+        user = User(
+            email=data['email'],
+            password_hash=password_hash,
+            name=data['name'],
+            role=data.get('role', 'user'),
+            phone=data.get('phone'),
+            is_active=True,
+            is_verified=False
+        )
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Generar token
+        if USE_AUTHSERVICE:
+            token = AuthService.generate_token(user.id, user.role)
+        else:
+            token = jwt.encode({
+                'user_id': user.id,
+                'role': user.role,
+                'exp': datetime.utcnow() + timedelta(hours=24),
+                'iat': datetime.utcnow()
+            }, app.config['SECRET_KEY'], algorithm='HS256')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Usuario registrado exitosamente',
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name,
+                'role': user.role,
+                'is_verified': user.is_verified
+            },
+            'token': token
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        error_msg = sanitize_error(e, "Error al registrar usuario. Por favor, verifique los datos e inténtelo de nuevo.")
+        return jsonify({'error': f'Error en el registro: {error_msg}'}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def login_direct():
+    """Login con JWT token - endpoint directo"""
+    try:
+        data = request.get_json()
+        
+        if not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email y contraseña son requeridos'}), 400
+        
+        # Buscar usuario
+        user = User.query.filter_by(email=data['email']).first()
+        if not user:
+            return jsonify({'error': 'Credenciales inválidas'}), 401
+        
+        # Verificar contraseña
+        if not user.password_hash:
+            return jsonify({'error': 'Credenciales inválidas'}), 401
+        
+        if USE_AUTHSERVICE:
+            password_valid = AuthService.verify_password(data['password'], user.password_hash)
+        else:
+            password_valid = check_password_hash(user.password_hash, data['password'])
+        
+        if not password_valid:
+            return jsonify({'error': 'Credenciales inválidas'}), 401
+        
+        # Verificar si está activo
+        if not user.is_active:
+            return jsonify({'error': 'Cuenta desactivada'}), 403
+        
+        # Actualizar último login
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        
+        # Generar token
+        if USE_AUTHSERVICE:
+            token = AuthService.generate_token(user.id, user.role)
+        else:
+            token = jwt.encode({
+                'user_id': user.id,
+                'role': user.role,
+                'exp': datetime.utcnow() + timedelta(hours=24),
+                'iat': datetime.utcnow()
+            }, app.config['SECRET_KEY'], algorithm='HS256')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Login exitoso',
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': user.name,
+                'role': user.role,
+                'is_verified': user.is_verified
+            },
+            'token': token
+        }), 200
+        
+    except Exception as e:
+        error_msg = sanitize_error(e, "Error al iniciar sesión. Por favor, verifique sus credenciales e inténtelo de nuevo.")
+        return jsonify({'error': f'Error en el login: {error_msg}'}), 500
+
+print("✅ Endpoints de auth directos registrados (Siempre activos)")
 
 # Modelo Interaction inline para compatibilidad
 class Interaction(db.Model):
