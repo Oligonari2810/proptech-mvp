@@ -13,6 +13,19 @@ import os
 
 app = Flask(__name__)
 
+# Helper para sanitizar errores en producción
+def sanitize_error(error: Exception, generic_message: str = "Ha ocurrido un error. Por favor, inténtelo más tarde.") -> str:
+    """Sanitiza errores para no mostrar stack traces en producción"""
+    is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+    
+    if is_production:
+        # En producción, solo mostrar mensaje genérico y log el error real
+        print(f"ERROR (sanitizado en producción): {str(error)}")
+        return generic_message
+    else:
+        # En desarrollo, mostrar el error completo para debugging
+        return str(error)
+
 # Configuración de base de datos - PostgreSQL en producción, SQLite en desarrollo
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
@@ -583,7 +596,8 @@ def ai_valuation():
             }
         })
     except Exception as e:
-        return jsonify({'error': str(e), 'estimatedValue': 300000, 'confidence': 0.5}), 200
+        error_msg = sanitize_error(e, "Error al calcular la valoración. Por favor, verifique los datos e inténtelo de nuevo.")
+        return jsonify({'error': error_msg, 'estimatedValue': 300000, 'confidence': 0.5}), 200
 
 @app.route('/api/ai/sale-probability', methods=['POST'])
 def ai_sale_probability():
@@ -599,7 +613,8 @@ def ai_sale_probability():
             ]
         })
     except Exception as e:
-        return jsonify({'error': str(e), 'saleProbability': {}}), 200
+        error_msg = sanitize_error(e, "Error al calcular la probabilidad de venta. Por favor, inténtelo más tarde.")
+        return jsonify({'error': error_msg, 'saleProbability': {}}), 200
 
 @app.route('/api/ai/describe', methods=['POST'])
 def ai_describe():

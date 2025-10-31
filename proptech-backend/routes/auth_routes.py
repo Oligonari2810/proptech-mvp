@@ -6,10 +6,24 @@ JWT + OAuth2 + Registro + Login + Gestión de Roles
 from flask import Blueprint, request, jsonify, current_app, session, url_for
 from datetime import datetime
 import json
+import os
 from auth import AuthService, oauth, google, github
 from models import db, User
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+
+# Helper para sanitizar errores en producción
+def sanitize_error(error: Exception, generic_message: str = "Ha ocurrido un error. Por favor, inténtelo más tarde.") -> str:
+    """Sanitiza errores para no mostrar stack traces en producción"""
+    is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+    
+    if is_production:
+        # En producción, solo mostrar mensaje genérico y log el error real
+        print(f"ERROR (sanitizado en producción): {str(error)}")
+        return generic_message
+    else:
+        # En desarrollo, mostrar el error completo para debugging
+        return str(error)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -61,7 +75,8 @@ def register():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Error en el registro: {str(e)}'}), 500
+        error_msg = sanitize_error(e, "Error al registrar usuario. Por favor, verifique los datos e inténtelo de nuevo.")
+        return jsonify({'error': f'Error en el registro: {error_msg}'}), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -107,7 +122,8 @@ def login():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error en el login: {str(e)}'}), 500
+        error_msg = sanitize_error(e, "Error al iniciar sesión. Por favor, verifique sus credenciales.")
+        return jsonify({'error': f'Error en el login: {error_msg}'}), 500
 
 @auth_bp.route('/me', methods=['GET'])
 def get_current_user():
@@ -136,7 +152,8 @@ def get_current_user():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error obteniendo usuario: {str(e)}'}), 500
+        error_msg = sanitize_error(e, "Error al obtener información del usuario.")
+        return jsonify({'error': f'Error obteniendo usuario: {error_msg}'}), 500
 
 @auth_bp.route('/refresh', methods=['POST'])
 def refresh_token():
@@ -155,7 +172,8 @@ def refresh_token():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': f'Error refrescando token: {str(e)}'}), 500
+        error_msg = sanitize_error(e, "Error al refrescar el token. Por favor, inicie sesión nuevamente.")
+        return jsonify({'error': f'Error refrescando token: {error_msg}'}), 500
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():

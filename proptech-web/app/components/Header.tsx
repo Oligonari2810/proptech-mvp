@@ -8,26 +8,52 @@
  * - Aplicar diseño visual enterprise (paleta brand/accent, tipografía Inter)
  * - Preservar NotificationBell y responsive design
  * - A11y y focus states mejorados
+ * - SEGURIDAD: Header condicional según autenticación
  */
 
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { NotificationBell } from "./notifications/NotificationBell";
 
 export function Header() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const isAuthenticated = !!session?.user;
+  const userRole = (session?.user as any)?.role;
 
-  // 🔗 Navegación principal (se mantiene igual)
-  const navItems = [
+  // 🔗 Navegación principal para usuarios públicos
+  const publicNavItems = [
     { href: "/comprar", label: "Comprar", icon: "🏠" },
     { href: "/alquilar", label: "Alquilar", icon: "🔑" },
     { href: "/invertir", label: "Invertir", icon: "💹" },
     { href: "/vender", label: "Vender", icon: "📈" },
-    { href: "/map", label: "Mapa", icon: "🗺️" },
-    { href: "/admin", label: "Admin", icon: "⚙️" },
-    { href: "/auth/register", label: "Registrarse", icon: "👤" },
   ];
+
+  // 🔗 Navegación para usuarios autenticados (agregar items adicionales)
+  const authenticatedNavItems = [
+    ...publicNavItems,
+    { href: "/profile", label: "Mi cuenta", icon: "👤" },
+    { href: "/dashboard/favorites", label: "Favoritos", icon: "❤️" },
+  ];
+
+  // 🔗 Navegación para admins (agregar link a Admin)
+  const adminNavItems = [
+    ...publicNavItems,
+    { href: "/admin", label: "Admin", icon: "⚙️" },
+    { href: "/profile", label: "Mi cuenta", icon: "👤" },
+  ];
+
+  // Determinar qué items mostrar según autenticación y rol
+  let navItems = publicNavItems;
+  if (isAuthenticated) {
+    if (userRole === "admin" || userRole === "super_admin") {
+      navItems = adminNavItems;
+    } else {
+      navItems = authenticatedNavItems;
+    }
+  }
 
   return (
     <header
@@ -83,18 +109,45 @@ export function Header() {
 
           {/* CTA + NOTIFICATION */}
           <div className="flex items-center gap-4">
-            <NotificationBell />
-            <Link
-              href="/contacto"
-              className="
-                inline-flex items-center justify-center
-                px-4 py-2 rounded-2xl text-sm font-semibold
-                text-white bg-brand-600 hover:bg-brand-700
-                shadow-soft transition-colors
-              "
-            >
-              Contáctanos
-            </Link>
+            {isAuthenticated && <NotificationBell />}
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="
+                    inline-flex items-center justify-center
+                    px-4 py-2 rounded-2xl text-sm font-semibold
+                    text-ink-700 hover:text-ink-900
+                    transition-colors
+                  "
+                >
+                  Iniciar sesión
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="
+                    inline-flex items-center justify-center
+                    px-4 py-2 rounded-2xl text-sm font-semibold
+                    text-white bg-brand-600 hover:bg-brand-700
+                    shadow-soft transition-colors
+                  "
+                >
+                  Registrarse
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/contacto"
+                className="
+                  inline-flex items-center justify-center
+                  px-4 py-2 rounded-2xl text-sm font-semibold
+                  text-white bg-brand-600 hover:bg-brand-700
+                  shadow-soft transition-colors
+                "
+              >
+                Contactar
+              </Link>
+            )}
           </div>
         </div>
 
