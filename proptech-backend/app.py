@@ -796,9 +796,9 @@ with app.app_context():
         
         # EMERGENCY FIX: Agregar columnas faltantes directamente
         try:
-            from sqlalchemy import text
+            # Ya importado arriba: from sqlalchemy import text
             
-            # Lista COMPLETA de columnas críticas a agregar (26 columnas)
+            # Lista COMPLETA de columnas críticas a agregar (29 columnas)
             critical_columns = [
                 ('image_url', 'VARCHAR(500)'),
                 ('status', 'VARCHAR(50)'),
@@ -828,6 +828,7 @@ with app.app_context():
                 ('is_bank_owned', 'BOOLEAN DEFAULT FALSE'),
                 ('has_virtual_tour', 'BOOLEAN DEFAULT FALSE'),
                 ('published_date', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+                ('user_id', 'INTEGER NOT NULL'),  # ✅ CRÍTICO: ForeignKey a users
             ]
             
             for column_name, column_type in critical_columns:
@@ -844,6 +845,17 @@ with app.app_context():
                         # Columna no existe, agregarla
                         alter_query = text(f"ALTER TABLE properties ADD COLUMN {column_name} {column_type}")
                         db.session.execute(alter_query)
+                        
+                        # Si es user_id, agregar ForeignKey constraint
+                        if column_name == 'user_id':
+                            try:
+                                fk_query = text("ALTER TABLE properties ADD CONSTRAINT properties_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)")
+                                db.session.execute(fk_query)
+                                print(f"✅ ForeignKey para '{column_name}' agregado")
+                            except Exception as fk_error:
+                                print(f"⚠️  No se pudo agregar FK para '{column_name}': {fk_error}")
+                                # Continuar sin FK - no es crítico para el funcionamiento
+                        
                         db.session.commit()
                         print(f"✅ Columna '{column_name}' agregada correctamente")
                     else:
