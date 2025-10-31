@@ -171,3 +171,4 @@ export const getDemoMessage = (): string => {
   return "🔧 Sistema en modo demostración - Backend en mantenimiento. Datos de ejemplo.";
 };
 
+

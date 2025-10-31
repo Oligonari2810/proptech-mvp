@@ -3,6 +3,7 @@ const nextConfig = {
   // Variables de entorno
   env: {
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com',
+    NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || '',
   },
   
   reactStrictMode: true,
@@ -58,11 +59,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: 
               "default-src 'self' https://proptech-mvp-1.onrender.com; " +
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://api.mapbox.com; " +
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://api.mapbox.com https://maps.googleapis.com; " +
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; " +
               "font-src 'self' 'unsafe-inline' data: https://fonts.gstatic.com https://api.mapbox.com; " +
               "img-src 'self' data: blob: https://*.mapbox.com https://images.unsplash.com https:; " +
-              "connect-src 'self' https://proptech-mvp-1.onrender.com https://*.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com wss://*.vercel.live; " +
+              "connect-src 'self' https://proptech-mvp-1.onrender.com https://*.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://maps.googleapis.com wss://*.vercel.live; " +
               "worker-src 'self' blob:; " +
               "child-src 'self' blob:; " +
               "frame-src 'self';"

@@ -11,6 +11,43 @@ from datetime import datetime, timedelta
 import json
 import os
 
+# Importar middleware de autenticación
+try:
+    from middleware.auth_middleware import admin_required
+except ImportError:
+    # Fallback: función decoradora básica si el middleware no está disponible
+    def admin_required(f):
+        def decorated_function(*args, **kwargs):
+            # Verificación básica de token en Authorization header
+            token = None
+            if 'Authorization' in request.headers:
+                auth_header = request.headers['Authorization']
+                if auth_header.startswith('Bearer '):
+                    token = auth_header.split(' ')[1]
+            
+            if not token:
+                return jsonify({'error': 'Token de autenticación requerido'}), 401
+            
+            # Verificación básica del token (delegar a auth.py)
+            try:
+                from auth import decode_token
+                data = decode_token(token)
+                if 'error' in data:
+                    return jsonify({'error': data['error']}), 401
+                
+                user_role = data.get('role')
+                if user_role not in ['admin', 'super_admin']:
+                    return jsonify({'error': 'Acceso denegado. Se requiere rol de administrador.'}), 403
+                
+                # Agregar usuario al request para uso en el endpoint
+                request.current_user = data
+                return f(*args, **kwargs)
+            except Exception as e:
+                return jsonify({'error': 'Token inválido', 'details': sanitize_error(e)}), 401
+        
+        decorated_function.__name__ = f.__name__
+        return decorated_function
+
 app = Flask(__name__)
 
 # Helper para sanitizar errores en producción
@@ -500,7 +537,7 @@ def get_properties():
     """API REAL: Obtener propiedades con filtros avanzados"""
     try:
         # Parámetros de filtrado
-        operation = request.args.get('operation', 'compra')
+        operation = request.args.get('operation', '')
         property_type = request.args.get('type', '')
         min_price = request.args.get('min_price', type=float)
         max_price = request.args.get('max_price', type=float)
@@ -510,8 +547,14 @@ def get_properties():
         # Construir consulta
         query = Property.query.filter_by(is_active=True)
         
+        # Filtrar por operation - CRÍTICO: Manejar NULLs correctamente
         if operation:
-            query = query.filter_by(operation=operation)
+            # Filtrar solo propiedades que tengan el operation especificado
+            # Si operation es NULL, no aparecerá en resultados
+            query = query.filter(Property.operation == operation)
+        # Si no se especifica operation, mostrar todas las que tengan operation no-null
+        else:
+            query = query.filter(Property.operation.isnot(None))
         if property_type:
             query = query.filter_by(type=property_type)
         if min_price:
@@ -631,22 +674,119 @@ def get_property_detail(property_id):
             'title': property.title,
             'description': property.description,
             'price': property.price,
-            'type': property.type,
+            'type': property.type or property.property_type,
             'operation': property.operation,
             'location': property.location,
             'bedrooms': property.bedrooms,
             'bathrooms': property.bathrooms,
-            'area': property.area,
+            'area': property.area or property.surface,
             'features': property.features or [],
             'emotional_tags': property.emotional_tags or [],
             'images': property.images or [],
-            'created_at': property.created_at.isoformat()
+            'is_active': property.is_active if hasattr(property, 'is_active') else True,
+            'status': property.status if hasattr(property, 'status') else 'available',
+            'created_at': property.created_at.isoformat() if property.created_at else None
         }
         
         return jsonify({'success': True, 'property': property_data})
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 404
+
+@app.route('/api/properties/<int:property_id>', methods=['PUT', 'PATCH'])
+@admin_required
+def update_property(property_id):
+    """API REAL: Actualizar propiedad (solo admin)"""
+    try:
+        property = Property.query.get_or_404(property_id)
+        data = request.get_json() or {}
+        
+        # Actualizar campos permitidos
+        if 'title' in data:
+            property.title = data['title']
+        if 'description' in data:
+            property.description = data.get('description', '')
+        if 'price' in data:
+            property.price = float(data['price'])
+        if 'type' in data:
+            property.type = data['type']
+            property.property_type = data['type']  # Mantener ambos campos sincronizados
+        if 'operation' in data:
+            property.operation = data['operation']
+        if 'location' in data:
+            property.location = data['location']
+        if 'bedrooms' in data:
+            property.bedrooms = data.get('bedrooms')
+        if 'bathrooms' in data:
+            property.bathrooms = data.get('bathrooms')
+        if 'area' in data:
+            property.area = data.get('area')
+            property.surface = data.get('area')  # Mantener ambos campos sincronizados
+        if 'features' in data:
+            property.features = data['features']
+        if 'emotional_tags' in data:
+            property.emotional_tags = data['emotional_tags']
+        if 'images' in data:
+            property.images = data['images']
+        if 'is_active' in data:
+            property.is_active = bool(data['is_active'])
+        if 'status' in data:
+            property.status = data['status']
+        
+        db.session.commit()
+        
+        property_data = {
+            'id': property.id,
+            'title': property.title,
+            'description': property.description,
+            'price': property.price,
+            'type': property.type or property.property_type,
+            'operation': property.operation,
+            'location': property.location,
+            'bedrooms': property.bedrooms,
+            'bathrooms': property.bathrooms,
+            'area': property.area or property.surface,
+            'features': property.features or [],
+            'emotional_tags': property.emotional_tags or [],
+            'images': property.images or [],
+            'is_active': property.is_active if hasattr(property, 'is_active') else True,
+            'status': property.status if hasattr(property, 'status') else 'available',
+            'created_at': property.created_at.isoformat() if property.created_at else None
+        }
+        
+        return jsonify({'success': True, 'property': property_data}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        error_msg = sanitize_error(e, "Error al actualizar la propiedad. Por favor, inténtelo más tarde.")
+        return jsonify({'success': False, 'error': error_msg}), 500
+
+@app.route('/api/properties/<int:property_id>', methods=['DELETE'])
+@admin_required
+def delete_property(property_id):
+    """API REAL: Eliminar propiedad (solo admin)"""
+    try:
+        property = Property.query.get_or_404(property_id)
+        
+        # Obtener datos antes de eliminar para respuesta
+        property_data = {
+            'id': property.id,
+            'title': property.title
+        }
+        
+        db.session.delete(property)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Propiedad eliminada exitosamente',
+            'property': property_data
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        error_msg = sanitize_error(e, "Error al eliminar la propiedad. Por favor, inténtelo más tarde.")
+        return jsonify({'success': False, 'error': error_msg}), 500
 
 @app.route('/api/users', methods=['POST'])
 def create_user():
@@ -869,6 +1009,7 @@ def initialize_app():
 
 # API DE MÉTRICAS ADMIN DASHBOARD
 @app.route('/api/admin/metrics', methods=['GET'])
+@admin_required
 def get_admin_metrics():
     """Obtener métricas reales para el admin dashboard - MEJORADO con manejo de errores"""
     try:
@@ -1171,6 +1312,7 @@ with app.app_context():
 
 # GET all users (admin only)
 @app.route('/api/admin/users', methods=['GET'])
+@admin_required
 def list_users():
     """Listar todos los usuarios (solo admin) - MEJORADO con manejo de errores"""
     try:

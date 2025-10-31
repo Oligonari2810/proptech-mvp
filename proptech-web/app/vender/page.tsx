@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import PropertyForm from '../components/PropertyForm'
+import { AddressAutocomplete } from '../components/AddressAutocomplete'
 
 export default function VenderPage() {
   const [activeTab, setActiveTab] = useState('publicacion')
@@ -56,10 +57,15 @@ export default function VenderPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Dirección de la propiedad</label>
-                    <input 
-                      type="text" 
-                      placeholder="Calle, número, ciudad..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    <AddressAutocomplete
+                      value=""
+                      onChange={(address, coords) => {
+                        // Actualizar estado local si es necesario
+                        console.log('Dirección seleccionada:', address, coords)
+                      }}
+                      placeholder="Buscar dirección en República Dominicana..."
+                      country="do"
+                      className="w-full"
                     />
                   </div>
                   <div>

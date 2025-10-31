@@ -7,7 +7,11 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         token = None
         if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+            else:
+                token = auth_header.split(" ")[1] if " " in auth_header else auth_header
         
         if not token:
             return jsonify({'error': 'Token es requerido'}), 401

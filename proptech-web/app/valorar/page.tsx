@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { calculateHabitaScore, getScoreDescription, PropertyInput, ValuationResult } from '../lib/avm/habitascore';
 import { LeadSticky } from '../components/LeadSticky';
+import { AddressAutocomplete } from '../components/AddressAutocomplete';
 
 export default async function ValorarPage() {
   const [formData, setFormData] = useState<PropertyInput>({
@@ -162,6 +163,23 @@ export default async function ValorarPage() {
               </div>
 
               {/* Location & Zone */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ubicación
+                  </label>
+                  <AddressAutocomplete
+                    value={formData.location}
+                    onChange={(address) => {
+                      handleInputChange('location', address);
+                    }}
+                    placeholder="Buscar dirección en República Dominicana..."
+                    country="do"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

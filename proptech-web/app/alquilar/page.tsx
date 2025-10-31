@@ -44,6 +44,8 @@ export default function AlquilarPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
 
       const params = new URLSearchParams();
+      // CRÍTICO: Filtrar por operation=alquiler
+      params.append('operation', 'alquiler');
       if (filterParams?.minPrice) params.append('min_price', filterParams.minPrice.toString());
       if (filterParams?.maxPrice) params.append('max_price', filterParams.maxPrice.toString());
       if (filterParams?.bedrooms) params.append('bedrooms', filterParams.bedrooms.toString());

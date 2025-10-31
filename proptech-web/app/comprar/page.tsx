@@ -49,6 +49,8 @@ export default function ComprarPage() {
       
       // Construir query params para filtros
       const params = new URLSearchParams();
+      // CRÍTICO: Filtrar por operation=compra
+      params.append('operation', 'compra');
       if (filterParams?.minPrice) params.append('min_price', filterParams.minPrice.toString());
       if (filterParams?.maxPrice) params.append('max_price', filterParams.maxPrice.toString());
       if (filterParams?.bedrooms) params.append('bedrooms', filterParams.bedrooms.toString());

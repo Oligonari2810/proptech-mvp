@@ -12,10 +12,10 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NotificationBell } from "./notifications/NotificationBell";
+import { UserDropdown } from "./UserDropdown";
 
 export function Header() {
   const pathname = usePathname();
@@ -31,29 +31,16 @@ export function Header() {
     { href: "/vender", label: "Vender", icon: "📈" },
   ];
 
-  // 🔗 Navegación para usuarios autenticados (agregar items adicionales)
+  // 🔗 Navegación para usuarios autenticados (NO incluir Admin ni Mi cuenta en nav principal)
   const authenticatedNavItems = [
     ...publicNavItems,
-    { href: "/profile", label: "Mi cuenta", icon: "👤" },
-    { href: "/dashboard/favorites", label: "Favoritos", icon: "❤️" },
+    // Admin y Mi cuenta van en el dropdown de usuario
   ];
 
-  // 🔗 Navegación para admins (agregar link a Admin)
-  const adminNavItems = [
-    ...publicNavItems,
-    { href: "/admin", label: "Admin", icon: "⚙️" },
-    { href: "/profile", label: "Mi cuenta", icon: "👤" },
-  ];
-
-  // Determinar qué items mostrar según autenticación y rol
+  // Determinar qué items mostrar según autenticación
+  // SIEMPRE mostrar solo navegación pública en el header principal
+  // Admin y opciones de usuario van en el dropdown
   let navItems = publicNavItems;
-  if (isAuthenticated) {
-    if (userRole === "admin" || userRole === "super_admin") {
-      navItems = adminNavItems;
-    } else {
-      navItems = authenticatedNavItems;
-    }
-  }
 
   return (
     <header
@@ -67,23 +54,15 @@ export function Header() {
       {/* CONTENEDOR PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* LOGO + BRAND */}
+          {/* BRAND - SOLO TEXTO */}
           <Link
             href="/"
-            className="flex items-center gap-2"
+            className="flex items-center"
             aria-label="HabitatPro — Inicio"
           >
-            <Image
-              src="/images/Logo.png"
-              alt="HabitatPro logo"
-              width={32}
-              height={32}
-              className="rounded-2xl shadow-soft"
-              priority
-            />
-            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-ink-900">
-              HabitatPro
-            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 hover:text-brand-700 transition-colors">
+              HABITATPRO
+            </h1>
           </Link>
 
           {/* NAVEGACIÓN DESKTOP */}
@@ -107,7 +86,7 @@ export function Header() {
             })}
           </nav>
 
-          {/* CTA + NOTIFICATION */}
+          {/* CTA + NOTIFICATION + USER DROPDOWN */}
           <div className="flex items-center gap-4">
             {isAuthenticated && <NotificationBell />}
             {!isAuthenticated ? (
@@ -136,17 +115,12 @@ export function Header() {
                 </Link>
               </>
             ) : (
-              <Link
-                href="/contacto"
-                className="
-                  inline-flex items-center justify-center
-                  px-4 py-2 rounded-2xl text-sm font-semibold
-                  text-white bg-brand-600 hover:bg-brand-700
-                  shadow-soft transition-colors
-                "
-              >
-                Contactar
-              </Link>
+              <UserDropdown
+                userEmail={session?.user?.email}
+                userName={session?.user?.name}
+                userRole={userRole}
+                avatarUrl={(session?.user as any)?.image || (session?.user as any)?.avatar_url}
+              />
             )}
           </div>
         </div>

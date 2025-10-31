@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createProperty, type PropertyData } from '../lib/propertyAPI'
+import { AddressAutocomplete } from './AddressAutocomplete'
 
 interface PropertyFormProps {
   onSuccess?: (property: any) => void
@@ -26,6 +27,7 @@ export default function PropertyForm({ onSuccess, onError }: PropertyFormProps) 
 
   const [images, setImages] = useState<string[]>([])
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | undefined>(undefined)
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -83,6 +85,8 @@ export default function PropertyForm({ onSuccess, onError }: PropertyFormProps) 
         type: formData.type || 'casa',
         operation: formData.operation || 'compra',
         location: formData.location || '',
+        latitude: coordinates?.lat,
+        longitude: coordinates?.lng,
         bedrooms: formData.bedrooms,
         bathrooms: formData.bathrooms,
         area: formData.area,
@@ -202,15 +206,24 @@ export default function PropertyForm({ onSuccess, onError }: PropertyFormProps) 
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Ubicación *
             </label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
+            <AddressAutocomplete
+              value={formData.location || ''}
+              onChange={(address, coords) => {
+                setFormData((prev) => ({ ...prev, location: address }))
+                if (coords) {
+                  setCoordinates(coords)
+                }
+              }}
+              placeholder="Buscar dirección en República Dominicana..."
               required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Ciudad, Barrio..."
+              country="do"
+              className="w-full"
             />
+            {coordinates && (
+              <p className="mt-1 text-xs text-gray-500">
+                📍 Coordenadas: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+              </p>
+            )}
           </div>
         </div>
       </div>
