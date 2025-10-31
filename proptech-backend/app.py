@@ -793,6 +793,13 @@ with app.app_context():
     try:
         db.create_all()
         print("✅ Tablas verificadas/creadas correctamente (incluyendo TenantBranding)")
+        
+        # Intentar agregar columnas faltantes
+        try:
+            from add_missing_columns import add_missing_columns
+            add_missing_columns()
+        except Exception as e:
+            print(f"⚠️ Error en add_missing_columns (probablemente no existe): {e}")
     except Exception as e:
         print(f"⚠️ Error creando tablas: {e}")
 
