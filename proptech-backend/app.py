@@ -918,6 +918,26 @@ with app.app_context():
             
             print("✅ Verificación/agregado de columnas completado")
             
+            # FORCE RE-CHECK: Verificar específicamente user_id
+            force_check = text("""
+                SELECT COUNT(*) 
+                FROM information_schema.columns 
+                WHERE table_name='properties' AND column_name='user_id'
+            """)
+            user_id_exists = db.session.execute(force_check).scalar()
+            
+            if user_id_exists == 0:
+                print("🚨 FORCE FIX: user_id NO existe, agregando manualmente...")
+                try:
+                    db.session.execute(text("ALTER TABLE properties ADD COLUMN user_id INTEGER"))
+                    db.session.commit()
+                    print("✅ FORCE FIX: user_id agregado exitosamente")
+                except Exception as force_error:
+                    print(f"❌ FORCE FIX falló: {force_error}")
+                    db.session.rollback()
+            else:
+                print("✅ FORCE CHECK: user_id existe en la tabla")
+            
         except Exception as e:
             print(f"⚠️ Error en agregado de columnas: {e}")
         
