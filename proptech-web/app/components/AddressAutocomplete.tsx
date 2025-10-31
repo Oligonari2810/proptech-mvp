@@ -24,8 +24,8 @@ export function AddressAutocomplete({
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+  const autocompleteServiceRef = useRef<any>(null);
+  const placesServiceRef = useRef<any>(null);
 
   // Inicializar Google Places API
   useEffect(() => {
@@ -74,18 +74,18 @@ export function AddressAutocomplete({
 
     setLoading(true);
 
-    const request: google.maps.places.AutocompletionRequest = {
+    const request: any = {
       input,
       componentRestrictions: country ? { country: country.toUpperCase() } : undefined,
       language: 'es',
       types: ['address'], // Solo direcciones
     };
 
-    autocompleteServiceRef.current.getPlacePredictions(request, (predictions, status) => {
+    autocompleteServiceRef.current.getPlacePredictions(request, (predictions: any[], status: string) => {
       setLoading(false);
       
-      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-        const addresses = predictions.map(p => p.description);
+      if (status === 'OK' && predictions) {
+        const addresses = predictions.map((p: any) => p.description);
         setSuggestions(addresses);
         setShowSuggestions(true);
       } else {
@@ -97,20 +97,14 @@ export function AddressAutocomplete({
 
   // Obtener detalles completos de una dirección (incluyendo coordenadas)
   const getPlaceDetails = (address: string, callback: (address: string, coords?: { lat: number; lng: number }) => void) => {
-    if (!placesServiceRef.current) {
+    if (!placesServiceRef.current || !window.google?.maps?.Geocoder) {
       callback(address);
       return;
     }
 
-    // Buscar place_id desde las sugerencias o hacer una nueva búsqueda
-    const request: google.maps.places.FindPlaceFromQueryRequest = {
-      query: address,
-      fields: ['place_id', 'geometry', 'formatted_address'],
-    };
-
     // Usar Geocoder como alternativa más confiable
     const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ address, region: country.toUpperCase() }, (results, status) => {
+    geocoder.geocode({ address, region: country.toUpperCase() } as any, (results: any, status: string) => {
       if (status === 'OK' && results && results[0]) {
         const location = results[0].geometry.location;
         callback(results[0].formatted_address, {
@@ -214,15 +208,15 @@ declare global {
     google?: {
       maps: {
         places: {
-          AutocompleteService: new () => google.maps.places.AutocompleteService;
-          PlacesService: new (element: HTMLElement) => google.maps.places.PlacesService;
+          AutocompleteService: new () => any;
+          PlacesService: new (element: HTMLElement) => any;
           PlacesServiceStatus: {
             OK: string;
             ZERO_RESULTS: string;
             [key: string]: string;
           };
         };
-        Geocoder: new () => google.maps.Geocoder;
+        Geocoder: new () => any;
         GeocoderStatus: {
           OK: string;
           [key: string]: string;
