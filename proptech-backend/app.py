@@ -794,12 +794,52 @@ with app.app_context():
         db.create_all()
         print("✅ Tablas verificadas/creadas correctamente (incluyendo TenantBranding)")
         
-        # Intentar agregar columnas faltantes
+        # EMERGENCY FIX: Agregar columnas faltantes directamente
         try:
-            from add_missing_columns import add_missing_columns
-            add_missing_columns()
+            from sqlalchemy import text
+            
+            # Lista de columnas críticas a agregar
+            critical_columns = [
+                ('latitude', 'FLOAT'),
+                ('longitude', 'FLOAT'),
+                ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+                ('type', 'VARCHAR(50)'),
+                ('operation', 'VARCHAR(20)'),
+                ('area', 'FLOAT'),
+                ('features', 'JSONB'),
+                ('emotional_tags', 'JSONB'),
+                ('images', 'JSONB'),
+                ('is_active', 'BOOLEAN DEFAULT TRUE'),
+            ]
+            
+            for column_name, column_type in critical_columns:
+                try:
+                    # Verificar si la columna existe
+                    check_query = text(f"""
+                        SELECT COUNT(*) 
+                        FROM information_schema.columns 
+                        WHERE table_name='properties' AND column_name='{column_name}'
+                    """)
+                    result = db.session.execute(check_query).scalar()
+                    
+                    if result == 0:
+                        # Columna no existe, agregarla
+                        alter_query = text(f"ALTER TABLE properties ADD COLUMN {column_name} {column_type}")
+                        db.session.execute(alter_query)
+                        db.session.commit()
+                        print(f"✅ Columna '{column_name}' agregada correctamente")
+                    else:
+                        print(f"⏭️  Columna '{column_name}' ya existe")
+                        
+                except Exception as e:
+                    print(f"⚠️  Error con columna '{column_name}': {e}")
+                    db.session.rollback()
+            
+            print("✅ Verificación/agregado de columnas completado")
+            
         except Exception as e:
-            print(f"⚠️ Error en add_missing_columns (probablemente no existe): {e}")
+            print(f"⚠️ Error en agregado de columnas: {e}")
+        
     except Exception as e:
         print(f"⚠️ Error creando tablas: {e}")
 
