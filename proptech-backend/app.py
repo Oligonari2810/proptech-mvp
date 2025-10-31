@@ -799,7 +799,9 @@ with app.app_context():
             # Ya importado arriba: from sqlalchemy import text
             
             # Lista COMPLETA de columnas críticas a agregar (29 columnas)
+            # IMPORTANTE: user_id va PRIMERO y nullable para no romper datos existentes
             critical_columns = [
+                ('user_id', 'INTEGER'),  # ✅ CRÍTICO: nullable primero, luego podemos hacer NOT NULL si es necesario
                 ('image_url', 'VARCHAR(500)'),
                 ('status', 'VARCHAR(50)'),
                 ('property_type', 'VARCHAR(50)'),
@@ -828,7 +830,6 @@ with app.app_context():
                 ('is_bank_owned', 'BOOLEAN DEFAULT FALSE'),
                 ('has_virtual_tour', 'BOOLEAN DEFAULT FALSE'),
                 ('published_date', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
-                ('user_id', 'INTEGER NOT NULL'),  # ✅ CRÍTICO: ForeignKey a users
             ]
             
             for column_name, column_type in critical_columns:
@@ -846,15 +847,38 @@ with app.app_context():
                         alter_query = text(f"ALTER TABLE properties ADD COLUMN {column_name} {column_type}")
                         db.session.execute(alter_query)
                         
-                        # Si es user_id, agregar ForeignKey constraint
+                        # Si es user_id, agregar ForeignKey constraint y valor por defecto
                         if column_name == 'user_id':
                             try:
-                                fk_query = text("ALTER TABLE properties ADD CONSTRAINT properties_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)")
+                                # Primero agregar ForeignKey constraint
+                                fk_query = text("""
+                                    DO $$ 
+                                    BEGIN
+                                        IF NOT EXISTS (
+                                            SELECT 1 FROM pg_constraint 
+                                            WHERE conname = 'properties_user_id_fkey'
+                                        ) THEN
+                                            ALTER TABLE properties 
+                                            ADD CONSTRAINT properties_user_id_fkey 
+                                            FOREIGN KEY (user_id) REFERENCES users(id);
+                                        END IF;
+                                    END $$;
+                                """)
                                 db.session.execute(fk_query)
-                                print(f"✅ ForeignKey para '{column_name}' agregado")
+                                
+                                # Si hay propiedades sin user_id, asignar un valor por defecto (primer usuario admin)
+                                update_query = text("""
+                                    UPDATE properties 
+                                    SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1)
+                                    WHERE user_id IS NULL 
+                                    AND EXISTS (SELECT 1 FROM users WHERE role = 'admin')
+                                """)
+                                db.session.execute(update_query)
+                                
+                                print(f"✅ ForeignKey y valor por defecto para '{column_name}' agregado")
                             except Exception as fk_error:
-                                print(f"⚠️  No se pudo agregar FK para '{column_name}': {fk_error}")
-                                # Continuar sin FK - no es crítico para el funcionamiento
+                                print(f"⚠️  No se pudo agregar FK/default para '{column_name}': {fk_error}")
+                                # Continuar sin FK - no es crítico para el funcionamiento inmediato
                         
                         db.session.commit()
                         print(f"✅ Columna '{column_name}' agregada correctamente")
