@@ -804,6 +804,25 @@ with app.app_context():
         db.create_all()
         print("✅ Tablas verificadas/creadas correctamente (incluyendo TenantBranding)")
         
+        # EMERGENCY FIX PRE-CHECK: Verificar user_id INMEDIATAMENTE
+        try:
+            quick_check = text("""
+                SELECT COUNT(*) 
+                FROM information_schema.columns 
+                WHERE table_name='properties' AND column_name='user_id'
+            """)
+            user_id_check = db.session.execute(quick_check).scalar()
+            if user_id_check == 0:
+                print("🚨 EMERGENCY PRE-CHECK: user_id NO existe - agregando AHORA...")
+                db.session.execute(text("ALTER TABLE properties ADD COLUMN user_id INTEGER"))
+                db.session.commit()
+                print("✅ EMERGENCY PRE-CHECK: user_id agregado")
+            else:
+                print("✅ EMERGENCY PRE-CHECK: user_id ya existe")
+        except Exception as pre_check_error:
+            print(f"⚠️ PRE-CHECK error: {pre_check_error}")
+            db.session.rollback()
+        
         # EMERGENCY FIX: Agregar columnas faltantes directamente
         try:
             # Ya importado arriba: from sqlalchemy import text
