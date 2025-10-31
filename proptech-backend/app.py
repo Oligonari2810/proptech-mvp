@@ -798,18 +798,36 @@ with app.app_context():
         try:
             from sqlalchemy import text
             
-            # Lista de columnas críticas a agregar
+            # Lista COMPLETA de columnas críticas a agregar (26 columnas)
             critical_columns = [
+                ('image_url', 'VARCHAR(500)'),
+                ('status', 'VARCHAR(50)'),
+                ('property_type', 'VARCHAR(50)'),
                 ('latitude', 'FLOAT'),
                 ('longitude', 'FLOAT'),
                 ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
                 ('type', 'VARCHAR(50)'),
                 ('operation', 'VARCHAR(20)'),
                 ('area', 'FLOAT'),
+                ('surface', 'FLOAT'),
+                ('bedrooms', 'INTEGER'),
+                ('bathrooms', 'INTEGER'),
+                ('lot_size', 'FLOAT'),
+                ('year_built', 'INTEGER'),
+                ('num_floors', 'INTEGER'),
                 ('features', 'JSONB'),
                 ('emotional_tags', 'JSONB'),
                 ('images', 'JSONB'),
                 ('is_active', 'BOOLEAN DEFAULT TRUE'),
+                ('has_basement', 'BOOLEAN DEFAULT FALSE'),
+                ('has_garage', 'BOOLEAN DEFAULT FALSE'),
+                ('has_pool', 'BOOLEAN DEFAULT FALSE'),
+                ('has_elevator', 'BOOLEAN DEFAULT FALSE'),
+                ('is_accessible', 'BOOLEAN DEFAULT FALSE'),
+                ('is_luxury', 'BOOLEAN DEFAULT FALSE'),
+                ('is_bank_owned', 'BOOLEAN DEFAULT FALSE'),
+                ('has_virtual_tour', 'BOOLEAN DEFAULT FALSE'),
+                ('published_date', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
             ]
             
             for column_name, column_type in critical_columns:
