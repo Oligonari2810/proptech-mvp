@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.sql.sqltypes import Boolean  # ✅ Importar Boolean correctamente
 from sqlalchemy.orm import relationship
 import datetime
@@ -55,9 +55,15 @@ class Property(db.Model):
     image_url = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="available")
     property_type = Column(String(50), nullable=False, default="apartment")  # ✅ Valor por defecto para evitar NULL
+    type = Column(String(50), nullable=True)  # Alias para property_type (compatibilidad)
+    operation = Column(String(20), nullable=True)  # compra, alquiler
     surface = Column(Float, nullable=True)  # Superficie en m²
+    area = Column(Float, nullable=True)  # Área total (alias de surface)
     bedrooms = Column(Integer, nullable=True)  # Habitaciones
     bathrooms = Column(Integer, nullable=True)  # Baños
+    features = Column(JSON, nullable=True)  # JSON con características
+    emotional_tags = Column(JSON, nullable=True)  # JSON con tags emocionales
+    images = Column(JSON, nullable=True)  # JSON con URLs de imágenes
     lot_size = Column(Float, nullable=True)  # Tamaño del terreno en m²
     year_built = Column(Integer, nullable=True)  # Año de construcción
     num_floors = Column(Integer, nullable=True)  # Número de pisos
@@ -69,6 +75,7 @@ class Property(db.Model):
     is_luxury = Column(Boolean, nullable=True, default=False)  # Es propiedad de lujo
     is_bank_owned = Column(Boolean, nullable=True, default=False)  # Es propiedad de banco
     has_virtual_tour = Column(Boolean, nullable=True, default=False)  # Tiene visita virtual
+    is_active = Column(Boolean, nullable=True, default=True)  # Propiedad activa/públicada
     published_date = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de publicación
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
