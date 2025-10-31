@@ -60,9 +60,9 @@ const nextConfig = {
               "default-src 'self' https://proptech-mvp-1.onrender.com; " +
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live; " +
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-              "font-src 'self' data: https://fonts.gstatic.com https://api.mapbox.com; " +
+              "font-src 'self' 'unsafe-inline' data: https://fonts.gstatic.com https://api.mapbox.com; " +
               "img-src 'self' data: blob: https:; " +
-              "connect-src 'self' https://proptech-mvp-1.onrender.com https://api.mapbox.com wss://*.vercel.live;"
+              "connect-src 'self' https://proptech-mvp-1.onrender.com https://api.mapbox.com https://events.mapbox.com wss://*.vercel.live;"
           }
         ]
       }

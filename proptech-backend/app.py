@@ -45,9 +45,19 @@ allowed_origins = [
     'https://proptech-mvp.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://localhost:3003'
+    'http://localhost:3003',
+    'http://localhost:3004',
 ]
-CORS(app, origins=allowed_origins, supports_credentials=True)
+
+# CORS más permisivo para desarrollo y producción
+CORS(app, 
+     origins=allowed_origins, 
+     supports_credentials=True,
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     expose_headers=['Content-Length', 'X-Total-Count'],
+     max_age=3600
+)
 
 # Redis configuration - manejar fallback si no está disponible
 try:
