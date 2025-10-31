@@ -30,6 +30,7 @@ export default function RootLayout({
         <link rel="alternate" hrefLang="x-default" href="https://habitatprord.com" />
         <script
           type="application/ld+json"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>

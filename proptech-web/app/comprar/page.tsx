@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
+import PropertyRecommendations from '../components/ai/PropertyRecommendations';
 import PropertyComparator from '../components/comparator/PropertyComparator';
 
 interface ListingProperty {
@@ -71,7 +72,30 @@ export default function ComprarPage() {
       if (!res.ok) throw new Error('API failed');
       
       const data = await res.json();
-      const props = (data.properties || data || []) as ListingProperty[];
+      let props = (data.properties || data || []) as ListingProperty[];
+      // Enriquecer propiedades sin coordenadas con coords de demo por ubicación
+      const locationToCoords: Record<string, { lat: number; lng: number }> = {
+        'Santo Domingo': { lat: 18.4861, lng: -69.9312 },
+        'Punta Cana': { lat: 18.5820, lng: -68.4055 },
+        'Santiago': { lat: 19.4517, lng: -70.6970 },
+        'La Romana': { lat: 18.4273, lng: -68.9728 },
+        'Bávaro': { lat: 18.7052, lng: -68.4509 },
+      };
+      props = props.map((p) => {
+        const hasCoords = (p as any).latitude && (p as any).longitude;
+        if (!hasCoords) {
+          const match = locationToCoords[p.location as string];
+          if (match) {
+            (p as any).latitude = match.lat;
+            (p as any).longitude = match.lng;
+          } else {
+            // Fallback al centro de Santo Domingo si no coincide
+            (p as any).latitude = 18.4861;
+            (p as any).longitude = -69.9312;
+          }
+        }
+        return p;
+      });
       setAllProperties(props);
       setFilteredProperties(props);
     } catch (_e) {
@@ -154,13 +178,26 @@ export default function ComprarPage() {
             </div>
           </div>
         ) : (
-          <PropertySplitView
-            properties={filteredProperties}
-            useRedesign={useRedesign}
-            onPropertySelect={(property) => {
-              console.log('Property selected:', property);
-            }}
-          />
+          <div className="relative h-full">
+            <PropertySplitView
+              properties={filteredProperties}
+              useRedesign={useRedesign}
+              onPropertySelect={(property) => {
+                console.log('Property selected:', property);
+              }}
+            />
+            <div className="hidden lg:block absolute top-4 right-4 z-10 w-96">
+              <div className="bg-white/90 backdrop-blur rounded-xl shadow-card p-4 border">
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Recomendadas para ti</h3>
+                {/* Usamos la primera propiedad como referencia si existe */}
+                {filteredProperties.length > 0 ? (
+                  <PropertyRecommendations propertyId={Number(filteredProperties[0].id)} />
+                ) : (
+                  <p className="text-sm text-gray-600">Aplica filtros para obtener recomendaciones.</p>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

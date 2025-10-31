@@ -12,7 +12,8 @@ export function useFavorites() {
   const [favorites, setFavorites] = useState<number[]>([])
   const [loading, setLoading] = useState(false)
 
-  const userId = (session?.user as any)?.id ? parseInt((session.user as any).id) : undefined
+  const rawId = (session?.user as any)?.id
+  const userId = rawId ? parseInt(String(rawId)) : undefined
 
   useEffect(() => {
     if (userId) {

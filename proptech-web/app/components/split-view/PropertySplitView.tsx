@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PropertyCard as OriginalPropertyCard } from '../ui/PropertyCard';
+import OriginalPropertyCard from '../ui/PropertyCard';
 import RedesignPropertyCard from '../redesign/PropertyCard';
 import { MapCluster } from '../MapCluster';
 
@@ -122,7 +122,14 @@ export default function PropertySplitView({
                       {useRedesign ? (
                         <RedesignPropertyCard property={property} onClick={() => {}} />
                       ) : (
-                        <OriginalPropertyCard property={property as any} />
+                        <OriginalPropertyCard
+                          id={String(property.id)}
+                          title={property.title}
+                          price={property.price}
+                          location={property.location}
+                          bedrooms={property.bedrooms}
+                          area={property.area}
+                        />
                       )}
                     </div>
                   ))
@@ -161,7 +168,14 @@ export default function PropertySplitView({
                     {useRedesign ? (
                       <RedesignPropertyCard property={property} onClick={() => {}} />
                     ) : (
-                      <OriginalPropertyCard property={property as any} />
+                      <OriginalPropertyCard
+                        id={String(property.id)}
+                        title={property.title}
+                        price={property.price}
+                        location={property.location}
+                        bedrooms={property.bedrooms}
+                        area={property.area}
+                      />
                     )}
                   </div>
                 ))}

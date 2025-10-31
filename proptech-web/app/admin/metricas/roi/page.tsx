@@ -42,8 +42,8 @@ export default function ROIDashboard() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const res = await fetch(`${base}/properties`);
+        const base = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "https://proptech-mvp-1.onrender.com";
+        const res = await fetch(`${base}/api/properties`);
         if (!res.ok) throw new Error("Error cargando propiedades");
         const data = await res.json();
         const list: Property[] = Array.isArray(data)
@@ -69,8 +69,8 @@ export default function ROIDashboard() {
     const fetchROI = async () => {
       try {
         setLoading(true);
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const res = await fetch(`${base}/analytics/roi?property_id=${selectedPropertyId}`);
+        const base = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "https://proptech-mvp-1.onrender.com";
+        const res = await fetch(`${base}/api/analytics/roi?property_id=${selectedPropertyId}`);
         const data = await res.json();
         if (!res.ok || data.success === false) {
           throw new Error(data.error || `Error ${res.status}`);
@@ -128,7 +128,7 @@ export default function ROIDashboard() {
           <h2 className="text-red-800 font-bold">Error al cargar datos ROI</h2>
           <p className="text-red-600">{error}</p>
           <p className="text-sm text-red-500 mt-2">
-            Verifica que el backend esté ejecutándose en {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}
+            Verifica que el backend esté ejecutándose en {process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "https://proptech-mvp-1.onrender.com"}
           </p>
         </div>
       )}
@@ -144,6 +144,36 @@ export default function ROIDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ROIBreakdown data={roiData} />
             <ComparisonTable comparisons={roiData.comparison} />
+          </div>
+
+          <div>
+            <button
+              onClick={() => {
+                try {
+                  const rows = [
+                    ['Propiedad', 'Precio Compra', 'Renta Mensual Est.', 'ROI Total', 'Cash Flow Anual'],
+                    [
+                      roiData.property_title || selectedPropertyId,
+                      roiData.purchase_price,
+                      roiData.estimated_rent,
+                      (roiData.total_roi * 100).toFixed(1) + '%',
+                      roiData.cash_flow
+                    ]
+                  ];
+                  const csv = rows.map(r => r.join(',')).join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `roi-${selectedPropertyId}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch { /* noop */ }
+              }}
+              className="mt-4 inline-flex items-center px-3 py-2 border rounded text-sm hover:bg-gray-50"
+            >
+              📥 Exportar CSV
+            </button>
           </div>
         </>
       )}

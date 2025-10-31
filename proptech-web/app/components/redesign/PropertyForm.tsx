@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Button from './Button';
 import Card from './Card';
+import DescriptionGenerator from '../ai/DescriptionGenerator';
 
 interface PropertyData {
   // Paso 1: Información Básica
@@ -324,6 +325,12 @@ export default function PropertyForm() {
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
           placeholder="Describe tu propiedad en detalle..."
         />
+        <div className="mt-2">
+          <DescriptionGenerator
+            propertyData={formData}
+            onDescriptionGenerated={(d) => handleChange('description', d)}
+          />
+        </div>
       </div>
     </div>
   );

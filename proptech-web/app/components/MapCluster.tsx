@@ -34,17 +34,18 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
       try {
         const mapboxgl = (await import('mapbox-gl')).default;
         
-        if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+        const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (!token) {
           throw new Error('Mapbox token not configured');
         }
 
-        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        mapboxgl.accessToken = token as string;
 
         const map = new mapboxgl.Map({
           container: mapContainer.current!,
           style: 'mapbox://styles/mapbox/light-v10',
-          center: [-69.9, 18.5], // República Dominicana
-          zoom: 9
+          center: items.length > 0 ? [items[0].longitude, items[0].latitude] : [-69.9312, 18.4861],
+          zoom: items.length > 0 ? 11 : 10
         });
 
         mapRef.current = map;
@@ -206,11 +207,12 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
     };
   }, [items, mapError]);
 
-  if (mapError || !process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+  const hasToken = !!(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
+  if (mapError || !hasToken) {
     return (
-      <div className="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
+      <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-500">Mapa cargando...</div>
+          <div className="text-gray-500">{!hasToken ? 'Configura NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN para ver el mapa.' : 'Mapa cargando...'}</div>
           <div className="text-sm text-gray-400 mt-2">
             Mostrando {items.length} propiedades en República Dominicana
           </div>
@@ -219,5 +221,5 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
     );
   }
 
-  return <div ref={mapContainer} className="w-full h-96 rounded-lg border" />;
+  return <div ref={mapContainer} className="w-full h-full rounded-lg border" />;
 };

@@ -22,6 +22,7 @@ export default function AdminLayout({
             {[
               { name: 'Dashboard', href: '/admin', icon: '📊' },
               { name: 'Métricas', href: '/admin/metricas', icon: '📈' },
+              { name: 'Analytics', href: '/admin/analytics', icon: '📊' },
               { name: 'CRM', href: '/admin/crm', icon: '🤝' },
               { name: 'Reportes', href: '/admin/reports', icon: '🧾' },
               { name: 'Branding', href: '/admin/branding', icon: '🎯' },

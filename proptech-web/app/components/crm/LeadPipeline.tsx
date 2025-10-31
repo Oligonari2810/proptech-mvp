@@ -44,6 +44,70 @@ export default function LeadPipeline({ initialLeads, onChange }: LeadPipelinePro
     offer: initialLeads?.offer || [],
     won: initialLeads?.won || [],
   }));
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const buildBoardFromLeads = (leads: Array<any>): BoardState => {
+    const empty: BoardState = { new: [], qualified: [], visit: [], offer: [], won: [] };
+    for (const l of leads) {
+      const item: Lead = {
+        id: String(l.id ?? crypto.randomUUID()),
+        name: String(l.name ?? 'Lead'),
+        email: l.email,
+        phone: l.phone,
+        budget: Number(l.value ?? l.budget ?? 0),
+        source: l.source ?? 'Web',
+        createdAt: l.createdAt ?? new Date().toISOString(),
+        notes: l.notes ?? (l.property_interested ? `Interesado en #${l.property_interested}` : undefined),
+      };
+      const stage = (l.stage ?? 'new') as StageKey;
+      if ((empty as any)[stage]) (empty as any)[stage].push(item);
+      else empty.new.push(item);
+    }
+    return empty;
+  };
+
+  // Cargar datos reales con fallback mock si no hay initialLeads
+  useEffect(() => {
+    const hasInitial =
+      (initialLeads?.new?.length || 0) +
+      (initialLeads?.qualified?.length || 0) +
+      (initialLeads?.visit?.length || 0) +
+      (initialLeads?.offer?.length || 0) +
+      (initialLeads?.won?.length || 0);
+    if (hasInitial) return;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
+        const res = await fetch(`${backendUrl}/api/crm/leads`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Endpoint no disponible');
+        const data = await res.json();
+        const leads = data.leads || data || [];
+        setBoard(buildBoardFromLeads(leads));
+      } catch (e) {
+        const mock = Array.from({ length: 10 }, (_, i) => ({
+          id: `mock-${i + 1}`,
+          name: `Lead Demo ${i + 1}`,
+          email: `lead${i + 1}@demo.com`,
+          phone: `+1 809 555 ${String(1000 + i)}`,
+          value: [90000, 120000, 180000, 250000, 400000][i % 5],
+          stage: ['new', 'qualified', 'visit', 'offer', 'won'][i % 5],
+          source: ['Web', 'Landing', 'WhatsApp'][i % 3],
+          createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+          notes: 'Mock automático',
+        }));
+        setBoard(buildBoardFromLeads(mock));
+        setError('Usando datos de demostración');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [initialLeads]);
 
   useEffect(() => {
     onChange?.(board);
@@ -91,6 +155,12 @@ export default function LeadPipeline({ initialLeads, onChange }: LeadPipelinePro
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-sm text-gray-600">Cargando leads del CRM...</div>
+      )}
+      {error && (
+        <div className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">{error}</div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Pipeline de Leads</h2>
