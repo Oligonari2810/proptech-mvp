@@ -11,6 +11,8 @@ def add_missing_columns():
         try:
             # Lista de columnas a agregar
             columns_to_add = [
+                ('latitude', 'FLOAT'),
+                ('longitude', 'FLOAT'),
                 ('type', 'VARCHAR(50)'),
                 ('operation', 'VARCHAR(20)'),
                 ('area', 'FLOAT'),
@@ -18,6 +20,7 @@ def add_missing_columns():
                 ('emotional_tags', 'JSONB'),
                 ('images', 'JSONB'),
                 ('is_active', 'BOOLEAN DEFAULT TRUE'),
+                ('created_at', 'TIMESTAMP'),
             ]
             
             for column_name, column_type in columns_to_add:

@@ -3,6 +3,21 @@
 -- Agregar columnas a tabla properties si no existen
 DO $$ 
 BEGIN
+    -- Verificar y agregar latitude
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='latitude') THEN
+        ALTER TABLE properties ADD COLUMN latitude FLOAT;
+    END IF;
+
+    -- Verificar y agregar longitude
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='longitude') THEN
+        ALTER TABLE properties ADD COLUMN longitude FLOAT;
+    END IF;
+
+    -- Verificar y agregar created_at
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='created_at') THEN
+        ALTER TABLE properties ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    END IF;
+
     -- Verificar y agregar type
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='properties' AND column_name='type') THEN
         ALTER TABLE properties ADD COLUMN type VARCHAR(50);
