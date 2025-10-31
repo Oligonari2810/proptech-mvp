@@ -71,7 +71,7 @@ class Property(db.Model):
     has_virtual_tour = Column(Boolean, nullable=True, default=False)  # Tiene visita virtual
     published_date = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de publicación
 
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
 
     owner = relationship("User", back_populates="properties")
     valuations = relationship("Valuation", back_populates="property", lazy=True)
@@ -102,7 +102,7 @@ class Valuation(db.Model):
     __tablename__ = "valuation"
 
     id = Column(Integer, primary_key=True)
-    property_id = Column(Integer, ForeignKey("property.id"), nullable=False)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
     estimated_value = Column(Float, nullable=False)
     valuation_date = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -113,9 +113,9 @@ class SmartContract(db.Model):
     __tablename__ = "smart_contract"
 
     id = Column(Integer, primary_key=True)
-    property_id = Column(Integer, ForeignKey("property.id"), nullable=False)
-    buyer_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    seller_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     contract_hash = Column(String(256), nullable=False)
     status = Column(String(50), nullable=False, default="pending")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

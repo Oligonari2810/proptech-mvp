@@ -33,7 +33,9 @@ app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET', 'your-goo
 app.config['GITHUB_CLIENT_ID'] = os.getenv('GITHUB_CLIENT_ID', 'your-github-client-id')
 app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET', 'your-github-client-secret')
 
-db = SQLAlchemy(app)
+# Primero importar db desde models.py, luego inicializar
+from models import db
+db.init_app(app)
 
 # CORS configuration for production
 allowed_origins = [
