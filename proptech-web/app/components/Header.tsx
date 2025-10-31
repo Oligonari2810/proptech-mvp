@@ -116,10 +116,10 @@ export function Header() {
               </>
             ) : (
               <UserDropdown
-                userEmail={session?.user?.email}
-                userName={session?.user?.name}
+                userEmail={session?.user?.email || undefined}
+                userName={session?.user?.name || undefined}
                 userRole={userRole}
-                avatarUrl={(session?.user as any)?.image || (session?.user as any)?.avatar_url}
+                avatarUrl={(session?.user as any)?.image || (session?.user as any)?.avatar_url || undefined}
               />
             )}
           </div>
