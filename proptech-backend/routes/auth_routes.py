@@ -7,6 +7,12 @@ from flask import Blueprint, request, jsonify, current_app, session, url_for
 from datetime import datetime
 import json
 import os
+import sys
+from pathlib import Path
+
+# Agregar directorio raíz al path para importar auth
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from auth import AuthService, oauth, google, github
 from models import db, User
 
