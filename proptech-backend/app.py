@@ -90,6 +90,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Importar modelos desde models.py
 from models import User, Property, Favorite
 
+# Importar y registrar blueprint de autenticación
+try:
+    from routes.auth_routes import auth_bp
+    app.register_blueprint(auth_bp)
+    print("✅ Blueprint de autenticación registrado")
+except Exception as e:
+    print(f"⚠️ No se pudo registrar blueprint de autenticación: {e}")
+
 # Modelo Interaction inline para compatibilidad
 class Interaction(db.Model):
     __tablename__ = 'interactions'
