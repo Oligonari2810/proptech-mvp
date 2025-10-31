@@ -857,38 +857,55 @@ with app.app_context():
                         alter_query = text(f"ALTER TABLE properties ADD COLUMN {column_name} {column_type}")
                         db.session.execute(alter_query)
                         
-                        # Si es user_id, agregar ForeignKey constraint y valor por defecto
+                        # Si es user_id, intentar agregar ForeignKey constraint después (opcional)
                         if column_name == 'user_id':
+                            # Intentar agregar FK constraint solo si la columna se creó exitosamente
                             try:
-                                # Primero agregar ForeignKey constraint
-                                fk_query = text("""
-                                    DO $$ 
-                                    BEGIN
-                                        IF NOT EXISTS (
-                                            SELECT 1 FROM pg_constraint 
-                                            WHERE conname = 'properties_user_id_fkey'
-                                        ) THEN
-                                            ALTER TABLE properties 
-                                            ADD CONSTRAINT properties_user_id_fkey 
-                                            FOREIGN KEY (user_id) REFERENCES users(id);
-                                        END IF;
-                                    END $$;
+                                # Verificar si tabla users existe antes de agregar FK
+                                check_users = text("""
+                                    SELECT COUNT(*) FROM information_schema.tables 
+                                    WHERE table_name = 'users'
                                 """)
-                                db.session.execute(fk_query)
+                                users_exists = db.session.execute(check_users).scalar()
                                 
-                                # Si hay propiedades sin user_id, asignar un valor por defecto (primer usuario admin)
-                                update_query = text("""
-                                    UPDATE properties 
-                                    SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1)
-                                    WHERE user_id IS NULL 
-                                    AND EXISTS (SELECT 1 FROM users WHERE role = 'admin')
-                                """)
-                                db.session.execute(update_query)
+                                if users_exists > 0:
+                                    # Intentar agregar FK constraint (puede fallar si ya existe)
+                                    try:
+                                        fk_query = text("""
+                                            DO $$ 
+                                            BEGIN
+                                                IF NOT EXISTS (
+                                                    SELECT 1 FROM pg_constraint 
+                                                    WHERE conname = 'properties_user_id_fkey'
+                                                ) THEN
+                                                    ALTER TABLE properties 
+                                                    ADD CONSTRAINT properties_user_id_fkey 
+                                                    FOREIGN KEY (user_id) REFERENCES users(id);
+                                                END IF;
+                                            END $$;
+                                        """)
+                                        db.session.execute(fk_query)
+                                        print(f"✅ ForeignKey para '{column_name}' agregado")
+                                    except Exception as fk_err:
+                                        print(f"⚠️  FK constraint ya existe o error: {fk_err}")
+                                        # No es crítico, continuar
                                 
-                                print(f"✅ ForeignKey y valor por defecto para '{column_name}' agregado")
+                                # Intentar asignar valor por defecto si hay usuarios admin
+                                try:
+                                    update_query = text("""
+                                        UPDATE properties 
+                                        SET user_id = (SELECT id FROM users WHERE role = 'admin' LIMIT 1)
+                                        WHERE user_id IS NULL 
+                                        AND EXISTS (SELECT 1 FROM users WHERE role = 'admin')
+                                    """)
+                                    db.session.execute(update_query)
+                                    print(f"✅ Valores por defecto para '{column_name}' asignados")
+                                except Exception as update_err:
+                                    print(f"⚠️  No se pudieron asignar valores por defecto: {update_err}")
+                                    # No crítico
                             except Exception as fk_error:
-                                print(f"⚠️  No se pudo agregar FK/default para '{column_name}': {fk_error}")
-                                # Continuar sin FK - no es crítico para el funcionamiento inmediato
+                                print(f"⚠️  Error configurando FK/default para '{column_name}': {fk_error}")
+                                # Continuar - la columna ya fue agregada
                         
                         db.session.commit()
                         print(f"✅ Columna '{column_name}' agregada correctamente")
