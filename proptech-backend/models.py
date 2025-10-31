@@ -38,8 +38,8 @@ class User(db.Model):
     subscription_end = Column(DateTime, nullable=True)
 
     properties = relationship("Property", back_populates="owner", lazy=True)
-    buyer_contracts = relationship("SmartContract", foreign_keys="SmartContract.buyer_id", back_populates="buyer", lazy=True)
-    seller_contracts = relationship("SmartContract", foreign_keys="SmartContract.seller_id", back_populates="seller", lazy=True)
+    buyer_contracts = relationship("SmartContract", foreign_keys="[SmartContract.buyer_id]", back_populates="buyer", lazy=True)
+    seller_contracts = relationship("SmartContract", foreign_keys="[SmartContract.seller_id]", back_populates="seller", lazy=True)
 
 # ✅ Modelo de Propiedad
 class Property(db.Model):
