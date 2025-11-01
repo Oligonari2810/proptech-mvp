@@ -1171,7 +1171,7 @@ with app.app_context():
             # Verificar si el error es porque la columna ya existe
             error_str = str(pre_check_error).lower()
             if 'already exists' in error_str or 'duplicate' in error_str:
-                print("✅ EMERGENCY PRE-CHECK: user_id ya existe (error capturado)")
+                logger.info("✅ EMERGENCY PRE-CHECK: user_id ya existe (error capturado)")
             else:
                 print(f"⚠️ PRE-CHECK error: {pre_check_error}")
             db.session.rollback()
