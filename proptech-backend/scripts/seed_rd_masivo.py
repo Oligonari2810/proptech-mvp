@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app import app, db
-from models import Property
+from models import Property, User
 from datetime import datetime
 
 # Propiedades RD realistas con datos del mercado real
@@ -303,12 +303,26 @@ PROPERTIES_RD = [
 def seed_rd_properties(count=50):
     """Seed masivo de propiedades RD"""
     with app.app_context():
+        # Obtener o crear usuario admin por defecto
+        admin_user = User.query.filter_by(email='admin@habitatpro.com').first()
+        if not admin_user:
+            admin_user = User(
+                email='admin@habitatpro.com',
+                name='Admin HabitatPro',
+                role='admin',
+                is_active=True
+            )
+            db.session.add(admin_user)
+            db.session.commit()
+            print(f"✅ Usuario admin creado (ID: {admin_user.id})")
+        
         # Limpiar propiedades existentes (opcional - comentar si no quieres borrar)
         # Property.query.delete()
         # db.session.commit()
         
         # Agregar propiedades
         added = 0
+        skipped = 0
         for prop_data in PROPERTIES_RD[:count]:
             # Verificar si ya existe
             existing = Property.query.filter_by(
@@ -318,7 +332,11 @@ def seed_rd_properties(count=50):
             
             if existing:
                 print(f"⏭️  Saltando: {prop_data['title']} (ya existe)")
+                skipped += 1
                 continue
+            
+            # Asegurar que tenemos image_url (requerido)
+            image_url = prop_data.get("image_url") or "https://picsum.photos/800/600?random=" + str(added)
             
             property = Property(
                 title=prop_data["title"],
@@ -329,12 +347,17 @@ def seed_rd_properties(count=50):
                 bedrooms=prop_data.get("bedrooms", 0),
                 bathrooms=prop_data.get("bathrooms", 0),
                 area=prop_data.get("area", 0),
+                surface=prop_data.get("area", 0),  # Alias para area
                 location=prop_data["location"],
                 latitude=prop_data.get("latitude"),
                 longitude=prop_data.get("longitude"),
+                image_url=image_url,
+                images=[image_url],  # JSON array
                 features=prop_data.get("features", []),
                 emotional_tags=prop_data.get("emotional_tags", []),
                 is_active=True,
+                status="available",
+                user_id=admin_user.id,  # ✅ CRÍTICO: Asignar user_id
                 created_at=datetime.utcnow()
             )
             
@@ -342,7 +365,12 @@ def seed_rd_properties(count=50):
             added += 1
         
         db.session.commit()
-        print(f"✅ {added} propiedades RD agregadas exitosamente")
+        print(f"\n{'='*60}")
+        print(f"✅ RESULTADO SEED RD:")
+        print(f"   - Propiedades agregadas: {added}")
+        print(f"   - Propiedades saltadas: {skipped}")
+        print(f"   - Total procesadas: {added + skipped}")
+        print(f"{'='*60}\n")
         return added
 
 if __name__ == '__main__':
