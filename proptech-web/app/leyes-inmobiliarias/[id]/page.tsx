@@ -1,18 +1,38 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { dominicanLaws, Law } from '@/app/lib/legal/laws';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
-    id: string;
+  params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const law = dominicanLaws.find(l => l.id === id);
+
+  if (!law) {
+    return {
+      title: 'Ley no encontrada - HabitatPro RD'
+    };
+  }
+
+  return {
+    title: `${law.nombre} - HabitatPro RD`,
+    description: `Información completa sobre ${law.nombre} (${law.numero}) en República Dominicana. ${law.descripcion}`
   };
 }
 
-export default function LawDetailPage({ params }: Props) {
-  const law = dominicanLaws.find(l => l.id === params.id);
+export async function generateStaticParams() {
+  return dominicanLaws.map((law) => ({
+    id: law.id,
+  }));
+}
+
+export default async function LawDetailPage({ params }: Props) {
+  const { id } = await params;
+  const law = dominicanLaws.find(l => l.id === id);
 
   if (!law) {
     return (
