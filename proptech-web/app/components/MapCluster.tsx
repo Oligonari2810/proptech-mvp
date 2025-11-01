@@ -34,12 +34,13 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
       try {
         const mapboxgl = (await import('mapbox-gl')).default;
         
-        const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 
-                      process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 
+        // Token con fallback - siempre tiene valor
+        const token = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 
+                      (process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string) || 
                       'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
         
-        if (!token || token === '') {
-          console.warn('⚠️ Mapbox token no configurado. Usando token demo.');
+        if (!token) {
+          console.error('❌ Mapbox token no disponible');
           setMapError(true);
           return;
         }
