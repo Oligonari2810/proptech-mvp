@@ -157,9 +157,6 @@ try:
     logger.info("✅ Blueprint de favoritos registrado")
 except Exception as e:
     logger.warning(f"⚠️ No se pudo registrar blueprint de favoritos: {e}")
-except Exception as e:
-    logger.warning(f"⚠️ No se pudo registrar blueprint de autenticación: {e}")
-    logger.info("🔄 Implementando endpoints de auth directos como fallback...")
 
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
