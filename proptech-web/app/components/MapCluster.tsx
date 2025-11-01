@@ -35,19 +35,26 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
         // Importar mapbox-gl dinámicamente
         const mapboxgl = (await import('mapbox-gl')).default;
         
-        // Token con fallback - siempre tiene valor
-        const token = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 
-                      (process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string) || 
-                      'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
+        // Usar configuración centralizada
+        const { getMapboxToken, isValidMapboxToken } = await import('../../lib/mapboxConfig');
+        const token = getMapboxToken();
         
-        if (!token) {
-          console.error('❌ Mapbox token no disponible');
+        console.log('🔍 Mapbox Debug:', {
+          token_present: !!token,
+          token_valid: isValidMapboxToken(token),
+          token_length: token?.length || 0,
+          token_prefix: token?.substring(0, 10) || 'N/A'
+        });
+        
+        if (!isValidMapboxToken(token)) {
+          console.error('❌ Mapbox token no válido', { token_length: token?.length, token_prefix: token?.substring(0, 10) });
           setMapError(true);
           return;
         }
 
         // Configurar token ANTES de crear el mapa
         mapboxgl.accessToken = token;
+        console.log('✅ Token Mapbox configurado correctamente');
 
         // Verificar que el contenedor existe
         if (!mapContainer.current) {
@@ -71,16 +78,22 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
 
         // Manejar errores del mapa
         map.on('error', (e: any) => {
-          console.error('❌ Error de Mapbox:', e);
-          console.error('Detalles del error:', {
-            error: e.error?.message || e.message || 'Error desconocido',
-            type: e.type,
-            token: token ? 'Presente' : 'Faltante'
-          });
+          const errorDetails = {
+            error_message: e.error?.message || e.message || 'Error desconocido',
+            error_type: e.type,
+            error_code: e.error?.statusCode || e.statusCode || 'N/A',
+            token_present: !!token,
+            token_valid: token?.startsWith('pk.') || false,
+            container_exists: !!mapContainer.current,
+            style_loaded: map.isStyleLoaded()
+          };
+          console.error('❌ Error de Mapbox:', errorDetails);
+          console.error('Error completo:', e);
           setMapError(true);
         });
 
         map.on('load', () => {
+          console.log('✅ Mapbox cargado exitosamente');
           // Add source with clustering
           map.addSource('properties', {
             type: 'geojson',

@@ -35,9 +35,9 @@ export default function MapComponent({
   showMarker = false,
   markerPosition
 }: MapComponentProps) {
-  // Token con fallback - siempre tiene valor
-  const MAPBOX_TOKEN = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 
-                       'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
+  // Token usando configuración centralizada
+  const { getMapboxToken } = require('../../lib/mapboxConfig');
+  const MAPBOX_TOKEN = getMapboxToken();
   const [lat, lng] = mapCenter;
   
   // Estado para marcador arrastrable

@@ -67,15 +67,42 @@ export default function MapPage() {
 
     const initMap = () => {
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
-        const token = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
+        const { getMapboxToken, isValidMapboxToken } = await import('../lib/mapboxConfig');
+        const token = getMapboxToken();
+        
+        console.log('🔍 Mapbox Token Debug:', {
+          token_present: !!token,
+          token_valid: isValidMapboxToken(token),
+          token_prefix: token?.substring(0, 10),
+          mapboxgl_available: !!(window as any).mapboxgl
+        });
+        
+        if (!isValidMapboxToken(token)) {
+          console.error('❌ Token Mapbox inválido');
+          return;
+        }
+        
         (window as any).mapboxgl.accessToken = token;
         
-        const map = new (window as any).mapboxgl.Map({
-          container: 'map-container',
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [-3.7038, 40.4168], // Madrid
-          zoom: 12
-        });
+        try {
+          const map = new (window as any).mapboxgl.Map({
+            container: 'map-container',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-69.9312, 18.4861], // República Dominicana (corregido)
+            zoom: 10
+          });
+          
+          map.on('error', (e: any) => {
+            console.error('❌ Error Mapbox en /map:', e);
+            console.error('Error details:', {
+              message: e.error?.message || e.message,
+              code: e.error?.statusCode || 'N/A'
+            });
+          });
+          
+          map.on('load', () => {
+            console.log('✅ Mapbox cargado en /map');
+          });
 
         map.on('load', () => {
           setMapLoaded(true);
@@ -104,6 +131,11 @@ export default function MapPage() {
             }
           });
         });
+        } catch (error) {
+          console.error('❌ Error creando mapa:', error);
+        }
+      } else {
+        console.error('❌ mapboxgl no disponible en window');
       }
     };
 
