@@ -4,7 +4,7 @@
  */
 
 // Token de fallback público (para desarrollo)
-const FALLBACK_TOKEN = 'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
+const FALLBACK_TOKEN = 'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzOTgwZDAwY241MmtwbHJ6aWFsazIxIn0.-k_hECMvvQyjKCgqHbQHAA';
 
 /**
  * Obtiene el token de Mapbox de forma confiable
