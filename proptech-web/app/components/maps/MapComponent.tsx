@@ -36,7 +36,7 @@ export default function MapComponent({
   markerPosition
 }: MapComponentProps) {
   // Token usando configuración centralizada
-  const { getMapboxToken } = require('../../lib/mapboxConfig');
+  const { getMapboxToken } = require('../lib/mapboxConfig');
   const MAPBOX_TOKEN = getMapboxToken();
   const [lat, lng] = mapCenter;
   

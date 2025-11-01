@@ -70,16 +70,15 @@ export default function MapPage() {
         // Usar token directamente (este componente carga Mapbox manualmente)
         const token = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 
                       'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzOTgwZDAwY241MmtwbHJ6aWFsazIxIn0.-k_hECMvvQyjKCgqHbQHAA';
-        const token = getMapboxToken();
         
         console.log('🔍 Mapbox Token Debug:', {
           token_present: !!token,
-          token_valid: isValidMapboxToken(token),
+          token_valid: token?.startsWith('pk.') && token.length > 20,
           token_prefix: token?.substring(0, 10),
           mapboxgl_available: !!(window as any).mapboxgl
         });
         
-        if (!isValidMapboxToken(token)) {
+        if (!token || !token.startsWith('pk.') || token.length < 20) {
           console.error('❌ Token Mapbox inválido');
           return;
         }
