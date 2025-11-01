@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Heart, MapPin, Bed, Bath, Square } from 'lucide-react';
 import Link from 'next/link';
-import { getFavorites, removeFavorite } from '../../lib/favoritesAPI';
+import { getFavorites, removeFavorite } from '../lib/favoritesAPI';
 
 interface FavoriteProperty {
   id: number;
