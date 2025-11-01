@@ -31,6 +31,7 @@ export function Header() {
     { href: "/vender", label: "Vender", icon: "📈" },
     { href: "/calculadora-impuestos", label: "Calculadora", icon: "🧮" },
     { href: "/leyes-inmobiliarias", label: "Leyes RD", icon: "📚" },
+    { href: "/tramites-inmobiliarios", label: "Trámites", icon: "🧭" },
   ];
 
   // 🔗 Enlaces adicionales para usuarios (se pueden mostrar en footer o menú desplegable)
