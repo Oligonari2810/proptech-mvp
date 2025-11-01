@@ -132,18 +132,51 @@ export default function InvertirPage() {
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-3xl font-bold text-gray-900">Oportunidades de Inversión</h1>
 
-            <div className="bg-white p-2 rounded-lg shadow-sm border">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useRedesign}
-                  onChange={(e) => {
-                    setUseRedesign(e.target.checked);
-                    try { localStorage.setItem('redesign-enabled', e.target.checked.toString()); } catch {}
-                  }}
-                />
-                <span className="text-sm">🎨 Rediseño</span>
-              </label>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/confotur"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
+              >
+                <span>🏖️</span>
+                <span>Guía CONFOTUR</span>
+              </Link>
+              
+              <div className="bg-white p-2 rounded-lg shadow-sm border">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useRedesign}
+                    onChange={(e) => {
+                      setUseRedesign(e.target.checked);
+                      try { localStorage.setItem('redesign-enabled', e.target.checked.toString()); } catch {}
+                    }}
+                  />
+                  <span className="text-sm">🎨 Rediseño</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          {/* Banner Informativo CONFOTUR */}
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">🏖️</span>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-800 mb-1">
+                  Inversiones Turísticas en RD
+                </h3>
+                <p className="text-sm text-gray-700 mb-2">
+                  ¿Planeas una inversión inmobiliaria turística? Consulta nuestra guía completa de trámites 
+                  con <strong>CONFOTUR</strong> (Consejo Nacional de Fomento del Turismo) y accede a beneficios 
+                  fiscales según la <strong>Ley 158-01</strong>.
+                </p>
+                <Link
+                  href="/confotur"
+                  className="text-blue-600 hover:text-blue-800 font-semibold text-sm inline-flex items-center gap-1"
+                >
+                  Ver guía CONFOTUR →
+                </Link>
+              </div>
             </div>
           </div>
 
