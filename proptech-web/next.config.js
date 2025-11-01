@@ -62,7 +62,7 @@ const nextConfig = {
               "default-src 'self' https://proptech-mvp-1.onrender.com; " +
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://api.mapbox.com https://maps.googleapis.com; " +
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; " +
-              "font-src 'self' 'unsafe-inline' data: https://fonts.gstatic.com https://api.mapbox.com; " +
+              "font-src 'self' 'unsafe-inline' data: blob: https://fonts.gstatic.com https://api.mapbox.com https://*.mapbox.com; " +
               "img-src 'self' data: blob: https://*.mapbox.com https://images.unsplash.com https:; " +
               "connect-src 'self' https://proptech-mvp-1.onrender.com https://*.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://maps.googleapis.com wss://*.vercel.live; " +
               "worker-src 'self' blob:; " +

@@ -103,23 +103,39 @@ from models import db
 db.init_app(app)
 
 # CORS configuration for production
+# IMPORTANTE: Agregar todos los dominios de Vercel posibles
 allowed_origins = [
     'https://habitatprord.com',
     'https://www.habitatprord.com',
     'https://habitatprord.vercel.app',
     'https://proptech-mvp.vercel.app',
+    'https://proptech-mvp-oligonari2810s-projects.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3003',
     'http://localhost:3004',
 ]
 
+# Permitir todos los dominios de Vercel dinámicamente
+import re
+def is_vercel_domain(origin):
+    if not origin:
+        return False
+    # Permitir cualquier subdominio de vercel.app
+    vercel_pattern = re.compile(r'^https://.*\.vercel\.app$')
+    return vercel_pattern.match(origin)
+
 # CORS más permisivo para desarrollo y producción
 CORS(app, 
-     origins=allowed_origins, 
+     origins=lambda origin: (
+         origin in allowed_origins or 
+         is_vercel_domain(origin) or
+         (origin and 'localhost' in origin) or
+         (os.getenv('FLASK_ENV') != 'production' and origin)  # Permitir todos en desarrollo
+     ),
      supports_credentials=True,
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
      expose_headers=['Content-Length', 'X-Total-Count'],
      max_age=3600
 )
