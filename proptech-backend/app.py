@@ -135,7 +135,7 @@ try:
     redis_client.ping()
 except:
     redis_client = None
-    print("⚠️ Redis no disponible - continuando sin cache")
+    logger.warning("⚠️ Redis no disponible - continuando sin cache")
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -1163,10 +1163,10 @@ with app.app_context():
                     if 'already exists' in error_str or 'duplicate' in error_str:
                         logger.info("✅ EMERGENCY PRE-CHECK: user_id ya existe (race condition)")
                     else:
-                        print(f"⚠️ EMERGENCY PRE-CHECK: Error agregando user_id: {alter_error}")
+                        logger.error(f"⚠️ EMERGENCY PRE-CHECK: Error agregando user_id: {alter_error}")
                     db.session.rollback()
             else:
-                print("✅ EMERGENCY PRE-CHECK: user_id ya existe")
+                logger.info("✅ EMERGENCY PRE-CHECK: user_id ya existe")
         except Exception as pre_check_error:
             # Verificar si el error es porque la columna ya existe
             error_str = str(pre_check_error).lower()
