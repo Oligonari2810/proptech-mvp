@@ -1173,7 +1173,7 @@ with app.app_context():
             if 'already exists' in error_str or 'duplicate' in error_str:
                 logger.info("✅ EMERGENCY PRE-CHECK: user_id ya existe (error capturado)")
             else:
-                print(f"⚠️ PRE-CHECK error: {pre_check_error}")
+                logger.error(f"⚠️ PRE-CHECK error: {pre_check_error}")
             db.session.rollback()
         
         # EMERGENCY FIX: Agregar columnas faltantes directamente
