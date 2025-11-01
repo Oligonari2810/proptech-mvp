@@ -212,14 +212,14 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
     };
   }, [items, mapError]);
 
-  const hasToken = !!(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
-  if (mapError || !hasToken) {
+  // Verificar token (siempre tiene fallback, pero mostrar loading si hay error)
+  if (mapError) {
     return (
       <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-500">{!hasToken ? 'Configura NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN para ver el mapa.' : 'Mapa cargando...'}</div>
+          <div className="text-gray-500">Error al cargar el mapa. Verifica la configuración de Mapbox.</div>
           <div className="text-sm text-gray-400 mt-2">
-            Mostrando {items.length} propiedades en República Dominicana
+            Mostrando {items.length} propiedades
           </div>
         </div>
       </div>
