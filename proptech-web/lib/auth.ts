@@ -3,14 +3,19 @@ import Credentials from 'next-auth/providers/credentials'
 
 // NEXTAUTH_SECRET debe estar en .env.local o variables de entorno de Vercel
 // Durante el build, usamos un valor por defecto temporal para evitar errores
+// IMPORTANTE: Debe configurarse en Vercel Environment Variables para producción
 const nextAuthSecret = process.env.NEXTAUTH_SECRET || 
-  (process.env.NODE_ENV === 'production' && typeof window === 'undefined' 
-    ? 'temp-build-secret-replace-in-production' 
-    : undefined);
+  (process.env.VERCEL || process.env.NODE_ENV === 'production'
+    ? 'temp-build-secret-replace-in-production-via-vercel-env-vars'
+    : 'dev-secret-change-in-production');
 
-// Advertencia en desarrollo si no está configurado
-if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === 'development') {
-  console.warn('⚠️ NEXTAUTH_SECRET no configurado. Usando secret temporal para desarrollo.');
+// Advertencia si no está configurado
+if (!process.env.NEXTAUTH_SECRET) {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ NEXTAUTH_SECRET no configurado. Usando secret temporal para desarrollo.');
+  } else if (process.env.VERCEL) {
+    console.warn('⚠️ NEXTAUTH_SECRET no configurado en Vercel. Configura la variable de entorno.');
+  }
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
