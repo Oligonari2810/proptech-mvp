@@ -65,7 +65,7 @@ export default function MapPage() {
       document.head.appendChild(script);
     };
 
-    const initMap = () => {
+    const initMap = async () => {
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const { getMapboxToken, isValidMapboxToken } = await import('../lib/mapboxConfig');
         const token = getMapboxToken();
