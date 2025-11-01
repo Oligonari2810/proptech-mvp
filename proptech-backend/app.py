@@ -992,18 +992,6 @@ def health_check():
     except Exception as e:
         health_status['services']['redis'] = 'unhealthy'
         health_status['cache']['redis'] = 'unavailable'
-        logger.error(f"Redis health check error: {e}")
-    
-    try:
-        # Verificar Redis - MEJORADO con logging
-        if redis_client:
-            redis_client.ping()
-            health_status['services']['redis'] = 'healthy'
-        else:
-            health_status['services']['redis'] = 'unavailable'
-            logger.warning("⚠️ Redis no disponible - continuando sin cache")
-    except Exception as e:
-        health_status['services']['redis'] = 'unhealthy'
         health_status['status'] = 'degraded'
         logger.error(f"Redis health check error: {e}")
     
