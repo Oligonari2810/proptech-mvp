@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { dominicanLaws, Law } from '../../../lib/legal/laws';
+import { dominicanLaws, Law } from '@/app/lib/legal/laws';
 import { notFound } from 'next/navigation';
 
 interface Props {

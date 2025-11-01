@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TaxCalculationRD } from '../../lib/legal/types';
+import { TaxCalculationRD } from '@/app/lib/legal/types';
 
 interface Props {
   calculation: TaxCalculationRD;

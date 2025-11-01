@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { dominicanLaws, Law } from '../../lib/legal/laws';
+import { dominicanLaws, Law } from '@/app/lib/legal/laws';
 import { LawCard } from './LawCard';
 import { LawSearch } from './LawSearch';
 

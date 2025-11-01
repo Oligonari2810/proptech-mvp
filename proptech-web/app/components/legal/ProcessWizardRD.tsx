@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Process, dominicanProcesses } from '../../lib/legal/processes';
+import { Process, dominicanProcesses } from '@/app/lib/legal/processes';
 import { ProcessStep } from './ProcessStep';
 import { RequiredDocuments } from './RequiredDocuments';
 

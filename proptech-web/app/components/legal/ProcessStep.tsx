@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ProcessStep as ProcessStepType } from '../../lib/legal/processes';
+import { ProcessStep as ProcessStepType } from '@/app/lib/legal/processes';
 
 interface Props {
   step: ProcessStepType;

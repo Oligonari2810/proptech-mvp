@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Law } from '../../lib/legal/laws';
+import { Law } from '@/app/lib/legal/laws';
 
 interface Props {
   law: Law;

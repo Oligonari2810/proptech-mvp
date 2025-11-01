@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Law } from '../../lib/legal/laws';
+import { Law } from '@/app/lib/legal/laws';
 
 interface Props {
   laws: Law[];

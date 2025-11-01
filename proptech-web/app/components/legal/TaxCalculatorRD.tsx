@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TaxCalculationRD } from '../../lib/legal/types';
-import { calculateRDTaxes } from '../../lib/legal/calculator';
+import { TaxCalculationRD } from '@/app/lib/legal/types';
+import { calculateRDTaxes } from '@/app/lib/legal/calculator';
 import { TaxBreakdown } from './TaxBreakdown';
 
 export function TaxCalculatorRD() {

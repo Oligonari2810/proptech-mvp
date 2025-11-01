@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { confoturProcedures, confoturContact, ConfoturProcedure } from '../../lib/legal/confotur';
+import { confoturProcedures, confoturContact, ConfoturProcedure } from '@/app/lib/legal/confotur';
 
 export function ConfoturGuide() {
   const [selectedProcedure, setSelectedProcedure] = useState<ConfoturProcedure | null>(null);
