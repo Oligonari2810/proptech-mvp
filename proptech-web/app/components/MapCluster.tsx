@@ -36,7 +36,7 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
         const mapboxgl = (await import('mapbox-gl')).default;
         
         // Usar configuración centralizada
-        const { getMapboxToken, isValidMapboxToken } = await import('../../lib/mapboxConfig');
+        const { getMapboxToken, isValidMapboxToken } = await import('../lib/mapboxConfig');
         const token = getMapboxToken();
         
         console.log('🔍 Mapbox Debug:', {

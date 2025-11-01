@@ -148,10 +148,9 @@ export function BookingSystem({
         setIsSuccess(true);
         
         // Agregar a Google Calendar (opcional)
-        if (typeof window !== 'undefined' && window.google?.calendar) {
-          const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Visita+Propiedad:+${encodeURIComponent(propertyTitle)}&dates=${selectedDate}T${selectedTime.replace(':', '')}00/${selectedDate}T${(parseInt(selectedTime.split(':')[0]) + 1).toString().padStart(2, '0')}:${selectedTime.split(':')[1]}:00&details=${encodeURIComponent(`Dirección: ${propertyAddress}\nNotas: ${formData.notes || ''}`)}&location=${encodeURIComponent(propertyAddress)}`;
-          // window.open(calendarUrl, '_blank'); // Descomentar para abrir automáticamente
-        }
+        // Generar URL de Google Calendar directamente (no requiere API)
+        const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Visita+Propiedad:+${encodeURIComponent(propertyTitle)}&dates=${selectedDate}T${selectedTime.replace(':', '')}00/${selectedDate}T${(parseInt(selectedTime.split(':')[0]) + 1).toString().padStart(2, '0')}:${selectedTime.split(':')[1]}:00&details=${encodeURIComponent(`Dirección: ${propertyAddress}\nNotas: ${formData.notes || ''}`)}&location=${encodeURIComponent(propertyAddress)}`;
+        // window.open(calendarUrl, '_blank'); // Descomentar para abrir automáticamente
 
         if (onBookingComplete) {
           onBookingComplete(bookingId);

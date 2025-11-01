@@ -67,7 +67,9 @@ export default function MapPage() {
 
     const initMap = async () => {
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
-        const { getMapboxToken, isValidMapboxToken } = await import('../lib/mapboxConfig');
+        // Usar token directamente (este componente carga Mapbox manualmente)
+        const token = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 
+                      'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzOTgwZDAwY241MmtwbHJ6aWFsazIxIn0.-k_hECMvvQyjKCgqHbQHAA';
         const token = getMapboxToken();
         
         console.log('🔍 Mapbox Token Debug:', {
