@@ -62,7 +62,7 @@ export const dominicanLaws: Law[] = [
       {
         numero: 'Art. 6',
         titulo: 'Tasa del Impuesto',
-        contenido: 'La tasa general del ITBIS es del dieciocho por ciento (18%) del valor de la transacción. Para la primera venta de inmuebles, la tasa aplicable es del dieciséis por ciento (16%).'
+        contenido: 'La tasa general del ITBIS es del dieciocho por ciento (18%) del valor de la transacción. Esta tasa aplica también a la primera venta de inmuebles por parte de empresas constructoras.'
       }
     ],
     enlaces: [

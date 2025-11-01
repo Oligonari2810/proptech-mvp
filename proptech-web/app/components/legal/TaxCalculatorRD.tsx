@@ -87,7 +87,7 @@ export function TaxCalculatorRD() {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="primeraVenta" className="ml-2 text-sm text-gray-700">
-                    ¿Es primera venta por constructor? (Aplica ITBIS 16%)
+                    ¿Es primera venta por constructor? (Aplica ITBIS 18%)
                   </label>
                 </div>
               )}
@@ -111,7 +111,7 @@ export function TaxCalculatorRD() {
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
             <h4 className="font-semibold text-yellow-800 mb-2">⚖️ Base Legal</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• <strong>ITBIS 16%:</strong> Ley 11-92 (solo primera venta)</li>
+              <li>• <strong>ITBIS 18%:</strong> Ley 11-92 (solo primera venta por constructores)</li>
               <li>• <strong>Impuesto Transferencia 3%:</strong> Ley 173-07</li>
               <li>• <strong>Impuesto Inmobiliario:</strong> Ley 173-07</li>
               <li>• <strong>Honorarios Notariales:</strong> Ley 302 del Notariado</li>

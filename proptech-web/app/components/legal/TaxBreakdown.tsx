@@ -78,7 +78,7 @@ export function TaxBreakdown({ calculation }: Props) {
           <div className="flex items-center">
             <span className="text-green-600 text-lg mr-2">💡</span>
             <span className="text-sm text-green-700">
-              <strong>Ahorro identificado:</strong> Al comprar propiedad usada evitas ITBIS del 16%
+              <strong>Ahorro identificado:</strong> Al comprar propiedad usada evitas ITBIS del 18%
             </span>
           </div>
         </div>

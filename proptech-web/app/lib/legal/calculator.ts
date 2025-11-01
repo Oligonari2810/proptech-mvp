@@ -15,12 +15,12 @@ export function calculateRDTaxes(data: {
 
   // 1. ITBIS (Ley 11-92) - Solo primera venta por constructores
   if (primeraVenta && tipoTransaccion === 'compra') {
-    const itbis = precioPropiedad * 0.16;
+    const itbis = precioPropiedad * 0.18;
     desglose.push({
       concepto: 'ITBIS',
       monto: itbis,
-      porcentaje: '16%',
-      descripcion: 'Impuesto sobre primera venta (Ley 11-92)',
+      porcentaje: '18%',
+      descripcion: 'Impuesto sobre primera venta (Ley 11-92) - Tasa general ITBIS 18%',
       obligatorio: primeraVenta
     });
     total += itbis;
@@ -90,7 +90,7 @@ export function calculateRDTaxes(data: {
     primeraVenta,
     incluirImpuestoAnual,
     resultados: {
-      itbis: primeraVenta ? precioPropiedad * 0.16 : undefined,
+      itbis: primeraVenta ? precioPropiedad * 0.18 : undefined,
       impuestoTransferencia: tipoTransaccion === 'compra' ? precioPropiedad * 0.03 : 0,
       impuestoInmobiliarioAnual,
       gastosNotariales,
