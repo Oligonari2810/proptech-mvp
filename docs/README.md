@@ -20,13 +20,21 @@ docs/
 
 ### **Configuración Inicial**
 - `VERCEL_MAPBOX_SETUP.md` - Configurar Mapbox en Vercel
+- `VERCEL_ENV_SETUP.md` - Configurar variables de entorno en Vercel
 - `MAPBOX_TOKEN_403_FIX.md` - Solucionar error 403 de Mapbox
 - `ACTUALIZAR_TOKEN_VERCEL.md` - Actualizar token Mapbox
 - `FIX_ERRORS_PRODUCCION.md` - Solución de errores en producción
 - `VERIFICACION_REDIS_CACHE.md` - Verificar y configurar Redis
+- `CONFIGURAR_MAPBOX_VERCEL.md` - Configuración Mapbox
+- `CONFIGURAR_VERCEL_NEXTAUTH.md` - Configuración NextAuth
+- `DEBUG_MAPBOX.md` - Debug Mapbox
+- `GOOGLE_PLACES_SETUP.md` - Configuración Google Places
+- `PLAN_IMPLEMENTACION_FASES.md` - Plan de implementación
 
 ### **Scripts Útiles**
 - `*.sh` - Scripts de diagnóstico y verificación
+- `render.yaml` - Configuración Render
+- `docker-compose.monitoring.yml` - Docker Compose monitoring
 
 ---
 
@@ -36,12 +44,35 @@ docs/
 - `RESUMEN_ESTADO_ACTUAL_PROYECTO.md` - Estado completo del proyecto
 - `RESUMEN_TRABAJO_COMPLETADO.md` - Trabajo completado
 - `RESUMEN_TRABAJO_NOCTURNO.md` - Trabajo nocturno
+- `AUDITORIA_COMPLETA_ESTADO_ACTUAL.md` - Auditoría completa
+- `ESTADO_PLAN_TRABAJO_NOCTURNO.md` - Estado plan trabajo nocturno
+- `REVISION_PROMPT_TRABAJO_NOCTURNO.md` - Revisión prompt
+- `VERIFICACION_URGENTE_PRODUCCION.md` - Verificación urgente
+- `VALIDACION_COMPLETA.md` - Validación completa
+- `VALIDACION_TESTS.md` - Validación tests
 
 ### **Arquitectura y Planes**
 - `PLAN_IMPLEMENTACION_FASES.md` - Plan de implementación por fases
+- `PLAN_ACCION_PRIORIZADO.md` - Plan de acción priorizado
+- `GUIA_COMPLETA_FASE_SIGUIENTE.md` - Guía completa fase siguiente
+- `IMPLEMENTACION_FASE_SIGUIENTE.md` - Implementación fase siguiente
+- `CHECKLIST_FASE_SIGUIENTE.md` - Checklist fase siguiente
+- `RESUMEN_IMPLEMENTACION_COMPLETA.md` - Resumen implementación
 - `HABITATPRO_ENTERPRISE_ARCHITECTURE.md` - Arquitectura enterprise
 - `CONSOLIDATION_REPORT.md` - Reporte de consolidación
 - `PRODUCTION_VALIDATION_REPORT.md` - Validación de producción
+
+### **Auditorías y Análisis**
+- `AUDITORIA_FUNCIONALIDADES_CTO.md` - Auditoría funcionalidades CTO
+- `AUDITORIA_PROFUNDIDAD_FASE_SIGUIENTE.md` - Auditoría profundidad
+- `AUDITORIA_TYPESCRIPT_COMPLETA.md` - Auditoría TypeScript
+- `COMPARACION_PLATAFORMAS_LEADERS.md` - Comparación plataformas líderes
+
+### **Implementaciones**
+- `IMPLEMENTACION_PANEL_PROPERTIES.md` - Implementación panel properties
+- `IMPLEMENTACION_SEGURIDAD_UX.md` - Implementación seguridad UX
+- `FIX_FILTROS_OPERATION.md` - Fix filtros operation
+- `LIMPIEZA_ARCHIVOS_OBSOLETOS.md` - Limpieza archivos obsoletos
 
 ### **Deployment**
 - `DEPLOY_NOTES.md` - Notas de deployment
