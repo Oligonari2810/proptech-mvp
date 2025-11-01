@@ -40,7 +40,7 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
 
-        <PortalStatistics timeRange={timeRange} />
+        <PortalStatistics />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -50,13 +50,13 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-2">
             <h3 className="text-lg font-semibold mb-2 px-2">Mapa de Calor de Leads</h3>
-            <LeadHeatmap timeRange={timeRange} />
+            <LeadHeatmap />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ContentModeration />
-          <AuditLogs timeRange={timeRange} />
+          <AuditLogs />
         </div>
       </div>
     </NextAuthRoleGuard>
