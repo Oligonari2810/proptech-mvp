@@ -221,9 +221,11 @@ export function AddressAutocomplete({
           <MapComponent
             properties={[]}
             mapCenter={[selectedCoords.lat, selectedCoords.lng]}
-            onPropertyClick={(prop) => {
-              // Cuando se hace click en el mapa, actualizar coordenadas
-              const newCoords = { lat: prop.latitude, lng: prop.longitude };
+            showMarker={true}
+            draggableMarker={true}
+            markerPosition={[selectedCoords.lat, selectedCoords.lng]}
+            onMarkerDragEnd={(newCoords) => {
+              // Actualizar coordenadas cuando se arrastra el marcador
               setSelectedCoords(newCoords);
               // Reverse geocoding para obtener dirección
               if (window.google?.maps?.Geocoder) {
@@ -233,6 +235,9 @@ export function AddressAutocomplete({
                     onChange(results[0].formatted_address, newCoords);
                   }
                 });
+              } else {
+                // Si no hay Google Maps, actualizar solo coordenadas
+                onChange(value, newCoords);
               }
             }}
           />
