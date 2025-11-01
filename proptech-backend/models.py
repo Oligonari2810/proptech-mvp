@@ -74,7 +74,16 @@ class Property(db.Model):
     is_accessible = Column(Boolean, nullable=True, default=False)  # Es accesible
     is_luxury = Column(Boolean, nullable=True, default=False)  # Es propiedad de lujo
     is_bank_owned = Column(Boolean, nullable=True, default=False)  # Es propiedad de banco
-    has_virtual_tour = Column(Boolean, nullable=True, default=False)  # Tiene visita virtual
+    has_virtual_tour = Column(Boolean, nullable=True, default=False)
+    
+    # Índices para optimización de queries
+    __table_args__ = (
+        Index('idx_properties_operation', 'operation'),
+        Index('idx_properties_location', 'location'),
+        Index('idx_properties_price', 'price'),
+        Index('idx_properties_type', 'property_type'),
+        Index('idx_properties_active', 'is_active'),
+    )  # Tiene visita virtual
     is_active = Column(Boolean, nullable=True, default=True)  # Propiedad activa/públicada
     published_date = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de publicación
     created_at = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de creación

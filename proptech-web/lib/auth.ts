@@ -1,8 +1,14 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 
+// NEXTAUTH_SECRET debe estar en .env.local
+const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+if (!nextAuthSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('NEXTAUTH_SECRET no configurado en producción. Genera uno seguro con scripts/generate_secrets.py');
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-change-in-production',
+  secret: nextAuthSecret || (process.env.NODE_ENV !== 'production' ? 'dev-secret-change-in-production' : undefined),
   providers: [
     Credentials({
       name: 'credentials',

@@ -45,7 +45,10 @@ export function UserDropdown({
       });
       router.push('/');
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      // Logger implementado - usar logger.error en lugar de console.error
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error al cerrar sesión:', error);
+      }
     }
   };
 

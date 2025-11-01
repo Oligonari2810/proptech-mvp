@@ -3,13 +3,22 @@ from werkzeug.security import generate_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from flask_cors import CORS
-from sqlalchemy import text
+from sqlalchemy import text, Index
+from sqlalchemy.sql import func
 import redis
 from datetime import datetime, timedelta
 # from sklearn.neighbors import NearestNeighbors
 # from sklearn.feature_extraction.text import TfidfVectorizer
 import json
 import os
+
+# Importar logger estructurado
+try:
+    from utils.logger import logger
+except ImportError:
+    import logging
+    logger = logging.getLogger('habitatpro')
+    logger.setLevel(logging.INFO)
 
 # Importar middleware de autenticación
 try:
@@ -53,15 +62,18 @@ app = Flask(__name__)
 # Helper para sanitizar errores en producción
 def sanitize_error(error: Exception, generic_message: str = "Ha ocurrido un error. Por favor, inténtelo más tarde.") -> str:
     """Sanitiza errores para no mostrar stack traces en producción"""
-    is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
-    
-    if is_production:
-        # En producción, solo mostrar mensaje genérico y log el error real
-        print(f"ERROR (sanitizado en producción): {str(error)}")
-        return generic_message
-    else:
-        # En desarrollo, mostrar el error completo para debugging
-        return str(error)
+    try:
+        from utils.logger import sanitize_error as logger_sanitize
+        return logger_sanitize(error, generic_message)
+    except ImportError:
+        # Fallback si logger no está disponible
+        is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+        
+        if is_production:
+            logger.error(f"Error sanitizado: {str(error)}")
+            return generic_message
+        else:
+            return str(error)
 
 # Configuración de base de datos - PostgreSQL en producción, SQLite en desarrollo
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -75,7 +87,10 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///habitatpro.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'habitatpro-super-secret-2024')
+# SECRET_KEY debe estar en .env, no hardcodeado
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+if not app.config['SECRET_KEY']:
+    raise ValueError("SECRET_KEY no configurado. Usa scripts/generate_secrets.py para generarlo.")
 
 # Configuración OAuth
 app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID', 'your-google-client-id')
@@ -131,19 +146,19 @@ from models import User, Property, Favorite
 try:
     from routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp)
-    print("✅ Blueprint de autenticación registrado")
+    logger.info("✅ Blueprint de autenticación registrado")
 except Exception as e:
-    print(f"⚠️ No se pudo registrar blueprint de autenticación: {e}")
-    print("🔄 Implementando endpoints de auth directos como fallback...")
+    logger.warning(f"⚠️ No se pudo registrar blueprint de autenticación: {e}")
+    logger.info("🔄 Implementando endpoints de auth directos como fallback...")
 
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
 try:
     from auth import AuthService
     USE_AUTHSERVICE = True
-    print("✅ AuthService importado exitosamente")
+    logger.info("✅ AuthService importado exitosamente")
 except Exception as e:
-    print(f"⚠️ No se pudo importar AuthService, usando werkzeug: {e}")
+    logger.warning(f"⚠️ No se pudo importar AuthService, usando werkzeug: {e}")
     USE_AUTHSERVICE = False
     from werkzeug.security import generate_password_hash, check_password_hash
     import jwt
@@ -277,7 +292,7 @@ def login_direct():
         error_msg = sanitize_error(e, "Error al iniciar sesión. Por favor, verifique sus credenciales e inténtelo de nuevo.")
         return jsonify({'error': f'Error en el login: {error_msg}'}), 500
 
-print("✅ Endpoints de auth directos registrados (Siempre activos)")
+logger.info("✅ Endpoints de auth directos registrados (Siempre activos)")
 
 # Modelo Interaction inline para compatibilidad
 class Interaction(db.Model):
@@ -342,7 +357,7 @@ try:
     from monitoring.business_metrics import update_properties_count, ROI_CALCULATIONS
     monitor_requests(app)
 except Exception as _e:
-    print(f"⚠️ Monitoring básico no inicializado: {_e}")
+    logger.warning(f"⚠️ Monitoring básico no inicializado: {_e}")
 
 # DATOS DE PRUEBA REALES
 def initialize_sample_data():
@@ -354,7 +369,7 @@ def initialize_sample_data():
         Interaction.query.delete()
         db.session.commit()
         
-        print("📊 Inicializando base de datos con datos de prueba...")
+        logger.info("📊 Inicializando base de datos con datos de prueba...")
         
         sample_properties = [
             {
@@ -514,7 +529,7 @@ def initialize_sample_data():
         db.session.add(test_user)
         
         db.session.commit()
-        print(f"✅ {len(sample_properties)} propiedades de prueba creadas")
+        logger.info(f"✅ {len(sample_properties)} propiedades de prueba creadas")
         
         # Entrenar IA con los datos
         properties_data = []
@@ -954,7 +969,7 @@ def health_check():
     except Exception as e:
         health_status['services']['database'] = 'unhealthy'
         health_status['status'] = 'degraded'
-        print(f"Database health check error: {e}")
+        logger.error(f"Database health check error: {e}")
     
     try:
         # Verificar Redis - MEJORADO con logging
@@ -963,11 +978,11 @@ def health_check():
             health_status['services']['redis'] = 'healthy'
         else:
             health_status['services']['redis'] = 'unavailable'
-            print("⚠️ Redis no disponible - continuando sin cache")
+            logger.warning("⚠️ Redis no disponible - continuando sin cache")
     except Exception as e:
         health_status['services']['redis'] = 'unhealthy'
         health_status['status'] = 'degraded'
-        print(f"Redis health check error: {e}")
+        logger.error(f"Redis health check error: {e}")
     
     return jsonify(health_status)
 
@@ -1020,13 +1035,13 @@ def get_admin_metrics():
         try:
             total_properties = Property.query.count()
         except Exception as prop_error:
-            print(f"⚠️ Error obteniendo count de propiedades: {prop_error}")
+            logger.warning(f"⚠️ Error obteniendo count de propiedades: {prop_error}")
             total_properties = 0
         
         try:
             total_users = User.query.count()
         except Exception as user_error:
-            print(f"⚠️ Error obteniendo count de usuarios: {user_error}")
+            logger.warning(f"⚠️ Error obteniendo count de usuarios: {user_error}")
             total_users = 0
         
         # Simular métricas adicionales basadas en datos reales
@@ -1125,7 +1140,7 @@ class TenantBranding(db.Model):
 with app.app_context():
     try:
         db.create_all()
-        print("✅ Tablas verificadas/creadas correctamente (incluyendo TenantBranding)")
+        logger.info("✅ Tablas verificadas/creadas correctamente (incluyendo TenantBranding)")
         
         # EMERGENCY FIX PRE-CHECK: Verificar user_id INMEDIATAMENTE
         try:
@@ -1136,12 +1151,12 @@ with app.app_context():
             """)
             user_id_check = db.session.execute(quick_check).scalar()
             if user_id_check == 0:
-                print("🚨 EMERGENCY PRE-CHECK: user_id NO existe - agregando AHORA...")
+                logger.warning("🚨 EMERGENCY PRE-CHECK: user_id NO existe - agregando AHORA...")
                 try:
                     # Usar IF NOT EXISTS si PostgreSQL lo soporta, sino usar try/except
                     db.session.execute(text("ALTER TABLE properties ADD COLUMN IF NOT EXISTS user_id INTEGER"))
                     db.session.commit()
-                    print("✅ EMERGENCY PRE-CHECK: user_id agregado")
+                    logger.info("✅ EMERGENCY PRE-CHECK: user_id agregado")
                 except Exception as alter_error:
                     # Si falla, puede ser que ya existe (en caso de race condition)
                     error_str = str(alter_error).lower()
@@ -1802,16 +1817,38 @@ def list_api_endpoints():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# RATE LIMITING - Temporarily disabled
-# from rate_limiting import setup_rate_limiting, limiter
-# setup_rate_limiting(app)
+# RATE LIMITING - Activado
+try:
+    from rate_limiting import setup_rate_limiting, limiter
+    setup_rate_limiting(app)
+    logger.info("✅ Rate limiting activado")
+except Exception as e:
+    logger.warning(f"⚠️ Error activando rate limiting: {e}")
+    # Continuar sin rate limiting en caso de error
 
-# SENTRY
+# SENTRY - Verificar que funcione
 try:
     from sentry_config import init_sentry
+    import sentry_sdk
     init_sentry()
+    # Test que Sentry funciona
+    if sentry_sdk.Hub.current.client:
+        sentry_sdk.capture_message("Sentry inicializado correctamente", level="info")
+        logger.info("✅ Sentry configurado y funcionando")
+    else:
+        logger.warning("⚠️ Sentry configurado pero no inicializado")
 except ImportError:
-    print("⚠️ Sentry no configurado - continuando sin monitoring")
+    logger.warning("⚠️ Sentry no configurado - continuando sin monitoring")
+except Exception as e:
+    logger.warning(f"⚠️ Error inicializando Sentry: {e}")
+
+# SWAGGER - Documentación API
+try:
+    from swagger_config import init_swagger
+    init_swagger(app)
+    logger.info("✅ Swagger documentación disponible en /api/docs")
+except Exception as e:
+    logger.warning(f"⚠️ Error inicializando Swagger: {e}")
 
 # CONFIGURACIÓN WEBSOCKET CORREGIDA
 @socketio.on('connect')
@@ -1823,9 +1860,9 @@ def handle_connect():
             'message': 'Conectado a HabitatPro IA',
             'timestamp': datetime.utcnow().isoformat()
         })
-        print("✅ Cliente WebSocket conectado correctamente")
+        logger.info("✅ Cliente WebSocket conectado correctamente")
     except Exception as e:
-        print(f"❌ Error en WebSocket: {e}")
+        logger.error(f"❌ Error en WebSocket: {e}")
 
 @socketio.on('request_realtime_recommendations')
 def handle_realtime_recommendations(data):
@@ -1869,11 +1906,11 @@ if __name__ == '__main__':
         initialize_app()
     
     print("🚀 HabitatPro Backend REAL iniciado en http://localhost:8000")
-    print("📊 APIs disponibles:")
-    print("   GET  /api/properties - Listar propiedades")
-    print("   GET  /api/properties/:id - Detalles de propiedad") 
-    print("   POST /api/users - Crear usuario")
-    print("   POST /api/ai/recommend - Recomendaciones IA")
-    print("   GET  /api/health - Estado del sistema")
+    logger.info("📊 APIs disponibles:")
+    logger.info("   GET  /api/properties - Listar propiedades")
+    logger.info("   GET  /api/properties/:id - Detalles de propiedad") 
+    logger.info("   POST /api/users - Crear usuario")
+    logger.info("   POST /api/ai/recommend - Recomendaciones IA")
+    logger.info("   GET  /api/health - Estado del sistema")
     
     app.run(host='0.0.0.0', port=8000, debug=True)
