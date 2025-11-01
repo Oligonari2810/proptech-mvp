@@ -32,6 +32,7 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
 
     const initializeMap = async () => {
       try {
+        // Importar mapbox-gl dinámicamente
         const mapboxgl = (await import('mapbox-gl')).default;
         
         // Token con fallback - siempre tiene valor
@@ -45,13 +46,25 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
           return;
         }
 
-        mapboxgl.accessToken = token as string;
+        // Configurar token ANTES de crear el mapa
+        mapboxgl.accessToken = token;
 
+        // Verificar que el contenedor existe
+        if (!mapContainer.current) {
+          console.error('❌ Contenedor de mapa no encontrado');
+          setMapError(true);
+          return;
+        }
+
+        // Crear mapa con manejo de errores
         const map = new mapboxgl.Map({
-          container: mapContainer.current!,
+          container: mapContainer.current,
           style: 'mapbox://styles/mapbox/light-v10',
-          center: items.length > 0 ? [items[0].longitude, items[0].latitude] : [-69.9312, 18.4861],
-          zoom: items.length > 0 ? 11 : 10
+          center: items.length > 0 && items[0].longitude && items[0].latitude 
+            ? [items[0].longitude, items[0].latitude] 
+            : [-69.9312, 18.4861], // República Dominicana por defecto
+          zoom: items.length > 0 ? 11 : 10,
+          attributionControl: false // Desactivar si causa problemas
         });
 
         mapRef.current = map;
