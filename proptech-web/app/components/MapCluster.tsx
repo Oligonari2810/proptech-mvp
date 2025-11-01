@@ -69,6 +69,17 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
 
         mapRef.current = map;
 
+        // Manejar errores del mapa
+        map.on('error', (e: any) => {
+          console.error('❌ Error de Mapbox:', e);
+          console.error('Detalles del error:', {
+            error: e.error?.message || e.message || 'Error desconocido',
+            type: e.type,
+            token: token ? 'Presente' : 'Faltante'
+          });
+          setMapError(true);
+        });
+
         map.on('load', () => {
           // Add source with clustering
           map.addSource('properties', {
