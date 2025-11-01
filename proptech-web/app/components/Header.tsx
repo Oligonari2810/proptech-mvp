@@ -29,6 +29,7 @@ export function Header() {
     { href: "/alquilar", label: "Alquilar", icon: "🔑" },
     { href: "/invertir", label: "Invertir", icon: "💹" },
     { href: "/vender", label: "Vender", icon: "📈" },
+    { href: "/calculadora-impuestos", label: "Calculadora", icon: "🧮" },
   ];
 
   // 🔗 Navegación para usuarios autenticados (NO incluir Admin ni Mi cuenta en nav principal)
