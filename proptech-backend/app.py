@@ -1161,7 +1161,7 @@ with app.app_context():
                     # Si falla, puede ser que ya existe (en caso de race condition)
                     error_str = str(alter_error).lower()
                     if 'already exists' in error_str or 'duplicate' in error_str:
-                        print("✅ EMERGENCY PRE-CHECK: user_id ya existe (race condition)")
+                        logger.info("✅ EMERGENCY PRE-CHECK: user_id ya existe (race condition)")
                     else:
                         print(f"⚠️ EMERGENCY PRE-CHECK: Error agregando user_id: {alter_error}")
                     db.session.rollback()
@@ -1905,7 +1905,7 @@ if __name__ == '__main__':
         db.create_all()
         initialize_app()
     
-    print("🚀 HabitatPro Backend REAL iniciado en http://localhost:8000")
+    logger.info("🚀 HabitatPro Backend REAL iniciado en http://localhost:8000")
     logger.info("📊 APIs disponibles:")
     logger.info("   GET  /api/properties - Listar propiedades")
     logger.info("   GET  /api/properties/:id - Detalles de propiedad") 

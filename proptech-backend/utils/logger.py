@@ -47,7 +47,6 @@ if not logger.handlers:
 
 def sanitize_error(error: Exception, generic_message: str = "Ha ocurrido un error. Por favor, inténtelo más tarde.") -> str:
     """Sanitiza errores para no mostrar stack traces en producción"""
-    """Sanitiza errores para no mostrar stack traces en producción"""
     is_production = ENVIRONMENT == 'production'
     
     if is_production:
