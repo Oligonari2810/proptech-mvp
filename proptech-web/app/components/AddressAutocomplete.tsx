@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+
+// Lazy load MapComponent para mejor performance
+const MapComponent = dynamic(() => import('./maps/MapComponent').then(mod => mod.default), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-200 animate-pulse flex items-center justify-center">Cargando mapa...</div>
+});
 
 interface AddressAutocompleteProps {
   value: string;
@@ -9,6 +16,8 @@ interface AddressAutocompleteProps {
   required?: boolean;
   className?: string;
   country?: string; // Restringir a país específico
+  showMap?: boolean; // Mostrar mapa interactivo
+  mapHeight?: string; // Altura del mapa
 }
 
 export function AddressAutocomplete({
@@ -18,6 +27,8 @@ export function AddressAutocomplete({
   required = false,
   className = '',
   country = 'do', // República Dominicana por defecto
+  showMap = false, // Mostrar mapa interactivo
+  mapHeight = '400px', // Altura del mapa
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -123,12 +134,17 @@ export function AddressAutocomplete({
     getSuggestions(inputValue);
   };
 
+  const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const handleSelectSuggestion = (address: string) => {
     onChange(address);
     setShowSuggestions(false);
     
     // Obtener coordenadas
     getPlaceDetails(address, (fullAddress, coords) => {
+      if (coords) {
+        setSelectedCoords(coords);
+      }
       onChange(fullAddress, coords);
     });
   };
@@ -196,6 +212,30 @@ export function AddressAutocomplete({
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Mapa interactivo opcional */}
+      {showMap && selectedCoords && (
+        <div className="mt-4 border border-gray-300 rounded-lg overflow-hidden" style={{ height: mapHeight }}>
+          <MapComponent
+            properties={[]}
+            mapCenter={[selectedCoords.lat, selectedCoords.lng]}
+            onPropertyClick={(prop) => {
+              // Cuando se hace click en el mapa, actualizar coordenadas
+              const newCoords = { lat: prop.latitude, lng: prop.longitude };
+              setSelectedCoords(newCoords);
+              // Reverse geocoding para obtener dirección
+              if (window.google?.maps?.Geocoder) {
+                const geocoder = new window.google.maps.Geocoder();
+                geocoder.geocode({ location: newCoords } as any, (results: any, status: string) => {
+                  if (status === 'OK' && results?.[0]) {
+                    onChange(results[0].formatted_address, newCoords);
+                  }
+                });
+              }
+            }}
+          />
         </div>
       )}
     </div>

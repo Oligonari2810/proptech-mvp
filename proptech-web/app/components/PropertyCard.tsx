@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { memo, useState } from 'react'
 import Image from 'next/image'
 import { MessageCircle } from 'lucide-react'
+import dynamic from 'next/dynamic'
 
 interface Property {
   id: number | string
@@ -26,7 +27,22 @@ interface PropertyCardProps {
   property: Property
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+// Skeleton loading component
+const PropertyCardSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 animate-pulse">
+    <div className="h-48 bg-gray-200"></div>
+    <div className="p-6 space-y-3">
+      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className="h-4 bg-gray-200 rounded w-full"></div>
+    </div>
+  </div>
+);
+
+export const PropertyCard = memo(function PropertyCard({ property }: PropertyCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
   const handleWhatsAppClick = () => {
     const message = `Hola, me interesa la propiedad: ${property.title} - ${property.price.toLocaleString('es-ES')}`;
     const url = `https://wa.me/+18091234567?text=${encodeURIComponent(message)}`;
@@ -43,15 +59,26 @@ export function PropertyCard({ property }: PropertyCardProps) {
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
       {/* Imagen de la propiedad */}
       <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg relative">
-        {imageUrl ? (
-          <Image 
-            src={imageUrl} 
-            alt={property.title}
-            width={400}
-            height={192}
-            className="w-full h-full object-cover"
-            priority
-          />
+        {imageUrl && !imageError ? (
+          <>
+            {!imageLoaded && <PropertyCardSkeleton />}
+            <Image 
+              src={imageUrl} 
+              alt={property.title}
+              width={400}
+              height={192}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageError(true);
+                setImageLoaded(false);
+              }}
+              loading="lazy"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </>
         ) : (
           <div className="text-center">
             <div className="text-4xl mb-2">🏠</div>
@@ -145,5 +172,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
       </div>
     </div>
-  )
-}
+  );
+});
+
+PropertyCard.displayName = 'PropertyCard';
