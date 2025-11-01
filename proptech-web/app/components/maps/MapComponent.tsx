@@ -21,8 +21,18 @@ interface MapComponentProps {
 }
 
 export default function MapComponent({ properties, onPropertyClick, mapCenter }: MapComponentProps) {
-  const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 
+                       'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
   const [lat, lng] = mapCenter;
+  
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gray-200">
+        <div className="text-gray-500">Configura NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN para ver el mapa.</div>
+      </div>
+    );
+  }
+  
   return (
     <div className="h-full w-full">
       <Map

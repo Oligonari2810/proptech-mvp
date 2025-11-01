@@ -34,9 +34,14 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
       try {
         const mapboxgl = (await import('mapbox-gl')).default;
         
-        const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-        if (!token) {
-          throw new Error('Mapbox token not configured');
+        const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || 
+                      process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 
+                      'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzYzd6a3kwZG16MndwcTRqdmF3Y3gyIn0.wgkq0ZFbnRLq_W9fzrFbOQ';
+        
+        if (!token || token === '') {
+          console.warn('⚠️ Mapbox token no configurado. Usando token demo.');
+          setMapError(true);
+          return;
         }
 
         mapboxgl.accessToken = token as string;
