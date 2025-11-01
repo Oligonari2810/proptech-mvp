@@ -33,6 +33,11 @@ export function Header() {
     { href: "/leyes-inmobiliarias", label: "Leyes RD", icon: "📚" },
   ];
 
+  // 🔗 Enlaces adicionales para usuarios (se pueden mostrar en footer o menú desplegable)
+  const legalNavItems = [
+    { href: "/confotur", label: "CONFOTUR", icon: "🏖️" },
+  ];
+
   // 🔗 Navegación para usuarios autenticados (NO incluir Admin ni Mi cuenta en nav principal)
   const authenticatedNavItems = [
     ...publicNavItems,

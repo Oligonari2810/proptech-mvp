@@ -148,7 +148,7 @@ export const dominicanLaws: Law[] = [
     numero: 'Ley 544-14',
     fecha: '2014',
     categoria: 'extranjeros',
-    descripcion: 'Regula la adquisición de bienes inmuebles por parte de extranjeros en República Dominicana, estableciendo procedimientos y restricciones.',
+    descripcion: 'Regula la adquisición de bienes inmuebles por parte de extranjeros en República Dominicana, estableciendo procedimientos y restricciones. Incluye trámites con CONFOTUR para inversiones turísticas.',
     articulos: [
       {
         numero: 'Art. 1',
@@ -159,9 +159,49 @@ export const dominicanLaws: Law[] = [
         numero: 'Art. 3',
         titulo: 'Restricciones en Zonas Fronterizas',
         contenido: 'La adquisición de inmuebles en zonas fronterizas por extranjeros requiere autorización previa del Poder Ejecutivo.'
+      },
+      {
+        numero: 'Art. 5',
+        titulo: 'Inversiones Turísticas',
+        contenido: 'Las inversiones turísticas en inmuebles por extranjeros pueden requerir autorización previa de CONFOTUR (Consejo Nacional de Fomento del Turismo) según el monto y ubicación del proyecto.'
       }
     ],
     enlaces: [],
+    ultimaActualizacion: '2024',
+    aplicabilidad: ['compra', 'inversion', 'extranjeros']
+  },
+  {
+    id: 'ley-158-01',
+    nombre: 'Ley 158-01 sobre Incentivos a la Inversión Turística',
+    numero: 'Ley 158-01',
+    fecha: '2001',
+    categoria: 'extranjeros',
+    descripcion: 'Establece incentivos fiscales y legales para inversiones en el sector turístico. CONFOTUR gestiona los beneficios para proyectos turísticos e inmobiliarios relacionados.',
+    articulos: [
+      {
+        numero: 'Art. 1',
+        titulo: 'Objeto de la Ley',
+        contenido: 'Esta ley tiene por objeto incentivar la inversión en proyectos turísticos mediante beneficios fiscales y facilidades administrativas gestionadas por CONFOTUR.'
+      },
+      {
+        numero: 'Art. 3',
+        titulo: 'Beneficios para Inversiones Turísticas',
+        contenido: 'Las inversiones en hoteles, resorts, desarrollos turísticos inmobiliarios y proyectos afines pueden acceder a exenciones del ITBIS (18%), impuesto de transferencia (3%) y otros beneficios fiscales, previa autorización de CONFOTUR.'
+      },
+      {
+        numero: 'Art. 6',
+        titulo: 'Requisitos CONFOTUR',
+        contenido: 'Para acceder a los beneficios, el proyecto debe: 1) Ser aprobado por CONFOTUR, 2) Cumplir con estándares turísticos establecidos, 3) Presentar plan de inversión detallado, 4) Tener monto mínimo de inversión según categoría.'
+      },
+      {
+        numero: 'Art. 8',
+        titulo: 'Trámites con CONFOTUR',
+        contenido: 'Los inversionistas deben presentar solicitud ante CONFOTUR con: documentación del proyecto, plan de inversión, estudios de factibilidad, y documentación de propiedad del terreno.'
+      }
+    ],
+    enlaces: [
+      'https://www.mitur.gob.do/confotur'
+    ],
     ultimaActualizacion: '2024',
     aplicabilidad: ['compra', 'inversion', 'extranjeros']
   },
