@@ -158,6 +158,14 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ No se pudo registrar blueprint de favoritos: {e}")
 
+# Importar y registrar blueprint de reservas
+try:
+    from routes.bookings import bookings_bp
+    app.register_blueprint(bookings_bp, url_prefix='/api')
+    logger.info("✅ Blueprint de reservas registrado")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo registrar blueprint de reservas: {e}")
+
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
 try:
