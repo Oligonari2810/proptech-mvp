@@ -2,7 +2,8 @@
 
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, Suspense } from "react";
 
 interface MarketComparison {
   zone: string;
@@ -34,7 +35,7 @@ interface Property {
   location: string;
 }
 
-export default function ROIDashboard() {
+function ROIDashboardContent() {
   const [roiData, setRoiData] = useState<ROIMetrics | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
