@@ -695,11 +695,11 @@ def get_properties():
                 'location': prop.location,
                 'bedrooms': prop.bedrooms,
                 'bathrooms': prop.bathrooms,
-                'area': prop.area,
+                'area': prop.area if prop.area is not None else (prop.surface if prop.surface is not None else None),
                 'features': prop.features or [],
                 'emotional_tags': prop.emotional_tags or [],
                 'images': prop.images or [],
-                'created_at': prop.created_at.isoformat()
+                'created_at': prop.created_at.isoformat() if prop.created_at else None
             }
             # Añadir featuredTier si existe
             if prop.id in featured_by_property:
