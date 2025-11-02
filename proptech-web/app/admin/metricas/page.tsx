@@ -2,8 +2,10 @@
 
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
+
 import ROIDashboard from "./roi/page";
 import LeadHeatmap from "../../components/analytics/LeadHeatmap";
+import { Suspense } from 'react';
 
 export default function AnalyticsDashboard() {
   const sampleLeads = [
@@ -13,12 +15,14 @@ export default function AnalyticsDashboard() {
   ];
 
   return (
-    <div className="space-y-8 p-6">
-      <ROIDashboard />
-      <div className="bg-white p-6 rounded-lg shadow border">
-        <h2 className="text-xl font-bold mb-4">Mapa de Calor - Leads</h2>
-        <LeadHeatmap leads={sampleLeads as any} />
+    <Suspense fallback={<div className="p-6">Cargando métricas...</div>}>
+      <div className="space-y-8 p-6">
+        <ROIDashboard />
+        <div className="bg-white p-6 rounded-lg shadow border">
+          <h2 className="text-xl font-bold mb-4">Mapa de Calor - Leads</h2>
+          <LeadHeatmap leads={sampleLeads as any} />
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }
