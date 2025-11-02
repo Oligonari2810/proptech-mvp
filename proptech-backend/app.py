@@ -198,6 +198,14 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ No se pudo registrar blueprint de featured listings: {e}")
 
+# Importar y registrar blueprint de búsqueda emocional (IA Emocional)
+try:
+    from ai.routes.emotional_search import emotional_bp
+    app.register_blueprint(emotional_bp)
+    logger.info("✅ Blueprint de búsqueda emocional registrado")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo registrar blueprint de búsqueda emocional: {e}")
+
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
 try:

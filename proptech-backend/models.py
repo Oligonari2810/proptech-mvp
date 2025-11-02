@@ -62,7 +62,8 @@ class Property(db.Model):
     bedrooms = Column(Integer, nullable=True)  # Habitaciones
     bathrooms = Column(Integer, nullable=True)  # Baños
     features = Column(JSON, nullable=True)  # JSON con características
-    emotional_tags = Column(JSON, nullable=True)  # JSON con tags emocionales
+    emotional_tags = Column(JSON, nullable=True)  # JSON con tags emocionales (legacy - mantener para compatibilidad)
+    emotional_profile = Column(JSON, nullable=True)  # JSON con perfil emocional rico: {vibes: [], lifestyle: [], community: [], energy: 1-10, privacy: 1-10, wellness: []}
     images = Column(JSON, nullable=True)  # JSON con URLs de imágenes
     lot_size = Column(Float, nullable=True)  # Tamaño del terreno en m²
     year_built = Column(Integer, nullable=True)  # Año de construcción
