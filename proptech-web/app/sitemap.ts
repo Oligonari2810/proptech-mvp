@@ -3,25 +3,41 @@ import { MetadataRoute } from 'next'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://habitatprord.com'
   
-  // Obtener propiedades dinámicamente
-  let properties = []
+  // Obtener propiedades dinámicamente con manejo seguro de errores
+  let properties: any[] = []
   try {
     const response = await fetch('https://proptech-mvp-1.onrender.com/api/properties?is_active=true', {
-      next: { revalidate: 3600 } // Cache por 1 hora
+      next: { revalidate: 3600 }, // Cache por 1 hora
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
-    const data = await response.json()
-    properties = data.properties || data || []
+    
+    if (response.ok) {
+      const data = await response.json()
+      // Asegurar que siempre sea un array
+      if (Array.isArray(data)) {
+        properties = data
+      } else if (Array.isArray(data.properties)) {
+        properties = data.properties
+      } else if (data && typeof data === 'object' && Array.isArray(data.items)) {
+        properties = data.items
+      }
+    }
   } catch (error) {
+    // Silenciar error en build - usar sitemap estático
     console.error('Error fetching properties for sitemap:', error)
   }
 
-  // URLs de propiedades dinámicas
-  const propertyEntries = properties.slice(0, 1000).map((property: any) => ({
-    url: `${baseUrl}/properties/${property.id}`,
-    lastModified: property.updated_at ? new Date(property.updated_at) : new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }))
+  // URLs de propiedades dinámicas - verificar que properties sea array antes de usar slice
+  const propertyEntries = Array.isArray(properties) && properties.length > 0
+    ? properties.slice(0, 1000).map((property: any) => ({
+        url: `${baseUrl}/properties/${property.id || property.property_id || ''}`,
+        lastModified: property.updated_at ? new Date(property.updated_at) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+      })).filter((entry) => entry.url && !entry.url.endsWith('/')) // Filtrar entradas inválidas
+    : []
 
   // Páginas estáticas principales (Priority 1.0 - 0.9)
   const staticPages: MetadataRoute.Sitemap = [

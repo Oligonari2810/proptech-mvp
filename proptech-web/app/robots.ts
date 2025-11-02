@@ -16,26 +16,6 @@ export default function robots(): MetadataRoute.Robots {
           '/static/',
         ],
       },
-      // Permitir específicamente páginas públicas importantes
-      {
-        userAgent: '*',
-        allow: [
-          '/',
-          '/comprar',
-          '/alquilar',
-          '/vender',
-          '/invertir',
-          '/valorar',
-          '/contacto',
-          '/calculadora-impuestos',
-          '/calculadora-hipotecaria',
-          '/leyes-inmobiliarias',
-          '/tramites-inmobiliarios',
-          '/confotur',
-          '/mapa',
-          '/properties/*',
-        ],
-      },
     ],
     sitemap: 'https://habitatprord.com/sitemap.xml',
   }
