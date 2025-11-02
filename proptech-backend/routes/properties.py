@@ -155,29 +155,6 @@ def get_properties():
             "total": 0,
             "success": False
         }), 500
-        "id": prop.id,
-        "title": prop.title or "Sin título",
-        "description": prop.description or "Sin descripción",
-        "price": prop.price if prop.price is not None else 0,
-        "location": prop.location or "Ubicación desconocida",
-        "image_url": prop.image_url or "https://ejemplo.com/default.jpg",
-        "property_type": prop.property_type or "Sin especificar",
-        "year_built": prop.year_built if prop.year_built is not None else "Desconocido",
-        "lot_size": prop.lot_size if prop.lot_size is not None else 0,
-        "bedrooms": prop.bedrooms if prop.bedrooms is not None else 0,
-        "bathrooms": prop.bathrooms if prop.bathrooms is not None else 0,
-        "status": prop.status or "available",
-        "latitude": prop.latitude if prop.latitude is not None else 0,  # ✅ Evita `null`
-        "longitude": prop.longitude if prop.longitude is not None else 0,  # ✅ Evita `null`
-        "has_basement": prop.has_basement if prop.has_basement is not None else False,
-        "has_garage": prop.has_garage if prop.has_garage is not None else False,
-        "has_pool": prop.has_pool if prop.has_pool is not None else False,
-        "has_elevator": prop.has_elevator if prop.has_elevator is not None else False,
-        "is_accessible": prop.is_accessible if prop.is_accessible is not None else False,
-        "is_luxury": prop.is_luxury if prop.is_luxury is not None else False,
-        "is_bank_owned": prop.is_bank_owned if prop.is_bank_owned is not None else False,
-        "has_virtual_tour": prop.has_virtual_tour if prop.has_virtual_tour is not None else False
-    } for prop in properties]), 200
 
 # ✅ Ruta para obtener una propiedad por ID
 @properties_bp.route('/<int:property_id>', methods=['GET'])
