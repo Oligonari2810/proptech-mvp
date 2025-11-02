@@ -3,6 +3,9 @@ import { useState } from 'react';
 import AssetPlaceholder from '../../components/ui/AssetPlaceholder';
 import { HABITATPRO_IMAGES } from '../../config/images';
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 export default function AssetsPage() {
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof HABITATPRO_IMAGES>('hero');
   
