@@ -698,6 +698,7 @@ def get_properties():
                 'area': prop.area if prop.area is not None else (prop.surface if prop.surface is not None else None),
                 'features': prop.features or [],
                 'emotional_tags': prop.emotional_tags or [],
+                'emotional_profile': getattr(prop, 'emotional_profile', None) or {},  # Safe access with getattr
                 'images': prop.images or [],
                 'created_at': prop.created_at.isoformat() if prop.created_at else None
             }
