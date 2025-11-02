@@ -12,6 +12,7 @@ import { useSession } from 'next-auth/react';
 import ValueEstimator from '../../components/ai/ValueEstimator';
 import PropertyRecommendations from '../../components/ai/PropertyRecommendations';
 import SaleProbability from '../../components/ai/SaleProbability';
+import { PropertyReviews } from '../../components/reputation/PropertyReviews';
 
 interface PropertyDetail {
   id: number;
@@ -293,6 +294,9 @@ export default function PropertyDetailPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <PropertyRecommendations propertyId={property.id} />
           </div>
+
+          {/* Reseñas y Calificaciones */}
+          <PropertyReviews propertyId={property.id} />
           </div>
 
           {/* Sidebar */}

@@ -152,3 +152,30 @@ class Favorite(db.Model):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint('user_id', 'property_id', name='unique_user_property_favorite'),)
+
+# ✅ Modelo de Reviews y Ratings
+class Review(db.Model):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=True)
+    broker_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5 estrellas
+    title = Column(String(255), nullable=True)
+    comment = Column(Text, nullable=False)
+    category = Column(String(50), nullable=False, default="property")  # property, broker, process
+    verified = Column(Boolean, default=False)  # Solo reviews de transacciones completadas
+    tags = Column(JSON, nullable=True)  # Array de tags
+    images = Column(JSON, nullable=True)  # Array de URLs de imágenes
+    helpful_count = Column(Integer, default=0)  # Cuántos usuarios marcaron como útil
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_reviews_property', 'property_id'),
+        Index('idx_reviews_broker', 'broker_id'),
+        Index('idx_reviews_user', 'user_id'),
+        Index('idx_reviews_rating', 'rating'),
+        Index('idx_reviews_verified', 'verified'),
+    )
