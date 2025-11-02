@@ -1,4 +1,10 @@
+from typing import List, Dict, Any, Optional, Union
 from flask import Blueprint, request, jsonify
+import logging
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+import json
 from ai.services.emotional_nlp_service import EmotionalNLPService
 from ai.services.emotional_matching_service import EmotionalMatchingService
 from models import Property, db
