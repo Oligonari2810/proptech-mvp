@@ -58,8 +58,8 @@ export function PropertyReviews({ propertyId, initialReviews = [], initialSummar
         },
         body: JSON.stringify({
           propertyId,
-          category: 'property',
-          ...reviewData
+          ...reviewData,
+          category: 'property' // Sobrescribir category después del spread
         })
       });
 
