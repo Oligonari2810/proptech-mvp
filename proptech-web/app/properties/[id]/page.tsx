@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { MapPin, Bed, Bath, Square, Heart, Share2, Phone, Mail } from 'lucide-react';
 import PropertyGallery from '../../components/properties/PropertyGallery';
-import MortgageCalculator from '../../components/mortgage/MortgageCalculator';
+import { MortgageCalculatorCompact } from '../../components/mortgage/MortgageCalculatorCompact';
+import { TaxCalculatorCompact } from '../../components/legal/TaxCalculatorCompact';
 import { useFavorites } from '../../hooks/useFavorites';
 import FavoriteButton from '../../components/FavoriteButton';
 import { useSession } from 'next-auth/react';
@@ -296,8 +297,19 @@ export default function PropertyDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Simulador financiero */}
-            <MortgageCalculator propertyPrice={property.price} propertyId={property.id} />
+            {/* Calculadora de Impuestos */}
+            <TaxCalculatorCompact 
+              precioPropiedad={property.price}
+              tipoPropiedad={property.property_type === 'Casa' ? 'residencial' : property.property_type === 'Terreno' ? 'terreno' : 'residencial'}
+              showFull={false}
+            />
+
+            {/* Calculadora Hipotecaria */}
+            <MortgageCalculatorCompact 
+              precioPropiedad={property.price}
+              propertyId={property.id}
+              showFull={false}
+            />
 
           {/* IA: Valor estimado */}
           <ValueEstimator property={property} />
