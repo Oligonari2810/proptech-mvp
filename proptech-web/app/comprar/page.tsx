@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
+import { EmotionalSearchChatbot } from '../components/ai/EmotionalSearchChatbot';
 import PropertyRecommendations from '../components/ai/PropertyRecommendations';
 import PropertyComparator from '../components/comparator/PropertyComparator';
 
