@@ -3,6 +3,9 @@ import { generateToolSchema } from '../../lib/seo/schemaExtended';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Calculadora Hipotecaria RD - HabitatPro | Bancos República Dominicana',
   description: 'Calcula tu cuota mensual, intereses y compara opciones de financiamiento con los principales bancos de República Dominicana (BanReservas, Popular, BHD, Scotiabank, Santander). Tabla de amortización completa y comparación de tasas.',
