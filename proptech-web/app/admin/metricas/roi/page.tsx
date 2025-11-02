@@ -1,4 +1,7 @@
 "use client";
+
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
 import { useEffect, useState } from "react";
 
 interface MarketComparison {
