@@ -148,7 +148,7 @@ export function calculateAdvancedHabitaScore(
       insights: emotionalResult.breakdown.insights,
       recommendations: emotionalResult.breakdown.recommendations,
     },
-    market_insights,
+    market_insights: marketInsights,
     confidence_interval: confidenceInterval,
     factors: combinedFactors,
   };
