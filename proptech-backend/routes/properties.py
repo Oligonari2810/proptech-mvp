@@ -35,15 +35,15 @@ def get_properties():
         operation = request.args.get('operation')
 
         filters = {
-        "has_basement": request.args.get('has_basement', type=lambda x: x.lower() == 'true'),
-        "has_garage": request.args.get('has_garage', type=lambda x: x.lower() == 'true'),
-        "has_pool": request.args.get('has_pool', type=lambda x: x.lower() == 'true'),
-        "has_elevator": request.args.get('has_elevator', type=lambda x: x.lower() == 'true'),
-        "is_accessible": request.args.get('is_accessible', type=lambda x: x.lower() == 'true'),
-        "is_luxury": request.args.get('is_luxury', type=lambda x: x.lower() == 'true'),
-        "is_bank_owned": request.args.get('is_bank_owned', type=lambda x: x.lower() == 'true'),
-        "has_virtual_tour": request.args.get('has_virtual_tour', type=lambda x: x.lower() == 'true')
-    }
+            "has_basement": request.args.get('has_basement', type=lambda x: x.lower() == 'true'),
+            "has_garage": request.args.get('has_garage', type=lambda x: x.lower() == 'true'),
+            "has_pool": request.args.get('has_pool', type=lambda x: x.lower() == 'true'),
+            "has_elevator": request.args.get('has_elevator', type=lambda x: x.lower() == 'true'),
+            "is_accessible": request.args.get('is_accessible', type=lambda x: x.lower() == 'true'),
+            "is_luxury": request.args.get('is_luxury', type=lambda x: x.lower() == 'true'),
+            "is_bank_owned": request.args.get('is_bank_owned', type=lambda x: x.lower() == 'true'),
+            "has_virtual_tour": request.args.get('has_virtual_tour', type=lambda x: x.lower() == 'true')
+        }
 
         # 📌 Construcción dinámica de la consulta con manejo seguro
         try:
