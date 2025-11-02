@@ -1,4 +1,7 @@
 "use client";
+
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
 import ROIDashboard from "./roi/page";
 import LeadHeatmap from "../../components/analytics/LeadHeatmap";
 
