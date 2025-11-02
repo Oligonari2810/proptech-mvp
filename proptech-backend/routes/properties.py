@@ -34,7 +34,7 @@ def get_properties():
         # 🔹 Obtener parámetro operation (compra/alquiler)
         operation = request.args.get('operation')
 
-    filters = {
+        filters = {
         "has_basement": request.args.get('has_basement', type=lambda x: x.lower() == 'true'),
         "has_garage": request.args.get('has_garage', type=lambda x: x.lower() == 'true'),
         "has_pool": request.args.get('has_pool', type=lambda x: x.lower() == 'true'),
