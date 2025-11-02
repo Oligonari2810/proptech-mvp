@@ -630,10 +630,22 @@ def get_properties():
             
         properties = query.order_by(Property.created_at.desc()).limit(50).all()
         
+        # Obtener featured listings activos para añadir tier
+        try:
+            now = datetime.utcnow()
+            featured_listings_active = FeaturedListing.query.filter(
+                FeaturedListing.is_active == True,
+                FeaturedListing.start_date <= now,
+                FeaturedListing.end_date >= now
+            ).all()
+            featured_by_property = {fl.property_id: fl.tier for fl in featured_listings_active}
+        except:
+            featured_by_property = {}
+        
         # Convertir a JSON
         properties_data = []
         for prop in properties:
-            properties_data.append({
+            prop_data = {
                 'id': prop.id,
                 'title': prop.title,
                 'description': prop.description,
@@ -648,7 +660,11 @@ def get_properties():
                 'emotional_tags': prop.emotional_tags or [],
                 'images': prop.images or [],
                 'created_at': prop.created_at.isoformat()
-            })
+            }
+            # Añadir featuredTier si existe
+            if prop.id in featured_by_property:
+                prop_data['featuredTier'] = featured_by_property[prop.id]
+            properties_data.append(prop_data)
         
         # Aplicar IA emocional si hay usuario
         user_id = request.args.get('user_id')
