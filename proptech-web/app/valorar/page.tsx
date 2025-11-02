@@ -68,10 +68,28 @@ export default async function ValorarPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Valora tu Propiedad con IA
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Obtén una valoración instantánea y precisa con nuestro algoritmo HabitaScore, 
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-4">
+            Obtén una valoración instantánea y precisa con nuestro algoritmo HabitaScore IA Emocional, 
             especializado en el mercado inmobiliario dominicano.
           </p>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useEmotional}
+                onChange={(e) => setUseEmotional(e.target.checked)}
+                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                🧠❤️ Usar IA Emocional (recomendado)
+              </span>
+            </label>
+          </div>
+          {useEmotional && (
+            <p className="text-sm text-purple-600 italic">
+              La IA Emocional analiza calidad de vida, bienestar y comunidad más allá del precio
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
