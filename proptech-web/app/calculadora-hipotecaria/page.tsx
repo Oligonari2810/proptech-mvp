@@ -1,3 +1,4 @@
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import { MortgageCalculatorRD } from '../components/mortgage/MortgageCalculatorRD';
 import { generateToolSchema } from '../../lib/seo/schemaExtended';
 import type { Metadata } from 'next';

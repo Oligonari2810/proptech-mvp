@@ -1,4 +1,5 @@
 'use client';
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 
 import { TaxCalculatorRD } from '../components/legal/TaxCalculatorRD';
 

@@ -1,4 +1,5 @@
 'use client';
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
@@ -121,7 +122,7 @@ export default function FavoritosPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
+          <LoadingOptimized type="spinner" size="md" />
           <p className="text-gray-600">Cargando favoritos...</p>
         </div>
       </div>

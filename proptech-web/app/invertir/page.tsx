@@ -1,6 +1,9 @@
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '../components/ToastNotification';
+import { VoiceSearch } from '../components/VoiceSearch';
 import Link from 'next/link';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
@@ -33,6 +36,7 @@ interface FilterState {
 }
 
 export default function InvertirPage() {
+  const { addToast } = useToast();
   const [allProperties, setAllProperties] = useState<ListingProperty[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<ListingProperty[]>([]);
   const [useRedesign, setUseRedesign] = useState(false);
@@ -181,7 +185,34 @@ export default function InvertirPage() {
             </div>
           </div>
 
-          <SmartFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+          
+        {/* Voice Search Integration */}
+        <div className="mb-4 flex items-center gap-2">
+          <VoiceSearch
+            onResult={(text) => {
+              addToast({
+                type: 'success',
+                title: 'Voz reconocida',
+                message: `Buscando: "${text}"`,
+                duration: 2000,
+              });
+              // Integrar con búsqueda existente
+              if (typeof handleSearch === 'function') {
+                handleSearch({ query: text });
+              }
+            }}
+            onError={(error) => {
+              addToast({
+                type: 'error',
+                title: 'Error en búsqueda por voz',
+                message: error,
+                duration: 4000,
+              });
+            }}
+          />
+        </div>
+
+<SmartFilters onFilterChange={handleFilterChange} initialFilters={filters} />
         </div>
       </div>
 
@@ -189,7 +220,7 @@ export default function InvertirPage() {
         {loading ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <LoadingOptimized type="spinner" size="md" />
               <p className="text-gray-600">Cargando propiedades...</p>
             </div>
           </div>

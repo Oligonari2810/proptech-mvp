@@ -1,13 +1,17 @@
 'use client'
+import { useToast } from '../components/ToastNotification';
+import { VoiceSearch } from '../components/VoiceSearch';
 
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react'
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import PropertyForm from '../components/PropertyForm'
 import { AddressAutocomplete } from '../components/AddressAutocomplete'
 
 export default function VenderPage() {
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('publicacion')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -17,7 +21,34 @@ export default function VenderPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Convierte tu hogar en oportunidades</h1>
+          
+        {/* Voice Search Integration */}
+        <div className="mb-4 flex items-center gap-2">
+          <VoiceSearch
+            onResult={(text) => {
+              addToast({
+                type: 'success',
+                title: 'Voz reconocida',
+                message: `Buscando: "${text}"`,
+                duration: 2000,
+              });
+              // Integrar con búsqueda existente
+              if (typeof handleSearch === 'function') {
+                handleSearch({ query: text });
+              }
+            }}
+            onError={(error) => {
+              addToast({
+                type: 'error',
+                title: 'Error en búsqueda por voz',
+                message: error,
+                duration: 4000,
+              });
+            }}
+          />
+        </div>
+
+<h1 className="text-3xl font-bold text-gray-900">Convierte tu hogar en oportunidades</h1>
           <p className="text-gray-600 mt-2">
             Haz que tu propiedad brille con nuestra IA emocional y obtén el mejor precio de mercado
           </p>

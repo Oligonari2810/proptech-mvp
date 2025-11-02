@@ -4,6 +4,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '../components/ToastNotification';
+import { VoiceSearch } from '../components/VoiceSearch';
 import { useRouter } from 'next/navigation';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
@@ -40,6 +42,7 @@ interface FilterState {
 }
 
 export default function ComprarPage() {
+  const { addToast } = useToast();
   const [allProperties, setAllProperties] = useState<ListingProperty[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<ListingProperty[]>([]);
   const [useRedesign, setUseRedesign] = useState(false);
@@ -171,7 +174,34 @@ export default function ComprarPage() {
           </div>
           
           {/* Filtros Inteligentes */}
-          <SmartFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+          
+        {/* Voice Search Integration */}
+        <div className="mb-4 flex items-center gap-2">
+          <VoiceSearch
+            onResult={(text) => {
+              addToast({
+                type: 'success',
+                title: 'Voz reconocida',
+                message: `Buscando: "${text}"`,
+                duration: 2000,
+              });
+              // Integrar con búsqueda existente
+              if (typeof handleSearch === 'function') {
+                handleSearch({ query: text });
+              }
+            }}
+            onError={(error) => {
+              addToast({
+                type: 'error',
+                title: 'Error en búsqueda por voz',
+                message: error,
+                duration: 4000,
+              });
+            }}
+          />
+        </div>
+
+<SmartFilters onFilterChange={handleFilterChange} initialFilters={filters} />
         </div>
       </div>
 
