@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { Header } from './components/Header'
+import { PremiumHeader } from './components/PremiumHeader'
 import { FrontendMonitoring } from './components/Monitoring'
 import { SessionProviderWrapper } from './providers/SessionProviderWrapper'
 import { generateOrganizationSchema } from '../lib/seo/schema'
@@ -40,7 +40,7 @@ export default function RootLayout({
           <a href="#main-content" className="skip-link">
             Saltar al contenido principal
           </a>
-          <Header />
+          <PremiumHeader />
           <main id="main-content">
             {children}
           </main>
