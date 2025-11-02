@@ -1,8 +1,18 @@
 'use client';
 import { useState } from 'react';
-import { calculateHabitaScore, getScoreDescription, PropertyInput, ValuationResult } from '../lib/avm/habitascore';
+import { 
+  calculateHabitaScore, 
+  calculateAdvancedHabitaScore,
+  calculateHabitaScoreWithEmotion,
+  getScoreDescription, 
+  PropertyInput, 
+  ValuationResult,
+  AdvancedValuationInput,
+  AdvancedValuationResult,
+} from '../lib/avm/habitascore';
 import { LeadSticky } from '../components/LeadSticky';
 import { AddressAutocomplete } from '../components/AddressAutocomplete';
+import EmotionalInsights from '../components/ai/EmotionalInsights';
 
 export default async function ValorarPage() {
   const [formData, setFormData] = useState<PropertyInput>({
@@ -20,7 +30,8 @@ export default async function ValorarPage() {
     proximitySchools: 1
   });
 
-  const [result, setResult] = useState<ValuationResult | null>(null);
+  const [result, setResult] = useState<ValuationResult | AdvancedValuationResult | null>(null);
+  const [useEmotional, setUseEmotional] = useState(true); // Usar IA Emocional por defecto
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +41,14 @@ export default async function ValorarPage() {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const valuation = calculateHabitaScore(formData);
+    // Usar valoración avanzada con IA Emocional si está habilitada
+    let valuation: ValuationResult | AdvancedValuationResult;
+    if (useEmotional) {
+      valuation = calculateHabitaScoreWithEmotion(formData as AdvancedValuationInput);
+    } else {
+      valuation = calculateHabitaScore(formData);
+    }
+    
     setResult(valuation);
     setLoading(false);
   };
@@ -343,6 +361,11 @@ export default async function ValorarPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Emotional Insights - Solo si es AdvancedValuationResult */}
+                {'emotional_score' in result && (
+                  <EmotionalInsights valuation={result as AdvancedValuationResult} />
+                )}
 
                 {/* Disclaimer */}
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
