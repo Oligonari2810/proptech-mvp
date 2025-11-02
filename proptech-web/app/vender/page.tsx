@@ -1,5 +1,8 @@
 'use client'
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react'
 import PropertyForm from '../components/PropertyForm'
 import { AddressAutocomplete } from '../components/AddressAutocomplete'
