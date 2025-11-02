@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, JSON, Index
 from sqlalchemy.sql.sqltypes import Boolean  # ✅ Importar Boolean correctamente
 from sqlalchemy.orm import relationship
 import datetime
