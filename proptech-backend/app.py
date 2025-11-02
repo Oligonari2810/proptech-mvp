@@ -116,29 +116,38 @@ allowed_origins = [
     'http://localhost:3004',
 ]
 
-# Permitir todos los dominios de Vercel dinámicamente
-import re
-def is_vercel_domain(origin):
-    if not origin:
-        return False
-    # Permitir cualquier subdominio de vercel.app
-    vercel_pattern = re.compile(r'^https://.*\.vercel\.app$')
-    return vercel_pattern.match(origin)
+# CORS simplificado y seguro
+# En desarrollo, permitir todos los orígenes
+# En producción, usar lista específica
+is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
 
-# CORS más permisivo para desarrollo y producción
-CORS(app, 
-     origins=lambda origin: (
-         origin in allowed_origins or 
-         is_vercel_domain(origin) or
-         (origin and 'localhost' in origin) or
-         (os.getenv('FLASK_ENV') != 'production' and origin)  # Permitir todos en desarrollo
-     ),
-     supports_credentials=True,
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-     expose_headers=['Content-Length', 'X-Total-Count'],
-     max_age=3600
-)
+if is_production:
+    # Producción: solo orígenes permitidos
+    CORS(app, 
+         resources={
+             r"/api/*": {
+                 "origins": allowed_origins,
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+                 "expose_headers": ["Content-Length", "X-Total-Count"],
+                 "supports_credentials": True,
+                 "max_age": 3600
+             }
+         }
+    )
+else:
+    # Desarrollo: permitir todos los orígenes
+    CORS(app, 
+         resources={
+             r"/api/*": {
+                 "origins": "*",
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+                 "supports_credentials": False,
+                 "max_age": 3600
+             }
+         }
+    )
 
 # Redis configuration - manejar fallback si no está disponible
 try:
