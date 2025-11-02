@@ -62,11 +62,11 @@ export function PremiumHeader() {
       clearTimeout(timeoutRef.current);
     }
 
-    // Crear timeout con delay de 200ms antes de cerrar
+    // Crear timeout con delay de 300ms antes de cerrar (aumentado de 200ms)
     timeoutRef.current = setTimeout(() => {
       setActiveMegamenu(null);
       timeoutRef.current = null;
-    }, 200);
+    }, 300);
   };
 
   const handleMegamenuMouseLeave = () => {

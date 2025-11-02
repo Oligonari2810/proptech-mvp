@@ -64,24 +64,24 @@ export function Megamenu({ type, featuredItems, categories, tools, onClose }: Me
     }
   };
 
-  // Manejar mouse leave del megamenú con delay
+  // Manejar mouse leave del megamenú con delay aumentado
   const handleMegamenuLeave = () => {
     // Limpiar timeout anterior si existe
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Crear timeout con delay de 200ms antes de cerrar
+    // Crear timeout con delay de 300ms antes de cerrar (aumentado de 200ms)
     timeoutRef.current = setTimeout(() => {
       onClose();
       timeoutRef.current = null;
-    }, 200);
+    }, 300);
   };
 
   return (
     <div
       ref={menuRef}
-      className="megamenu-container absolute left-0 right-0 top-full mt-1 bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
+      className="megamenu-container absolute left-0 right-0 top-full mt-2 bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
       onMouseEnter={handleMegamenuEnter}
       onMouseLeave={handleMegamenuLeave}
     >
