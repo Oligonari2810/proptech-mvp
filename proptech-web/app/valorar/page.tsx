@@ -17,7 +17,7 @@ import { LeadSticky } from '../components/LeadSticky';
 import { AddressAutocomplete } from '../components/AddressAutocomplete';
 import EmotionalInsights from '../components/ai/EmotionalInsights';
 
-export default async function ValorarPage() {
+export default function ValorarPage() {
   const [formData, setFormData] = useState<PropertyInput>({
     area: 100,
     bedrooms: 3,

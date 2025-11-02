@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Map, { Source, Layer } from "react-map-gl";
 
 interface Lead {
@@ -13,7 +13,7 @@ interface LeadHeatmapProps {
   leads?: Lead[];
 }
 
-export default function LeadHeatmap({ leads }: LeadHeatmapProps) {
+function LeadHeatmapContent({ leads }: LeadHeatmapProps) {
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -122,6 +122,14 @@ export default function LeadHeatmap({ leads }: LeadHeatmapProps) {
         </div>
       )}
     </div>
+  );
+}
+
+export default function LeadHeatmap({ leads }: LeadHeatmapProps) {
+  return (
+    <Suspense fallback={<div className="h-96 flex items-center justify-center">Cargando mapa...</div>}>
+      <LeadHeatmapContent leads={leads} />
+    </Suspense>
   );
 }
 
