@@ -238,6 +238,14 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ No se pudo registrar blueprint de búsqueda emocional: {e}")
 
+# Importar y registrar blueprint de health (si existe)
+try:
+    from routes.health import health_bp
+    app.register_blueprint(health_bp)
+    logger.info("✅ Blueprint de health check registrado")
+except Exception as e:
+    logger.warning(f"⚠️ Blueprint de health check no disponible: {e}")
+
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
 try:
