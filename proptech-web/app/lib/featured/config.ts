@@ -1,6 +1,6 @@
 // Configuración de tiers para Featured Listings
 
-import { ListingTierConfig } from './types';
+import { ListingTierConfig, ListingTier } from './types';
 
 export const listingTiers: ListingTierConfig[] = [
   {
