@@ -90,7 +90,7 @@ export function PremiumHeader() {
   const currentMegamenu = getCurrentMegamenu();
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm relative">
+    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Main Navigation Bar */}
         <div className="flex items-center justify-between h-16">
@@ -211,24 +211,19 @@ export function PremiumHeader() {
         {/* Megamenu Dropdown */}
         {activeMegamenu && currentMegamenu && (
           <div 
-            className="absolute left-0 right-0 top-0 z-40 pointer-events-none"
-            style={{ paddingTop: '64px' }} // Altura del header (h-16 = 64px)
-            onMouseEnter={(e) => {
-              e.stopPropagation();
+            className="absolute left-0 right-0 top-full z-40"
+            onMouseEnter={() => {
               // Cancelar cierre cuando mouse entra en la zona del megamenú
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
               }
             }}
-            onMouseLeave={(e) => {
-              // Solo cerrar si realmente salimos de toda la zona
-              handleMegamenuClose();
-            }}
+            onMouseLeave={handleMegamenuClose}
           >
-            {/* Zona de conexión continua desde el header hasta el megamenú */}
+            {/* Zona de conexión continua de 16px entre trigger y megamenú */}
             <div 
-              className="absolute left-0 right-0 top-full h-4 bg-transparent pointer-events-auto"
+              className="h-4 bg-transparent"
               onMouseEnter={() => {
                 // Cancelar cierre en la zona de conexión
                 if (timeoutRef.current) {
@@ -237,15 +232,13 @@ export function PremiumHeader() {
                 }
               }}
             />
-            <div className="pointer-events-auto">
-              <Megamenu
-                type={activeMegamenu}
-                featuredItems={currentMegamenu.featuredItems}
-                categories={currentMegamenu.categories}
-                tools={currentMegamenu.tools}
-                onClose={handleMegamenuClose}
-              />
-            </div>
+            <Megamenu
+              type={activeMegamenu}
+              featuredItems={currentMegamenu.featuredItems}
+              categories={currentMegamenu.categories}
+              tools={currentMegamenu.tools}
+              onClose={handleMegamenuClose}
+            />
           </div>
         )}
 
