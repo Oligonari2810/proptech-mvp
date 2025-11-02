@@ -66,8 +66,8 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; " +
               "font-src 'self' 'unsafe-inline' data: blob: https://fonts.gstatic.com https://api.mapbox.com https://*.mapbox.com; " +
               "script-src-elem 'self' 'unsafe-inline' https://vercel.live https://*.vercel.live https://cdn.vercel-insights.com https://api.mapbox.com https://maps.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com; " +
-              "img-src 'self' data: blob: https://*.mapbox.com https://images.unsplash.com https:; " +
-              "connect-src 'self' https://proptech-mvp-1.onrender.com https://*.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://maps.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com wss://*.vercel.live; " +
+              "img-src 'self' data: blob: https://*.mapbox.com https://*.tiles.mapbox.com https://images.unsplash.com https: http:; " +
+              "connect-src 'self' https://proptech-mvp-1.onrender.com https://*.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://api.mapbox.com https://*.mapbox.com https://maps.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com wss://*.vercel.live ws://*.vercel.live; " +
               "worker-src 'self' blob:; " +
               "child-src 'self' blob:; " +
               "frame-src 'self';"
