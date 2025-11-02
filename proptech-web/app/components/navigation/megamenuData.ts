@@ -68,7 +68,7 @@ export const compraMegamenu: MegamenuConfig = {
       title: "Herramientas",
       links: [
         { name: "🧮 Calculadora de Impuestos", href: "/calculadora-impuestos" },
-        { name: "📊 Calculadora Hipotecaria", href: "/calculadora-hipotecaria" },
+        { name: "🏦 Calculadora Hipotecaria", href: "/calculadora-hipotecaria" },
         { name: "📋 Asistente de Trámites", href: "/tramites-inmobiliarios" },
         { name: "⚖️ Leyes Inmobiliarias", href: "/leyes-inmobiliarias" }
       ]
