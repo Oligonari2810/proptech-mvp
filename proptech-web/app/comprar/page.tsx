@@ -10,6 +10,7 @@ import PropertySplitView from '../components/split-view/PropertySplitView';
 import { EmotionalSearchChatbot } from '../components/ai/EmotionalSearchChatbot';
 import PropertyRecommendations from '../components/ai/PropertyRecommendations';
 import PropertyComparator from '../components/comparator/PropertyComparator';
+import { LoadingOptimized, PageLoading } from '../components/LoadingOptimized';
 
 interface ListingProperty {
   id: string | number;
@@ -177,12 +178,7 @@ export default function ComprarPage() {
       {/* Split View */}
       <div className="flex-1">
         {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando propiedades...</p>
-            </div>
-          </div>
+          <PageLoading message="Cargando propiedades..." />
         ) : (
           <div className="relative h-full">
             <PropertySplitView

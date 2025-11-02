@@ -3,6 +3,7 @@
 import React from 'react'
 import { useProperties } from '../hooks/useProperties'
 import { PropertyCard } from './PropertyCard'
+import { LoadingOptimized } from './LoadingOptimized'
 
 interface PropertyGridProps {
   operation: string
@@ -14,10 +15,11 @@ export function PropertyGrid({ operation, filters }: PropertyGridProps) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-lg">Cargando propiedades reales...</span>
-      </div>
+      <LoadingOptimized 
+        type="property" 
+        count={6} 
+        className="py-12"
+      />
     )
   }
 

@@ -6,6 +6,8 @@ import { MessageCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { FeaturedBadge } from './featured/FeaturedBadge'
 import { ListingTier } from '../lib/featured/types'
+import FavoriteButton from './FavoriteButton'
+import { useToast } from './ToastNotification'
 
 interface Property {
   id: number | string
@@ -43,6 +45,7 @@ const PropertyCardSkeleton = () => (
 );
 
 export const PropertyCard = memo(function PropertyCard({ property }: PropertyCardProps) {
+  const { addToast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
@@ -50,6 +53,12 @@ export const PropertyCard = memo(function PropertyCard({ property }: PropertyCar
     const message = `Hola, me interesa la propiedad: ${property.title} - ${property.price.toLocaleString('es-ES')}`;
     const url = `https://wa.me/+18091234567?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
+    addToast({
+      type: 'info',
+      title: 'WhatsApp abierto',
+      message: 'Serás redirigido a WhatsApp para contactar al broker',
+      duration: 2000,
+    });
   };
 
   // Get the image URL
@@ -95,6 +104,9 @@ export const PropertyCard = memo(function PropertyCard({ property }: PropertyCar
             <div>{property.type || 'Propiedad'}</div>
           </div>
         )}
+        <div className="absolute top-4 left-4 z-10">
+          <FavoriteButton propertyId={Number(property.id)} />
+        </div>
         <div className="absolute top-4 right-4 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-semibold shadow-md">
           {property.operation === 'compra' ? 'Venta' : 'Alquiler'}
         </div>

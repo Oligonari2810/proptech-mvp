@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { PremiumHeader } from './components/PremiumHeader'
 import { FrontendMonitoring } from './components/Monitoring'
 import { SessionProviderWrapper } from './providers/SessionProviderWrapper'
+import { ToastProvider } from './components/ToastNotification'
 import { generateHomepageSchemas } from '../lib/seo/schemaExtended'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import SEOLinks from './components/SEOLinks'
@@ -74,16 +75,18 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <SessionProviderWrapper>
-          <FrontendMonitoring />
-          <a href="#main-content" className="skip-link">
-            Saltar al contenido principal
-          </a>
-          <GoogleAnalytics />
-          <SEOLinks />
-          <PremiumHeader />
-          <main id="main-content">
-            {children}
-          </main>
+          <ToastProvider>
+            <FrontendMonitoring />
+            <a href="#main-content" className="skip-link">
+              Saltar al contenido principal
+            </a>
+            <GoogleAnalytics />
+            <SEOLinks />
+            <PremiumHeader />
+            <main id="main-content">
+              {children}
+            </main>
+          </ToastProvider>
         </SessionProviderWrapper>
       </body>
     </html>
