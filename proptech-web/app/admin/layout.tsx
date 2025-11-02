@@ -30,7 +30,7 @@ export default function AdminLayout({
                 { name: 'API Marketplace', href: '/admin/api-marketplace', icon: '🧩' },
                 { name: 'Usuarios', href: '/admin/users', icon: '👥' },
                 { name: 'Propiedades', href: '/admin/properties', icon: '🏠' },
-                { name: 'Assets Visuales', href: '/admin/assets', icon: '🎨' },
+                // { name: 'Assets Visuales', href: '/admin/assets', icon: '🎨' }, // Página eliminada
                 { name: 'Configuración', href: '/admin/settings', icon: '⚙️' },
               ].map((item) => (
                 <a
