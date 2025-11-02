@@ -712,8 +712,8 @@ def get_properties():
             user = User.query.get(user_id)
             if user:
                 user_profile = {
-                    'preferences': user.preferences or {},
-                    'emotional_profile': user.emotional_profile or {}
+                    'preferences': getattr(user, 'preferences', None) or {},
+                    'emotional_profile': getattr(user, 'emotional_profile', None) or {}
                 }
                 properties_data = emotion_engine.recommend(user_profile, properties_data)
         
@@ -1994,8 +1994,8 @@ def handle_realtime_recommendations(data):
                 
                 # Generar recomendaciones
                 user_profile = {
-                    'preferences': user.preferences or {},
-                    'emotional_profile': user.emotional_profile or {}
+                    'preferences': getattr(user, 'preferences', None) or {},
+                    'emotional_profile': getattr(user, 'emotional_profile', None) or {}
                 }
                 
                 recommendations = emotion_engine.recommend(user_profile, properties_data, top_n=3)
