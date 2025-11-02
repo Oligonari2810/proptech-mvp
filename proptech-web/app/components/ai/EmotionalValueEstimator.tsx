@@ -129,7 +129,7 @@ export default function EmotionalValueEstimator({
           {useEmotional ? '💎 Valor Estimado por IA Emocional' : '💎 Valor Estimado por IA'}
         </h3>
         <div className="text-2xl font-bold text-green-600">
-          ${valuation.estimatedValue?.toLocaleString() || 'N/A'}
+          ${(valuation as any).estimatedValue?.toLocaleString() || valuation.priceRange?.avg?.toLocaleString() || 'N/A'}
         </div>
         <div className="text-sm text-gray-600 mt-1">
           Confianza: {((valuation.confidence || 0) * 100).toFixed(0)}%
