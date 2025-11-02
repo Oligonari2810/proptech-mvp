@@ -1,5 +1,8 @@
 'use client'
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
