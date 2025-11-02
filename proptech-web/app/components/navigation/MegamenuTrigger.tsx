@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
@@ -23,11 +23,41 @@ export function MegamenuTrigger({
   badge,
   icon
 }: MegamenuTriggerProps) {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseLeave = () => {
+    // Delay para permitir movimiento al megamenú
+    if (onMouseLeave) {
+      timeoutRef.current = setTimeout(() => {
+        onMouseLeave();
+        timeoutRef.current = null;
+      }, 300);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    // Cancelar timeout si el mouse vuelve al trigger
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    onHover();
+  };
+
+  useEffect(() => {
+    return () => {
+      // Limpiar timeout al desmontar
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div
       className="relative"
-      onMouseEnter={onHover}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <Link
         href={href}

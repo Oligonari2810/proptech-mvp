@@ -62,11 +62,11 @@ export function PremiumHeader() {
       clearTimeout(timeoutRef.current);
     }
 
-    // Crear timeout con delay de 300ms antes de cerrar (aumentado de 200ms)
+    // Crear timeout con delay de 500ms antes de cerrar (aumentado para mejor UX)
     timeoutRef.current = setTimeout(() => {
       setActiveMegamenu(null);
       timeoutRef.current = null;
-    }, 300);
+    }, 500);
   };
 
   const handleMegamenuMouseLeave = () => {
@@ -210,13 +210,25 @@ export function PremiumHeader() {
 
         {/* Megamenu Dropdown */}
         {activeMegamenu && currentMegamenu && (
-          <Megamenu
-            type={activeMegamenu}
-            featuredItems={currentMegamenu.featuredItems}
-            categories={currentMegamenu.categories}
-            tools={currentMegamenu.tools}
-            onClose={handleMegamenuClose}
-          />
+          <div 
+            className="absolute left-0 right-0 top-full z-40"
+            onMouseEnter={() => {
+              // Cancelar cierre cuando mouse entra en la zona del megamenú
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+              }
+            }}
+            onMouseLeave={handleMegamenuClose}
+          >
+            <Megamenu
+              type={activeMegamenu}
+              featuredItems={currentMegamenu.featuredItems}
+              categories={currentMegamenu.categories}
+              tools={currentMegamenu.tools}
+              onClose={handleMegamenuClose}
+            />
+          </div>
         )}
 
         {/* Mobile Menu */}

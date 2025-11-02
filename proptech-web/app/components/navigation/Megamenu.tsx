@@ -71,20 +71,28 @@ export function Megamenu({ type, featuredItems, categories, tools, onClose }: Me
       clearTimeout(timeoutRef.current);
     }
 
-    // Crear timeout con delay de 300ms antes de cerrar (aumentado de 200ms)
+    // Crear timeout con delay de 500ms antes de cerrar (aumentado para mejor UX)
     timeoutRef.current = setTimeout(() => {
       onClose();
       timeoutRef.current = null;
-    }, 300);
+    }, 500);
   };
 
   return (
-    <div
-      ref={menuRef}
-      className="megamenu-container absolute left-0 right-0 top-full mt-2 bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
-      onMouseEnter={handleMegamenuEnter}
-      onMouseLeave={handleMegamenuLeave}
-    >
+    <>
+      {/* Zona de conexión invisible entre trigger y megamenú */}
+      <div
+        className="absolute left-0 right-0 top-full h-2 z-40 bg-transparent"
+        onMouseEnter={handleMegamenuEnter}
+        onMouseLeave={handleMegamenuLeave}
+        style={{ marginTop: '0px' }}
+      />
+      <div
+        ref={menuRef}
+        className="megamenu-container absolute left-0 right-0 top-full mt-2 bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
+        onMouseEnter={handleMegamenuEnter}
+        onMouseLeave={handleMegamenuLeave}
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Featured Items */}
@@ -186,6 +194,7 @@ export function Megamenu({ type, featuredItems, categories, tools, onClose }: Me
         </div>
       </div>
     </div>
+    </>
   );
 }
 
