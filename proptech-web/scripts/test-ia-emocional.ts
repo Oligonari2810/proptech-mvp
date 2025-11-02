@@ -67,9 +67,8 @@ async function runFullIATesting() {
         hasPool: true,
         hasParking: true,
         proximityBeach: 3,
-        proximitySchools: 0.5,
-        features: ['garden', 'parking', 'pool', 'security']
-      },
+        proximitySchools: 0.5
+      } as AdvancedValuationInput,
       expected: {
         emotionalScore: { min: 70, max: 95 },
         factors: ['green_spaces', 'family_friendly']
@@ -89,9 +88,8 @@ async function runFullIATesting() {
         hasPool: false,
         hasParking: true,
         proximityBeach: 5,
-        proximitySchools: 1,
-        features: ['gym', 'rooftop', 'concierge', 'social_area']
-      },
+        proximitySchools: 1
+      } as AdvancedValuationInput,
       expected: {
         emotionalScore: { min: 65, max: 85 },
         factors: ['social_spaces', 'wellness_focus']
@@ -111,9 +109,8 @@ async function runFullIATesting() {
         hasPool: true,
         hasParking: true,
         proximityBeach: 1,
-        proximitySchools: 2,
-        features: ['pool', 'garden', 'gym', 'spa', 'security', 'social_area']
-      },
+        proximitySchools: 2
+      } as AdvancedValuationInput,
       expected: {
         emotionalScore: { min: 80, max: 100 },
         factors: ['wellness_focus', 'green_spaces']
@@ -147,8 +144,8 @@ async function runFullIATesting() {
       }
 
       // Validar factores emocionales
-      const hasExpectedFactors = testCase.expected.factors.every(factor => 
-        result.factors.some(f => f.toLowerCase().includes(factor.toLowerCase()))
+      const hasExpectedFactors = testCase.expected.factors.every((factor: string) => 
+        result.factors.some((f: string) => f.toLowerCase().includes(factor.toLowerCase()))
       );
       
       if (hasExpectedFactors || result.factors.length > 0) {

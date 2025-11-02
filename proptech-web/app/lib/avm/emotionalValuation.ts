@@ -33,6 +33,10 @@ export interface AdvancedValuationInput extends PropertyInput {
     market_trend?: 'rising' | 'stable' | 'declining';
     days_on_market_avg?: number;
   };
+  // Features adicionales para factores emocionales
+  features?: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface AdvancedValuationResult extends ValuationResult {
