@@ -90,7 +90,7 @@ export function PremiumHeader() {
   const currentMegamenu = getCurrentMegamenu();
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm relative">
+    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Navigation Bar */}
         <div className="flex items-center justify-between h-16">
@@ -229,7 +229,8 @@ export function PremiumHeader() {
       {/* Megamenu Dropdown - FUERA del contenedor para full-width */}
       {activeMegamenu && currentMegamenu && (
         <div 
-          className="absolute left-0 right-0 top-full z-40"
+          className="fixed left-0 right-0 z-40"
+          style={{ top: '64px' }} // Altura del header (h-16 = 64px)
           onMouseEnter={() => {
             // Cancelar cierre cuando mouse entra en la zona del megamenú
             if (timeoutRef.current) {
@@ -239,9 +240,9 @@ export function PremiumHeader() {
           }}
           onMouseLeave={handleMegamenuClose}
         >
-          {/* Zona de conexión continua de 16px entre trigger y megamenú */}
+          {/* Zona de conexión continua de 20px entre trigger y megamenú */}
           <div 
-            className="h-4 bg-transparent"
+            className="h-5 bg-transparent"
             onMouseEnter={() => {
               // Cancelar cierre en la zona de conexión
               if (timeoutRef.current) {
