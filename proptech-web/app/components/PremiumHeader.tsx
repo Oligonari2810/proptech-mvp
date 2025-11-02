@@ -233,7 +233,7 @@ export function PremiumHeader() {
       {/* Megamenu Dropdown - FUERA del contenedor para full-width */}
       {activeMegamenu && currentMegamenu && (
         <div 
-          className="fixed left-0 right-0 z-[60] relative"
+          className="fixed left-0 right-0 z-[60]"
           style={{ top: '64px' }} // Altura del header (h-16 = 64px)
           onMouseEnter={() => {
             // Cancelar cierre cuando mouse entra en la zona del megamenú o conexión
@@ -254,10 +254,11 @@ export function PremiumHeader() {
           {/* Zona de conexión continua más grande entre trigger y megamenú */}
           {/* Esta zona invisible conecta el header con el megamenú para evitar gaps */}
           <div 
-            className="h-12 bg-transparent pointer-events-auto absolute left-0 right-0"
+            className="h-12 bg-transparent pointer-events-auto fixed left-0 right-0"
             style={{ 
-              top: '-12px', // Conectar con el header (64px - 12px = 52px desde el top del megamenú)
-              zIndex: 1000 // Asegurar que está por encima
+              top: '52px', // Justo debajo del header (64px - 12px de padding)
+              zIndex: 1000, // Asegurar que está por encima
+              height: '12px' // Altura pequeña pero suficiente para conectar
             }}
             onMouseEnter={() => {
               // Cancelar cierre en la zona de conexión - CRÍTICO
@@ -266,9 +267,13 @@ export function PremiumHeader() {
                 timeoutRef.current = null;
               }
             }}
-            onMouseLeave={() => {
-              // Si el mouse sale de la zona de conexión sin entrar al megamenú, iniciar cierre
-              // Pero solo si no está entrando al megamenú
+            onMouseLeave={(e) => {
+              // Si el mouse sale de la zona de conexión, verificar si va al megamenú
+              const relatedTarget = e.relatedTarget as HTMLElement;
+              if (!relatedTarget || !relatedTarget.closest('.megamenu-container')) {
+                // No está yendo al megamenú, iniciar cierre
+                handleMegamenuClose();
+              }
             }}
           />
           <Megamenu
