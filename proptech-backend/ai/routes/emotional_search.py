@@ -8,7 +8,6 @@ import json
 from ai.services.emotional_nlp_service import EmotionalNLPService
 from ai.services.emotional_matching_service import EmotionalMatchingService
 from models import Property, db
-import logging
 
 logger = logging.getLogger(__name__)
 
