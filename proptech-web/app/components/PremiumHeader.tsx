@@ -90,8 +90,8 @@ export function PremiumHeader() {
   const currentMegamenu = getCurrentMegamenu();
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Navigation Bar */}
         <div className="flex items-center justify-between h-16">
           {/* Logo + Brand */}
@@ -208,40 +208,6 @@ export function PremiumHeader() {
           </div>
         </div>
 
-        {/* Megamenu Dropdown */}
-        {activeMegamenu && currentMegamenu && (
-          <div 
-            className="absolute left-0 right-0 top-full z-40"
-            onMouseEnter={() => {
-              // Cancelar cierre cuando mouse entra en la zona del megamenú
-              if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-              }
-            }}
-            onMouseLeave={handleMegamenuClose}
-          >
-            {/* Zona de conexión continua de 16px entre trigger y megamenú */}
-            <div 
-              className="h-4 bg-transparent"
-              onMouseEnter={() => {
-                // Cancelar cierre en la zona de conexión
-                if (timeoutRef.current) {
-                  clearTimeout(timeoutRef.current);
-                  timeoutRef.current = null;
-                }
-              }}
-            />
-            <Megamenu
-              type={activeMegamenu}
-              featuredItems={currentMegamenu.featuredItems}
-              categories={currentMegamenu.categories}
-              tools={currentMegamenu.tools}
-              onClose={handleMegamenuClose}
-            />
-          </div>
-        )}
-
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-gray-100 bg-white">
@@ -259,6 +225,40 @@ export function PremiumHeader() {
           </div>
         )}
       </div>
+
+      {/* Megamenu Dropdown - FUERA del contenedor para full-width */}
+      {activeMegamenu && currentMegamenu && (
+        <div 
+          className="absolute left-0 right-0 top-full z-40"
+          onMouseEnter={() => {
+            // Cancelar cierre cuando mouse entra en la zona del megamenú
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={handleMegamenuClose}
+        >
+          {/* Zona de conexión continua de 16px entre trigger y megamenú */}
+          <div 
+            className="h-4 bg-transparent"
+            onMouseEnter={() => {
+              // Cancelar cierre en la zona de conexión
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+              }
+            }}
+          />
+          <Megamenu
+            type={activeMegamenu}
+            featuredItems={currentMegamenu.featuredItems}
+            categories={currentMegamenu.categories}
+            tools={currentMegamenu.tools}
+            onClose={handleMegamenuClose}
+          />
+        </div>
+      )}
     </header>
   );
 }
