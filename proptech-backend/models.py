@@ -179,3 +179,24 @@ class Review(db.Model):
         Index('idx_reviews_rating', 'rating'),
         Index('idx_reviews_verified', 'verified'),
     )
+
+# ✅ Modelo de Featured Listings
+class FeaturedListing(db.Model):
+    __tablename__ = "featured_listings"
+
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    tier = Column(String(50), nullable=False, default="featured")  # featured, premium, platinum
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, default=True)
+    priority = Column(Integer, nullable=True)  # Para ordenamiento (1 = más prioritario)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_featured_property', 'property_id'),
+        Index('idx_featured_tier', 'tier'),
+        Index('idx_featured_active', 'is_active'),
+        Index('idx_featured_dates', 'start_date', 'end_date'),
+    )

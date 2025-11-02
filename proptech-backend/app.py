@@ -156,7 +156,7 @@ except:
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Importar modelos desde models.py
-from models import User, Property, Favorite, Review
+from models import User, Property, Favorite, Review, FeaturedListing
 
 # Importar y registrar blueprint de autenticación
 try:
@@ -189,6 +189,14 @@ try:
     logger.info("✅ Blueprint de reviews registrado")
 except Exception as e:
     logger.warning(f"⚠️ No se pudo registrar blueprint de reviews: {e}")
+
+# Importar y registrar blueprint de featured listings
+try:
+    from routes.featured import featured_bp
+    app.register_blueprint(featured_bp)
+    logger.info("✅ Blueprint de featured listings registrado")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo registrar blueprint de featured listings: {e}")
 
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback

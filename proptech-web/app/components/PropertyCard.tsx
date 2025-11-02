@@ -4,6 +4,8 @@ import React, { memo, useState } from 'react'
 import Image from 'next/image'
 import { MessageCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { FeaturedBadge } from './featured/FeaturedBadge'
+import { ListingTier } from '../lib/featured/types'
 
 interface Property {
   id: number | string
@@ -21,6 +23,7 @@ interface Property {
   type?: string
   operation?: string
   emotional_tags?: string[]
+  featuredTier?: ListingTier
 }
 
 interface PropertyCardProps {
@@ -56,7 +59,14 @@ export const PropertyCard = memo(function PropertyCard({ property }: PropertyCar
   const bathrooms = property.bathrooms || 0;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
+      {/* Featured Badge */}
+      {property.featuredTier && property.featuredTier !== 'basic' && (
+        <div className="absolute top-3 right-3 z-10">
+          <FeaturedBadge tier={property.featuredTier} />
+        </div>
+      )}
+
       {/* Imagen de la propiedad */}
       <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg relative">
         {imageUrl && !imageError ? (
