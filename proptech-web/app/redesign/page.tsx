@@ -1,5 +1,8 @@
 'use client';
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 import HeroSection from '../components/redesign/HeroSection';
 import ActionTiles from '../components/redesign/ActionTiles';
 import '../styles/redesign/globals.css';

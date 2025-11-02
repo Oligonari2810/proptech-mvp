@@ -1,5 +1,8 @@
 'use client';
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import RedesignPropertyCard from '../../components/redesign/PropertyCard';
 import '../../styles/redesign/globals.css';

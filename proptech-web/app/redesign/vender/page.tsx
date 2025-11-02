@@ -1,5 +1,8 @@
 'use client';
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 import PropertyForm from '../../components/redesign/PropertyForm';
 import NextAuthRoleGuard from '../../components/auth/NextAuthRoleGuard';
 import '../../styles/redesign/globals.css';
