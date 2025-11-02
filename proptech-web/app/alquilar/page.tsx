@@ -1,5 +1,8 @@
 "use client";
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState, useCallback } from 'react';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
