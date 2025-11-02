@@ -27,6 +27,7 @@ interface MegamenuProps {
 
 export function Megamenu({ type, featuredItems, categories, tools, onClose }: MegamenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,14 +48,42 @@ export function Megamenu({ type, featuredItems, categories, tools, onClose }: Me
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
+      // Limpiar timeout si existe
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, [onClose]);
+
+  // Manejar mouse enter en megamenú
+  const handleMegamenuEnter = () => {
+    // Cancelar cualquier timeout de cierre
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  // Manejar mouse leave del megamenú con delay
+  const handleMegamenuLeave = () => {
+    // Limpiar timeout anterior si existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Crear timeout con delay de 200ms antes de cerrar
+    timeoutRef.current = setTimeout(() => {
+      onClose();
+      timeoutRef.current = null;
+    }, 200);
+  };
 
   return (
     <div
       ref={menuRef}
-      className="absolute left-0 right-0 top-full mt-0 bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
-      onMouseLeave={onClose}
+      className="megamenu-container absolute left-0 right-0 top-full mt-1 bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
+      onMouseEnter={handleMegamenuEnter}
+      onMouseLeave={handleMegamenuLeave}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

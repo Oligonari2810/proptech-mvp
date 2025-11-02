@@ -12,7 +12,7 @@
  * - Integración completa con herramientas legales
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -33,6 +33,7 @@ export function PremiumHeader() {
 
   const [activeMegamenu, setActiveMegamenu] = useState<'comprar' | 'alquilar' | 'vender' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Navegación principal
   const publicNavItems = [
@@ -47,11 +48,30 @@ export function PremiumHeader() {
   ];
 
   const handleMegamenuHover = (type: 'comprar' | 'alquilar' | 'vender') => {
+    // Cancelar timeout de cierre si existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setActiveMegamenu(type);
   };
 
   const handleMegamenuClose = () => {
-    setActiveMegamenu(null);
+    // Limpiar timeout anterior si existe
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Crear timeout con delay de 200ms antes de cerrar
+    timeoutRef.current = setTimeout(() => {
+      setActiveMegamenu(null);
+      timeoutRef.current = null;
+    }, 200);
+  };
+
+  const handleMegamenuMouseLeave = () => {
+    // Solo cerrar si no estamos moviéndonos hacia el megamenú
+    handleMegamenuClose();
   };
 
   const getCurrentMegamenu = () => {
@@ -89,7 +109,15 @@ export function PremiumHeader() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          <nav 
+            className="hidden lg:flex items-center space-x-1"
+            onMouseLeave={() => {
+              // Solo cerrar si no estamos moviéndonos hacia el megamenú
+              if (activeMegamenu) {
+                handleMegamenuClose();
+              }
+            }}
+          >
             {/* Comprar con Megamenu */}
             <MegamenuTrigger
               title="Comprar"
@@ -97,7 +125,7 @@ export function PremiumHeader() {
               icon="🏠"
               isActive={activeMegamenu === 'comprar' || pathname.startsWith('/comprar')}
               onHover={() => handleMegamenuHover('comprar')}
-              onMouseLeave={handleMegamenuClose}
+              onMouseLeave={handleMegamenuMouseLeave}
               badge="500+"
             />
 
@@ -108,7 +136,7 @@ export function PremiumHeader() {
               icon="🔑"
               isActive={activeMegamenu === 'alquilar' || pathname.startsWith('/alquilar')}
               onHover={() => handleMegamenuHover('alquilar')}
-              onMouseLeave={handleMegamenuClose}
+              onMouseLeave={handleMegamenuMouseLeave}
               badge="200+"
             />
 
@@ -119,7 +147,7 @@ export function PremiumHeader() {
               icon="📈"
               isActive={activeMegamenu === 'vender' || pathname.startsWith('/vender') || pathname === '/valorar'}
               onHover={() => handleMegamenuHover('vender')}
-              onMouseLeave={handleMegamenuClose}
+              onMouseLeave={handleMegamenuMouseLeave}
             />
 
             {/* Otros enlaces simples */}
