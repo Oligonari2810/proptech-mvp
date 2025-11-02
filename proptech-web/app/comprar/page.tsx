@@ -203,6 +203,15 @@ export default function ComprarPage() {
           </div>
         )}
       </div>
+
+      {/* Chatbot de IA Emocional */}
+      <EmotionalSearchChatbot 
+        showSuggestions={true}
+        onPropertySelect={(property) => {
+          // Redirigir a la página de detalle de la propiedad
+          window.location.href = `/properties/${property.id}`;
+        }}
+      />
     </div>
   );
 }
