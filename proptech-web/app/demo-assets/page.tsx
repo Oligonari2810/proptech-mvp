@@ -3,6 +3,9 @@ import { useState } from 'react';
 import ImageOptimizer, { HeroImage, LifestyleImage, ProfessionalImage } from '../components/ui/ImageOptimizer';
 import { HABITATPRO_IMAGES } from '../config/images';
 
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
 export default function DemoAssetsPage() {
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof HABITATPRO_IMAGES>('hero');
   
