@@ -1,11 +1,11 @@
-'use client'
-import { useToast } from '../components/ToastNotification';
-import { VoiceSearch } from '../components/VoiceSearch';
+'use client';
 
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react'
+import React, { useState } from 'react';
+import { useToast } from '../components/ToastNotification';
+import { VoiceSearch } from '../components/VoiceSearch';
 import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import PropertyForm from '../components/PropertyForm'
 import { AddressAutocomplete } from '../components/AddressAutocomplete'
@@ -32,10 +32,7 @@ export default function VenderPage() {
                 message: `Buscando: "${text}"`,
                 duration: 2000,
               });
-              // Integrar con búsqueda existente
-              if (typeof handleSearch === 'function') {
-                handleSearch({ query: text });
-              }
+              // Nota: Esta página es para publicar propiedades, no para buscar
             }}
             onError={(error) => {
               addToast({

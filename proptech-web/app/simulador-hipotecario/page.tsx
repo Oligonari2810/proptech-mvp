@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/components/ToastNotification';
-import { LoadingOptimized } from '@/components/LoadingOptimized';
+import { useToast } from '../components/ToastNotification';
+import { LoadingOptimized } from '../components/LoadingOptimized';
 import { useRouter } from 'next/navigation';
 
 interface SimulacionHipoteca {

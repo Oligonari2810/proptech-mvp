@@ -1,10 +1,10 @@
-import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 "use client";
 
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import { useToast } from '../components/ToastNotification';
 import { VoiceSearch } from '../components/VoiceSearch';
 import SmartFilters from '../components/search/SmartFilters';
@@ -167,10 +167,8 @@ export default function AlquilarPage() {
                 message: `Buscando: "${text}"`,
                 duration: 2000,
               });
-              // Integrar con búsqueda existente
-              if (typeof handleSearch === 'function') {
-                handleSearch({ query: text });
-              }
+              // Integrar con filtros existentes
+              handleFilterChange({ ...filters, location: text });
             }}
             onError={(error) => {
               addToast({

@@ -185,10 +185,8 @@ export default function ComprarPage() {
                 message: `Buscando: "${text}"`,
                 duration: 2000,
               });
-              // Integrar con búsqueda existente
-              if (typeof handleSearch === 'function') {
-                handleSearch({ query: text });
-              }
+              // Integrar con filtros existentes
+              handleFilterChange({ ...filters, location: text });
             }}
             onError={(error) => {
               addToast({

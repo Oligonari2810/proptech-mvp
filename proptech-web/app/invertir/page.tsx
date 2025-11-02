@@ -1,7 +1,7 @@
-import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import { useToast } from '../components/ToastNotification';
 import { VoiceSearch } from '../components/VoiceSearch';
 import Link from 'next/link';
@@ -196,10 +196,8 @@ export default function InvertirPage() {
                 message: `Buscando: "${text}"`,
                 duration: 2000,
               });
-              // Integrar con búsqueda existente
-              if (typeof handleSearch === 'function') {
-                handleSearch({ query: text });
-              }
+              // Integrar con filtros existentes
+              handleFilterChange({ ...filters, location: text });
             }}
             onError={(error) => {
               addToast({
