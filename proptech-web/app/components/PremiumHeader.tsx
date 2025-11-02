@@ -229,7 +229,7 @@ export function PremiumHeader() {
       {/* Megamenu Dropdown - FUERA del contenedor para full-width */}
       {activeMegamenu && currentMegamenu && (
         <div 
-          className="fixed left-0 right-0 z-40"
+          className="fixed left-0 right-0 z-[60]"
           style={{ top: '64px' }} // Altura del header (h-16 = 64px)
           onMouseEnter={() => {
             // Cancelar cierre cuando mouse entra en la zona del megamenú

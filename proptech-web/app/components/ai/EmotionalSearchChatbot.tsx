@@ -83,7 +83,15 @@ export function EmotionalSearchChatbot({
     setMessages(prev => [...prev, thinkingMessage]);
 
     try {
+      console.log('🔍 Enviando búsqueda emocional:', userMessage.text);
+      
       const response = await searchEmotional(userMessage.text);
+      
+      console.log('✅ Respuesta recibida:', response);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.error || response?.message || 'Error en la respuesta del servidor');
+      }
       
       setLastResponse(response);
 
@@ -94,7 +102,7 @@ export function EmotionalSearchChatbot({
       const aiMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'ai',
-        text: response.emotional_summary || `Encontré ${response.matches_found} propiedades que coinciden con lo que buscas.`,
+        text: response.emotional_summary || response.message || `Encontré ${response.matches_found || 0} propiedades que coinciden con lo que buscas.`,
         timestamp: new Date(),
         data: response
       };
@@ -102,26 +110,28 @@ export function EmotionalSearchChatbot({
       setMessages(prev => [...prev, aiMessage]);
 
       // Si no hay propiedades, agregar mensaje de sugerencia
-      if (response.matches_found === 0) {
+      if (!response.matches_found || response.matches_found === 0) {
         const suggestionMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
-          text: '¿Podrías ser más específico? Por ejemplo: "hogar tranquilo para mi familia" o "apartamento vibrante para joven profesional".',
+          text: '¿Podrías ser más específico? Por ejemplo: "hogar tranquilo para mi familia" o "apartamento vibrante para joven profesional". También puedes probar: "casa con jardín en Punta Cana" o "apartamento moderno cerca del mar".',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, suggestionMessage]);
       }
-    } catch (error) {
-      console.error('Error en búsqueda emocional:', error);
+    } catch (error: any) {
+      console.error('❌ Error en búsqueda emocional:', error);
       
       // Remover mensaje de "pensando"
       setMessages(prev => prev.filter(m => m.id !== thinkingMessage.id));
 
-      // Agregar mensaje de error
+      // Agregar mensaje de error más descriptivo
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'ai',
-        text: 'Lo siento, hubo un error al procesar tu búsqueda. Por favor, intenta de nuevo.',
+        text: error?.message?.includes('fetch') || error?.message?.includes('network')
+          ? 'No pude conectar con el servidor. Verifica tu conexión a internet e intenta de nuevo.'
+          : error?.message || 'Lo siento, hubo un error al procesar tu búsqueda. Por favor, intenta de nuevo o reformula tu búsqueda.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);

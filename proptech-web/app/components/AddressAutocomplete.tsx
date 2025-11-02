@@ -42,8 +42,10 @@ export function AddressAutocomplete({
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
     
-    if (!apiKey) {
-      console.warn('Google Places API key no configurada. El autocompletado no funcionará.');
+    if (!apiKey || apiKey.trim() === '') {
+      console.warn('⚠️ Google Places API key no configurada. El autocompletado no funcionará.');
+      console.warn('💡 Configura NEXT_PUBLIC_GOOGLE_PLACES_API_KEY en Vercel para habilitar autocompletado.');
+      // NO retornar aquí, permitir que el input funcione sin autocompletado
       return;
     }
 
@@ -169,7 +171,33 @@ export function AddressAutocomplete({
   }, []);
 
   // Fallback si Google Places no está disponible
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+  const hasApiKey = apiKey && apiKey.trim() !== '';
+  
   const baseClassName = `w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${className}`;
+
+  // Si no hay API key, usar input simple sin autocompletado
+  if (!hasApiKey) {
+    return (
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || 'Ingresa dirección manualmente (ej: Calle Principal 123, Santo Domingo)'}
+          required={required}
+          className={baseClassName}
+          autoComplete="address-line1"
+        />
+        {value.length === 0 && (
+          <p className="mt-1 text-xs text-gray-500">
+            💡 Autocompletado deshabilitado. Ingresa la dirección manualmente.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
@@ -178,7 +206,7 @@ export function AddressAutocomplete({
         type="text"
         value={value}
         onChange={handleInputChange}
-        onFocus={() => value.length >= 3 && setShowSuggestions(true)}
+        onFocus={() => value.length >= 3 && hasApiKey && setShowSuggestions(true)}
         placeholder={placeholder}
         required={required}
         className={baseClassName}

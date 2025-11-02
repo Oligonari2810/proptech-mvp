@@ -75,6 +75,9 @@ export async function searchEmotional(query: string, options?: Partial<Emotional
       ...options,
     };
 
+    console.log('📡 Llamando a:', `${BACKEND_URL}/api/ai/emotional-search`);
+    console.log('📤 Request:', request);
+
     const response = await fetch(`${BACKEND_URL}/api/ai/emotional-search`, {
       method: 'POST',
       headers: {
@@ -83,15 +86,32 @@ export async function searchEmotional(query: string, options?: Partial<Emotional
       body: JSON.stringify(request),
     });
 
+    console.log('📥 Response status:', response.status, response.statusText);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      const errorMessage = errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`;
+      console.error('❌ Error response:', errorData);
+      throw new Error(errorMessage);
     }
 
     const data: EmotionalSearchResponse = await response.json();
+    console.log('✅ Response data:', data);
+    
+    // Si la respuesta no tiene success=true, tratar como error
+    if (data.success === false) {
+      throw new Error(data.error || data.message || 'Error en la respuesta del servidor');
+    }
+    
     return data;
-  } catch (error) {
-    console.error('Error en búsqueda emocional:', error);
+  } catch (error: any) {
+    console.error('❌ Error en búsqueda emocional:', error);
+    
+    // Si es un error de red, lanzar error más descriptivo
+    if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
+      throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+    }
+    
     throw error;
   }
 }

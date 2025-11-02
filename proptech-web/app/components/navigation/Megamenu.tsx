@@ -81,7 +81,7 @@ export function Megamenu({ type, featuredItems, categories, tools, onClose }: Me
   return (
     <div
       ref={menuRef}
-      className="megamenu-container bg-white border-b border-gray-200 shadow-xl z-50 animate-in slide-in-from-top-2 duration-300"
+      className="megamenu-container bg-white border-b border-gray-200 shadow-xl z-[60] animate-in slide-in-from-top-2 duration-300"
       onMouseEnter={handleMegamenuEnter}
       onMouseLeave={handleMegamenuLeave}
     >
