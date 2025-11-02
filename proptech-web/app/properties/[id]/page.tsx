@@ -10,6 +10,7 @@ import { useFavorites } from '../../hooks/useFavorites';
 import FavoriteButton from '../../components/FavoriteButton';
 import { useSession } from 'next-auth/react';
 import ValueEstimator from '../../components/ai/ValueEstimator';
+import EmotionalValueEstimator from '../../components/ai/EmotionalValueEstimator';
 import PropertyRecommendations from '../../components/ai/PropertyRecommendations';
 import SaleProbability from '../../components/ai/SaleProbability';
 import { PropertyReviews } from '../../components/reputation/PropertyReviews';
@@ -316,7 +317,7 @@ export default function PropertyDetailPage() {
             />
 
           {/* IA: Valor estimado */}
-          <ValueEstimator property={property} />
+          <EmotionalValueEstimator property={property} useEmotional={true} />
 
           {/* IA: Probabilidad de venta */}
           <SaleProbability property={property} />

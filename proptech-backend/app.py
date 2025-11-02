@@ -202,6 +202,13 @@ except Exception as e:
 try:
     from ai.routes.emotional_search import emotional_bp
     app.register_blueprint(emotional_bp)
+    
+    # Registrar blueprint de IA Emocional
+    try:
+        from ai.routes.ai_routes import ai_bp
+        app.register_blueprint(ai_bp, url_prefix='/api/ai')
+    except ImportError as e:
+        logger.warning(f"Blueprints de IA Emocional no disponibles: {e}")
     logger.info("✅ Blueprint de búsqueda emocional registrado")
 except Exception as e:
     logger.warning(f"⚠️ No se pudo registrar blueprint de búsqueda emocional: {e}")
