@@ -2,6 +2,9 @@
 
 import NextAuthRoleGuard from '../components/auth/NextAuthRoleGuard';
 
+// Admin layout debe ser dinámico para evitar prerender
+export const dynamic = 'force-dynamic';
+
 export default function AdminLayout({
   children,
 }: {
