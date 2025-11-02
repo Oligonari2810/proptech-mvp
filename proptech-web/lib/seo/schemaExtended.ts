@@ -256,6 +256,22 @@ export function generateHomepageSchemas() {
 }
 
 /**
+ * Schema: RealEstateListing (para páginas de búsqueda)
+ */
+export const realEstateListingSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateListing',
+  name: 'Búsqueda de Propiedades en República Dominicana',
+  description: 'Plataforma de búsqueda inteligente con IA emocional para encontrar propiedades en República Dominicana',
+  url: `${baseUrl}/comprar`,
+  areaServed: {
+    '@type': 'Country',
+    name: 'República Dominicana',
+  },
+  availableLanguage: 'es',
+}
+
+/**
  * Generador de Schema para página de herramienta
  */
 export function generateToolSchema(toolType: 'tax' | 'mortgage' | 'laws' | 'tramites') {
@@ -270,6 +286,33 @@ export function generateToolSchema(toolType: 'tax' | 'mortgage' | 'laws' | 'tram
       return governmentServiceSchema
     default:
       return null
+  }
+}
+
+/**
+ * Generador de Schema para páginas de búsqueda
+ */
+export function generateSearchPageSchema(pageType: 'buy' | 'rent' | 'sell' | 'invest') {
+  const pageNames = {
+    buy: { name: 'Comprar Propiedades', url: `${baseUrl}/comprar` },
+    rent: { name: 'Alquilar Apartamentos', url: `${baseUrl}/alquilar` },
+    sell: { name: 'Vender Propiedades', url: `${baseUrl}/vender` },
+    invest: { name: 'Inversión Inmobiliaria', url: `${baseUrl}/invertir` },
+  }
+
+  const pageInfo = pageNames[pageType]
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: `${pageInfo.name} en República Dominicana`,
+    description: `Plataforma de búsqueda inteligente con IA emocional para ${pageInfo.name.toLowerCase()} en República Dominicana`,
+    url: pageInfo.url,
+    areaServed: {
+      '@type': 'Country',
+      name: 'República Dominicana',
+    },
+    availableLanguage: 'es',
   }
 }
 

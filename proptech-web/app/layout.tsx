@@ -6,6 +6,8 @@ import { PremiumHeader } from './components/PremiumHeader'
 import { FrontendMonitoring } from './components/Monitoring'
 import { SessionProviderWrapper } from './providers/SessionProviderWrapper'
 import { generateHomepageSchemas } from '../lib/seo/schemaExtended'
+import GoogleAnalytics from './components/GoogleAnalytics'
+import SEOLinks from './components/SEOLinks'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -53,6 +55,13 @@ export default function RootLayout({
         <link rel="alternate" hrefLang="es" href="https://habitatprord.com" />
         <link rel="alternate" hrefLang="es-DO" href="https://habitatprord.com" />
         <link rel="alternate" hrefLang="x-default" href="https://habitatprord.com" />
+        {/* Google Search Console Verification - Reemplazar con tu código */}
+        {process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && (
+          <meta
+            name="google-site-verification"
+            content={process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION}
+          />
+        )}
         {/* Schema Markup: Organization, RealEstateAgent, WebSite */}
         {schemas.map((schema, index) => (
           <script
@@ -69,6 +78,8 @@ export default function RootLayout({
           <a href="#main-content" className="skip-link">
             Saltar al contenido principal
           </a>
+          <GoogleAnalytics />
+          <SEOLinks />
           <PremiumHeader />
           <main id="main-content">
             {children}
