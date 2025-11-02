@@ -4,6 +4,16 @@ from ai.models.emotion.emotion_model import EmotionAwareRecommendation, db
 from ai.services.emotional_valuation_service import EmotionalValuationService, EmotionalFactorsService
 from ai.services.valuation_engine import HabitatEstimateEngine
 
+# Importar servicios avanzados (opcionales)
+try:
+    from ai.services.geospatial_service import GeospatialService
+    from ai.services.valuation_explainer_service import ValuationExplainerService
+    ADVANCED_SERVICES_AVAILABLE = True
+except ImportError:
+    ADVANCED_SERVICES_AVAILABLE = False
+    GeospatialService = None
+    ValuationExplainerService = None
+
 ai_bp = Blueprint('ai', __name__)
 recommender = EmotionAwareRecommender()
 emotional_valuation_service = EmotionalValuationService()
@@ -115,10 +125,14 @@ def emotional_valuation():
             }
         }
         
+        # Determinar si usar datos geoespaciales
+        use_geospatial = data.get('use_geospatial', False) and ADVANCED_SERVICES_AVAILABLE
+        
         # Calcular valoración emocional avanzada
         advanced_valuation = emotional_valuation_service.calculate_advanced_valuation(
             property_data,
-            base_valuation
+            base_valuation,
+            use_geospatial=use_geospatial
         )
         
         return jsonify({

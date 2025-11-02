@@ -7,6 +7,16 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import math
 
+# Importar servicios avanzados (opcionales)
+try:
+    from ai.services.geospatial_service import GeospatialService
+    from ai.services.valuation_explainer_service import ValuationExplainerService
+    GEOSPATIAL_AVAILABLE = True
+except ImportError:
+    GEOSPATIAL_AVAILABLE = False
+    GeospatialService = None
+    ValuationExplainerService = None
+
 
 class EmotionalFactorsService:
     """Servicio para calcular factores emocionales de propiedades"""
@@ -254,11 +264,14 @@ class EmotionalValuationService:
     
     def __init__(self):
         self.emotional_factors_service = EmotionalFactorsService()
+        self.geospatial_service = GeospatialService() if GEOSPATIAL_AVAILABLE and GeospatialService else None
+        self.explainer_service = ValuationExplainerService() if GEOSPATIAL_AVAILABLE and ValuationExplainerService else None
     
     def calculate_advanced_valuation(
         self,
         property_data: Dict[str, Any],
-        base_valuation: Dict[str, Any]
+        base_valuation: Dict[str, Any],
+        use_geospatial: bool = False
     ) -> Dict[str, Any]:
         """
         Calcula valoración avanzada con factores emocionales
@@ -266,12 +279,47 @@ class EmotionalValuationService:
         Args:
             property_data: Datos de la propiedad
             base_valuation: Valoración base calculada previamente
+            use_geospatial: Si True, usa datos geoespaciales en tiempo real
         
         Returns:
             Valoración avanzada con factores emocionales
         """
-        # Calcular factores emocionales
-        emotional_factors = self.emotional_factors_service.calculate_emotional_factors(property_data)
+        # Usar datos geoespaciales si están disponibles y solicitados
+        if use_geospatial and self.geospatial_service:
+            latitude = property_data.get('latitude')
+            longitude = property_data.get('longitude')
+            
+            if latitude and longitude:
+                # Obtener factores emocionales desde datos geoespaciales
+                geospatial_factors = self.geospatial_service.get_emotional_factors_from_location(
+                    latitude, longitude, property_data.get('location')
+                )
+                
+                # Combinar factores geoespaciales con factores calculados
+                emotional_factors = self.emotional_factors_service.calculate_emotional_factors(property_data)
+                
+                # Enriquecer con datos geoespaciales
+                if 'green_spaces' in geospatial_factors:
+                    emotional_factors['lifestyle_quality']['green_spaces'] = geospatial_factors['green_spaces'].get('score', 6)
+                if 'noise_level' in geospatial_factors:
+                    emotional_factors['lifestyle_quality']['noise_level'] = geospatial_factors['noise_level'].get('score', 6)
+                if 'air_quality' in geospatial_factors:
+                    emotional_factors['lifestyle_quality']['air_quality'] = geospatial_factors['air_quality'].get('score', 7)
+                if 'proximity_data' in geospatial_factors:
+                    # Actualizar proximity_quality con datos reales
+                    proximity_data = geospatial_factors['proximity_data']
+                    if proximity_data.get('parks'):
+                        nearest_park = proximity_data['parks'][0]
+                        emotional_factors['proximity_quality']['parks'] = nearest_park.get('distance', 800)
+                    if proximity_data.get('schools'):
+                        nearest_school = proximity_data['schools'][0]
+                        emotional_factors['proximity_quality']['schools'] = nearest_school.get('distance', 2000)
+            else:
+                # Sin coordenadas, usar cálculo estándar
+                emotional_factors = self.emotional_factors_service.calculate_emotional_factors(property_data)
+        else:
+            # Calcular factores emocionales estándar
+            emotional_factors = self.emotional_factors_service.calculate_emotional_factors(property_data)
         
         # Calcular score emocional
         emotional_result = self.emotional_factors_service.calculate_emotional_score(emotional_factors)
@@ -302,7 +350,24 @@ class EmotionalValuationService:
         elif emotional_result['emotional_score'] < 40:
             final_confidence = 'medium'
         
-        return {
+        # Generar explicación avanzada si el servicio está disponible
+        advanced_insights = None
+        if self.explainer_service:
+            try:
+                advanced_insights = self.explainer_service.generate_emotional_insights(
+                    {
+                        'emotional_score': emotional_result['emotional_score'],
+                        'emotional_breakdown': emotional_result,
+                        'priceRange': adjusted_price,
+                        'score': min(800, base_valuation.get('score', 400) + (emotional_result['emotional_score'] // 10))
+                    },
+                    property_data
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Error generando insights avanzados: {e}")
+        
+        result = {
             **base_valuation,
             'score': min(800, base_valuation.get('score', 400) + (emotional_result['emotional_score'] // 10)),
             'priceRange': adjusted_price,
@@ -318,6 +383,12 @@ class EmotionalValuationService:
             },
             'confidence_interval': confidence_interval
         }
+        
+        # Agregar insights avanzados si están disponibles
+        if advanced_insights:
+            result['advanced_insights'] = advanced_insights
+        
+        return result
     
     def _calculate_emotional_multiplier(self, emotional_score: int) -> float:
         """Calcula multiplicador emocional basado en score (0-100)"""
