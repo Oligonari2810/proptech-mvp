@@ -246,6 +246,14 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ Blueprint de health check no disponible: {e}")
 
+# Importar y registrar blueprint de valuation (incluye AVM)
+try:
+    from routes.valuation import valuation_bp
+    app.register_blueprint(valuation_bp)
+    logger.info("✅ Blueprint de valuation (AVM) registrado")
+except Exception as e:
+    logger.warning(f"⚠️ Blueprint de valuation no disponible: {e}")
+
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
 try:
@@ -1056,51 +1064,92 @@ def ai_describe():
 @app.route('/api/health', methods=['GET'])
 # @limiter.exempt  # Temporarily disabled
 def health_check():
-    """Health check completo del sistema"""
-    health_status = {
-        'status': 'healthy',
-        'timestamp': datetime.utcnow().isoformat(),
-        'services': {
-            'database': 'unknown',
-            'redis': 'unknown',
-            'ai_engine': 'unknown'
-        },
-        'metrics': {
-            'total_properties': 0,
-            'total_users': 0,
-            'ai_trained': emotion_engine.is_trained
+    """Health check completo del sistema - CORREGIDO"""
+    try:
+        # ✅ INICIALIZAR ESTRUCTURA COMPLETA CON CACHE
+        health_status = {
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'version': '1.0.0',
+            'services': {
+                'database': 'unknown',
+                'redis': 'unknown',
+                'ai_engine': 'unknown',
+                'avm': 'unknown',
+                'properties': 'unknown',
+                'valuation': 'unknown'
+            },
+            'metrics': {
+                'total_properties': 0,
+                'total_users': 0,
+                'ai_trained': emotion_engine.is_trained if hasattr(emotion_engine, 'is_trained') else False
+            },
+            'cache': {}  # ✅ INICIALIZADO ANTES DE USAR
         }
-    }
-    
-    try:
+        
         # Verificar base de datos - CORREGIDO para SQLAlchemy 2.0
-        db.session.execute(text('SELECT 1'))
-        health_status['services']['database'] = 'healthy'
-        health_status['metrics']['total_properties'] = Property.query.count()
-        health_status['metrics']['total_users'] = User.query.count()
-    except Exception as e:
-        health_status['services']['database'] = 'unhealthy'
-        health_status['status'] = 'degraded'
-        logger.error(f"Database health check error: {e}")
-    
-    # Verificar Redis
-    try:
-        if redis_client:
-            redis_client.ping()
-            health_status['services']['redis'] = 'healthy'
-            health_status['cache']['redis'] = 'available'
-            logger.info("✅ Redis disponible en health check")
-        else:
-            health_status['services']['redis'] = 'unavailable'
+        try:
+            db.session.execute(text('SELECT 1'))
+            health_status['services']['database'] = 'healthy'
+            health_status['metrics']['total_properties'] = Property.query.count()
+            health_status['metrics']['total_users'] = User.query.count()
+            health_status['services']['properties'] = 'operational'
+        except Exception as e:
+            health_status['services']['database'] = 'unhealthy'
+            health_status['services']['properties'] = 'degraded'
+            health_status['status'] = 'degraded'
+            logger.error(f"Database health check error: {e}")
+        
+        # Verificar Redis - CORREGIDO: cache ya inicializado
+        try:
+            if redis_client:
+                redis_client.ping()
+                health_status['services']['redis'] = 'healthy'
+                health_status['cache']['redis'] = 'available'
+                logger.info("✅ Redis disponible en health check")
+            else:
+                health_status['services']['redis'] = 'unavailable'
+                health_status['cache']['redis'] = 'unavailable'
+                logger.warning("⚠️ Redis no disponible en health check")
+        except Exception as e:
+            health_status['services']['redis'] = 'unhealthy'
             health_status['cache']['redis'] = 'unavailable'
-            logger.warning("⚠️ Redis no disponible en health check")
+            health_status['status'] = 'degraded'
+            logger.error(f"Redis health check error: {e}")
+        
+        # Verificar AVM
+        try:
+            from avm.property_valuation import PropertyValuationModel
+            health_status['services']['avm'] = 'operational'
+            health_status['services']['valuation'] = 'operational'
+        except Exception as e:
+            health_status['services']['avm'] = 'unavailable'
+            health_status['services']['valuation'] = 'unavailable'
+            logger.warning(f"AVM not available: {e}")
+        
+        # Verificar AI Engine
+        try:
+            if hasattr(emotion_engine, 'is_trained'):
+                health_status['services']['ai_engine'] = 'operational' if emotion_engine.is_trained else 'not_trained'
+            else:
+                health_status['services']['ai_engine'] = 'unavailable'
+        except Exception as e:
+            health_status['services']['ai_engine'] = 'unavailable'
+            logger.warning(f"AI Engine check error: {e}")
+        
+        # Determinar código HTTP según estado
+        if health_status['status'] == 'healthy':
+            return jsonify(health_status), 200
+        else:
+            return jsonify(health_status), 503  # Service Unavailable si hay problemas
+            
     except Exception as e:
-        health_status['services']['redis'] = 'unhealthy'
-        health_status['cache']['redis'] = 'unavailable'
-        health_status['status'] = 'degraded'
-        logger.error(f"Redis health check error: {e}")
-    
-    return jsonify(health_status)
+        logger.error(f"Health check failed: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
 
 # VERSION ENDPOINT
 @app.route('/version', methods=['GET'])
