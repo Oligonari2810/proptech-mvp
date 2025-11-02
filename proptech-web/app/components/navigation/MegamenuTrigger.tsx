@@ -23,35 +23,20 @@ export function MegamenuTrigger({
   badge,
   icon
 }: MegamenuTriggerProps) {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleMouseLeave = () => {
-    // Delay para permitir movimiento al megamenú
-    if (onMouseLeave) {
-      timeoutRef.current = setTimeout(() => {
-        onMouseLeave();
-        timeoutRef.current = null;
-      }, 300);
-    }
-  };
-
   const handleMouseEnter = () => {
-    // Cancelar timeout si el mouse vuelve al trigger
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+    // Cuando el mouse entra, activar el megamenú inmediatamente
     onHover();
   };
 
-  useEffect(() => {
-    return () => {
-      // Limpiar timeout al desmontar
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+  const handleMouseLeave = () => {
+    // NO activar cierre inmediato - dejar que el contenedor del megamenú maneje el cierre
+    // Solo notificar que el mouse salió del trigger, pero el megamenú puede seguir abierto
+    // si el mouse está sobre él o la zona de conexión
+    if (onMouseLeave && !isActive) {
+      // Solo cerrar si el megamenú no está activo (por si acaso)
+      onMouseLeave();
+    }
+  };
 
   return (
     <div

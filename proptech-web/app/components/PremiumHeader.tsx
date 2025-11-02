@@ -62,15 +62,16 @@ export function PremiumHeader() {
       clearTimeout(timeoutRef.current);
     }
 
-    // Crear timeout con delay de 500ms antes de cerrar (aumentado para mejor UX)
+    // Crear timeout con delay aumentado para permitir movimiento al megamenú
     timeoutRef.current = setTimeout(() => {
       setActiveMegamenu(null);
       timeoutRef.current = null;
-    }, 500);
+    }, 300); // Reducido a 300ms pero más confiable
   };
 
   const handleMegamenuMouseLeave = () => {
-    // Solo cerrar si no estamos moviéndonos hacia el megamenú
+    // Cuando el mouse sale del trigger, iniciar el timeout de cierre
+    // Pero si el mouse entra al megamenú antes, se cancelará
     handleMegamenuClose();
   };
 
@@ -111,9 +112,12 @@ export function PremiumHeader() {
           {/* Desktop Navigation */}
           <nav 
             className="hidden lg:flex items-center space-x-1"
-            onMouseLeave={() => {
+            onMouseLeave={(e) => {
               // Solo cerrar si no estamos moviéndonos hacia el megamenú
-              if (activeMegamenu) {
+              // Verificar que el mouse no está yendo hacia el megamenú
+              const relatedTarget = e.relatedTarget as HTMLElement;
+              if (activeMegamenu && relatedTarget && !relatedTarget.closest('.megamenu-container')) {
+                // El mouse salió del nav y no está yendo al megamenú
                 handleMegamenuClose();
               }
             }}
@@ -229,26 +233,42 @@ export function PremiumHeader() {
       {/* Megamenu Dropdown - FUERA del contenedor para full-width */}
       {activeMegamenu && currentMegamenu && (
         <div 
-          className="fixed left-0 right-0 z-[60]"
+          className="fixed left-0 right-0 z-[60] relative"
           style={{ top: '64px' }} // Altura del header (h-16 = 64px)
           onMouseEnter={() => {
-            // Cancelar cierre cuando mouse entra en la zona del megamenú
+            // Cancelar cierre cuando mouse entra en la zona del megamenú o conexión
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
               timeoutRef.current = null;
             }
           }}
-          onMouseLeave={handleMegamenuClose}
+          onMouseLeave={(e) => {
+            // Verificar que el mouse realmente salió (no está yendo a otro elemento del megamenú)
+            const relatedTarget = e.relatedTarget as HTMLElement;
+            if (!relatedTarget || !relatedTarget.closest('.megamenu-container')) {
+              // El mouse salió completamente del área del megamenú
+              handleMegamenuClose();
+            }
+          }}
         >
-          {/* Zona de conexión continua de 20px entre trigger y megamenú */}
+          {/* Zona de conexión continua más grande entre trigger y megamenú */}
+          {/* Esta zona invisible conecta el header con el megamenú para evitar gaps */}
           <div 
-            className="h-5 bg-transparent"
+            className="h-12 bg-transparent pointer-events-auto absolute left-0 right-0"
+            style={{ 
+              top: '-12px', // Conectar con el header (64px - 12px = 52px desde el top del megamenú)
+              zIndex: 1000 // Asegurar que está por encima
+            }}
             onMouseEnter={() => {
-              // Cancelar cierre en la zona de conexión
+              // Cancelar cierre en la zona de conexión - CRÍTICO
               if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
                 timeoutRef.current = null;
               }
+            }}
+            onMouseLeave={() => {
+              // Si el mouse sale de la zona de conexión sin entrar al megamenú, iniciar cierre
+              // Pero solo si no está entrando al megamenú
             }}
           />
           <Megamenu

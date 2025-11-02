@@ -57,31 +57,32 @@ export function Megamenu({ type, featuredItems, categories, tools, onClose }: Me
 
   // Manejar mouse enter en megamenú
   const handleMegamenuEnter = () => {
-    // Cancelar cualquier timeout de cierre
+    // Cancelar cualquier timeout de cierre - CRÍTICO para mantener abierto
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
   };
 
-  // Manejar mouse leave del megamenú con delay aumentado
+  // Manejar mouse leave del megamenú con delay
   const handleMegamenuLeave = () => {
     // Limpiar timeout anterior si existe
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Crear timeout con delay de 500ms antes de cerrar (aumentado para mejor UX)
+    // Crear timeout con delay de 400ms antes de cerrar
+    // Esto permite que el usuario regrese al megamenú si se fue accidentalmente
     timeoutRef.current = setTimeout(() => {
       onClose();
       timeoutRef.current = null;
-    }, 500);
+    }, 400);
   };
 
   return (
     <div
       ref={menuRef}
-      className="megamenu-container bg-white border-b border-gray-200 shadow-xl z-[60] animate-in slide-in-from-top-2 duration-300"
+      className="megamenu-container bg-white border-b border-gray-200 shadow-xl z-[60] animate-in slide-in-from-top-2 duration-300 relative"
       onMouseEnter={handleMegamenuEnter}
       onMouseLeave={handleMegamenuLeave}
     >
