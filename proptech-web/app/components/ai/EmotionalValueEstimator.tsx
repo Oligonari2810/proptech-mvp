@@ -129,10 +129,25 @@ export default function EmotionalValueEstimator({
           {useEmotional ? '💎 Valor Estimado por IA Emocional' : '💎 Valor Estimado por IA'}
         </h3>
         <div className="text-2xl font-bold text-green-600">
-          ${(valuation as any).estimatedValue?.toLocaleString() || valuation.priceRange?.avg?.toLocaleString() || 'N/A'}
+          ${(() => {
+            const val = valuation as any;
+            if (val.estimatedValue) return val.estimatedValue.toLocaleString();
+            if (val.priceRange?.avg) return val.priceRange.avg.toLocaleString();
+            if (val.priceRange?.min && val.priceRange?.max) {
+              return ((val.priceRange.min + val.priceRange.max) / 2).toLocaleString();
+            }
+            return 'N/A';
+          })()}
         </div>
         <div className="text-sm text-gray-600 mt-1">
-          Confianza: {((valuation.confidence || 0) * 100).toFixed(0)}%
+          Confianza: {(() => {
+            const conf = (valuation as any).confidence;
+            if (typeof conf === 'number') return (conf * 100).toFixed(0);
+            if (conf === 'high') return '90';
+            if (conf === 'medium') return '70';
+            if (conf === 'low') return '50';
+            return '0';
+          })()}%
         </div>
         {valuation.priceRange && (
           <div className="text-xs text-gray-500 mt-2">
