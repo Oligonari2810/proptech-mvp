@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from werkzeug.security import generate_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
-from flask_cors import CORS
+# from flask_cors import CORS  # REMOVIDO - usando CORS manual
 from sqlalchemy import text, Index
 from sqlalchemy.sql import func
 import redis
@@ -116,38 +116,54 @@ allowed_origins = [
     'http://localhost:3004',
 ]
 
-# CORS simplificado y seguro
-# En desarrollo, permitir todos los orígenes
-# En producción, usar lista específica
-is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+# CORS MANUAL - Solución definitiva sin Flask-CORS
+# Configuración CORS manual para evitar dependencias problemáticas
+@app.after_request
+def after_request(response):
+    """Configuración CORS manual - permite orígenes permitidos"""
+    origin = request.headers.get('Origin')
+    
+    # En producción, verificar lista de orígenes permitidos
+    is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+    
+    if is_production:
+        # Producción: solo orígenes permitidos
+        if origin in allowed_origins:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+    else:
+        # Desarrollo: permitir todos los orígenes
+        if origin:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+    
+    # Headers CORS estándar
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+    response.headers.add('Access-Control-Expose-Headers', 'Content-Length,X-Total-Count')
+    response.headers.add('Access-Control-Max-Age', '3600')
+    
+    return response
 
-if is_production:
-    # Producción: solo orígenes permitidos
-    CORS(app, 
-         resources={
-             r"/api/*": {
-                 "origins": allowed_origins,
-                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-                 "expose_headers": ["Content-Length", "X-Total-Count"],
-                 "supports_credentials": True,
-                 "max_age": 3600
-             }
-         }
-    )
-else:
-    # Desarrollo: permitir todos los orígenes
-    CORS(app, 
-         resources={
-             r"/api/*": {
-                 "origins": "*",
-                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-                 "supports_credentials": False,
-                 "max_age": 3600
-             }
-         }
-    )
+# Manejar preflight OPTIONS requests
+@app.before_request
+def handle_preflight():
+    """Manejar requests OPTIONS (preflight) automáticamente"""
+    if request.method == "OPTIONS":
+        response = jsonify({'status': 'ok'})
+        origin = request.headers.get('Origin')
+        is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
+        
+        if is_production:
+            if origin in allowed_origins:
+                response.headers.add('Access-Control-Allow-Origin', origin)
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+        else:
+            if origin:
+                response.headers.add('Access-Control-Allow-Origin', origin)
+        
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+        return response
 
 # Redis configuration - manejar fallback si no está disponible
 try:
