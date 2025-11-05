@@ -178,7 +178,29 @@ except:
     redis_client = None
     logger.warning("⚠️ Redis no disponible - continuando sin cache")
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Configuración SocketIO con namespaces y hardening
+# Intentar usar eventlet, si no está disponible usar threading
+try:
+    import eventlet
+    async_mode = "eventlet"
+except ImportError:
+    async_mode = "threading"
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "https://habitatprord.com",
+        "https://proptech-mvp-1.onrender.com"
+    ],
+    async_mode=async_mode,
+    ping_interval=25,
+    ping_timeout=20,
+    logger=True,
+    engineio_logger=False
+)
 
 # Importar modelos desde models.py
 from models import User, Property, Favorite, Review, FeaturedListing
@@ -253,6 +275,26 @@ try:
     logger.info("✅ Blueprint de valuation (AVM) registrado")
 except Exception as e:
     logger.warning(f"⚠️ Blueprint de valuation no disponible: {e}")
+
+# Importar y registrar blueprint de chat
+try:
+    from routes.chat_routes import chat_bp, register_socketio_events
+    app.register_blueprint(chat_bp, url_prefix='/api/chat')
+    # Registrar eventos de SocketIO para chat
+    register_socketio_events(socketio)
+    logger.info("✅ Blueprint de chat registrado con eventos SocketIO")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo registrar blueprint de chat: {e}")
+
+# Importar y registrar blueprint de notificaciones
+try:
+    from routes.notification_routes import notification_bp, register_notification_socketio_events
+    app.register_blueprint(notification_bp, url_prefix='/api/notifications')
+    # Registrar eventos de SocketIO para notificaciones
+    register_notification_socketio_events(socketio)
+    logger.info("✅ Blueprint de notificaciones registrado con eventos SocketIO")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo registrar blueprint de notificaciones: {e}")
 
 # FALLBACK: Endpoints de auth directos - SIEMPRE REGISTRAR
 # Intentar importar AuthService, si falla usar werkzeug como fallback
@@ -407,49 +449,317 @@ class Interaction(db.Model):
     emotional_response = db.Column(db.JSON, default=dict)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# IA EMOCIONAL - TEMPORALMENTE DESHABILITADO (requiere numpy)
+# IA EMOCIONAL - MOTOR PROPECH COMPLETO CON KNN+TF-IDF
+try:
+    from sklearn.neighbors import NearestNeighbors
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    import numpy as np
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    logger.warning("⚠️ scikit-learn o numpy no disponible - IA emocional en modo básico")
+
 class EmotionAwareRecommender:
+    """
+    Motor de recomendación emocional PropTech completo.
+    Usa KNN + TF-IDF para encontrar propiedades similares basadas en:
+    - Perfil emocional del usuario
+    - Tags emocionales de propiedades
+    - Características técnicas (precio, tamaño, amenities)
+    """
     def __init__(self):
-        # self.vectorizer = TfidfVectorizer(max_features=50, stop_words=['spanish'])
-        # self.knn_model = NearestNeighbors(n_neighbors=5, metric='cosine')
         self.is_trained = False
+        self.properties_index = []
+        self.property_features = []
         
+        if ML_AVAILABLE:
+            # Vectorizador TF-IDF para tags emocionales y descripciones
+            self.vectorizer = TfidfVectorizer(
+                max_features=100,
+                stop_words=['spanish', 'english'],
+                ngram_range=(1, 2),  # Unigramas y bigramas
+                min_df=1,  # Mínimo 1 aparición
+                analyzer='word'
+            )
+            # Modelo KNN para encontrar propiedades similares
+            self.knn_model = NearestNeighbors(
+                n_neighbors=5,
+                metric='cosine',  # Distancia coseno para similitud
+                algorithm='auto'
+            )
+        else:
+            self.vectorizer = None
+            self.knn_model = None
+    
     def extract_property_features(self, property_data):
-        """Extrae características emocionales de una propiedad"""
+        """
+        Extrae características emocionales y técnicas de una propiedad.
+        Combina features numéricas normalizadas con tags emocionales.
+        """
         tags = property_data.get('emotional_tags', [])
         features = property_data.get('features', [])
         description = property_data.get('description', '')
         price = property_data.get('price', 0)
-        bedrooms = property_data.get('bedrooms', 0)
-        area = property_data.get('area', 0)
+        bedrooms = property_data.get('bedrooms', 0) or 0
+        area = property_data.get('area', 0) or 0
+        bathrooms = property_data.get('bathrooms', 0) or 0
+        
+        # Normalizar características numéricas (evitar división por cero)
+        max_price = 1000000  # Precio máximo esperado
+        max_bedrooms = 10
+        max_area = 500
+        max_bathrooms = 10
         
         # Características numéricas normalizadas
         feature_vector = [
-            price / 500000,  # Normalizar precio (max 500k)
-            bedrooms / 5.0,  # Normalizar dormitorios (max 5)
-            area / 300.0,    # Normalizar área (max 300m2)
-            # Características emocionales binarias
-            1.0 if any(tag in tags for tag in ['familiar', 'seguro', 'jardin', 'niños']) else 0.0,
-            1.0 if any(tag in tags for tag in ['lujoso', 'premium', 'exclusivo', 'diseño']) else 0.0,
-            1.0 if any(tag in tags for tag in ['moderno', 'contemporaneo', 'minimalista']) else 0.0,
-            1.0 if any(tag in tags for tag in ['inversion', 'rentable', 'oportunidad']) else 0.0,
-            1.0 if 'jardin' in features else 0.0,
-            1.0 if 'piscina' in features else 0.0,
-            1.0 if 'garaje' in features else 0.0,
+            min(price / max_price, 1.0) if max_price > 0 else 0.0,
+            min(bedrooms / max_bedrooms, 1.0) if max_bedrooms > 0 else 0.0,
+            min(area / max_area, 1.0) if max_area > 0 else 0.0,
+            min(bathrooms / max_bathrooms, 1.0) if max_bathrooms > 0 else 0.0,
         ]
+        
+        # Características emocionales binarias (one-hot encoding)
+        emotional_features = [
+            1.0 if any(tag in str(tags).lower() for tag in ['familiar', 'seguro', 'jardin', 'niños', 'family']) else 0.0,
+            1.0 if any(tag in str(tags).lower() for tag in ['lujoso', 'premium', 'exclusivo', 'diseño', 'luxury']) else 0.0,
+            1.0 if any(tag in str(tags).lower() for tag in ['moderno', 'contemporaneo', 'minimalista', 'modern']) else 0.0,
+            1.0 if any(tag in str(tags).lower() for tag in ['inversion', 'rentable', 'oportunidad', 'investment']) else 0.0,
+            1.0 if any(tag in str(tags).lower() for tag in ['artistico', 'creativo', 'urbano', 'artistic']) else 0.0,
+            1.0 if any(tag in str(tags).lower() for tag in ['tranquilo', 'calm', 'peaceful', 'residencial']) else 0.0,
+        ]
+        
+        # Amenities binarias
+        amenities_features = [
+            1.0 if any(feat in str(features).lower() for feat in ['jardin', 'garden', 'terraza', 'terrace']) else 0.0,
+            1.0 if any(feat in str(features).lower() for feat in ['piscina', 'pool']) else 0.0,
+            1.0 if any(feat in str(features).lower() for feat in ['garaje', 'garage', 'parking']) else 0.0,
+            1.0 if any(feat in str(features).lower() for feat in ['gimnasio', 'gym', 'fitness']) else 0.0,
+            1.0 if any(feat in str(features).lower() for feat in ['ascensor', 'elevator']) else 0.0,
+        ]
+        
+        # Combinar todas las características
+        feature_vector.extend(emotional_features)
+        feature_vector.extend(amenities_features)
         
         return feature_vector
     
+    def extract_text_features(self, property_data):
+        """
+        Extrae características de texto para TF-IDF.
+        Combina tags emocionales, features y descripción.
+        """
+        tags = property_data.get('emotional_tags', [])
+        features = property_data.get('features', [])
+        description = property_data.get('description', '')
+        title = property_data.get('title', '')
+        
+        # Combinar todo el texto relevante
+        text_parts = []
+        if title:
+            text_parts.append(str(title))
+        if description:
+            text_parts.append(str(description))
+        if tags:
+            if isinstance(tags, list):
+                text_parts.extend([str(tag) for tag in tags])
+            else:
+                text_parts.append(str(tags))
+        if features:
+            if isinstance(features, list):
+                text_parts.extend([str(feat) for feat in features])
+            else:
+                text_parts.append(str(features))
+        
+        return ' '.join(text_parts).lower()
+    
     def fit(self, properties):
-        """Entrena el modelo con propiedades existentes"""
-        # TEMPORALMENTE DESHABILITADO
-        self.is_trained = False
-        return
+        """
+        Entrena el modelo con propiedades existentes.
+        Usa KNN + TF-IDF para aprendizaje no supervisado.
+        """
+        if not ML_AVAILABLE or not properties:
+            self.is_trained = False
+            return
+        
+        try:
+            self.properties_index = properties
+            property_texts = [self.extract_text_features(prop) for prop in properties]
+            property_features = [self.extract_property_features(prop) for prop in properties]
+            
+            # Entrenar TF-IDF vectorizer
+            if property_texts:
+                tfidf_matrix = self.vectorizer.fit_transform(property_texts)
+                
+                # Combinar características numéricas con TF-IDF
+                numeric_features = np.array(property_features)
+                tfidf_dense = tfidf_matrix.toarray()
+                
+                # Normalizar características numéricas
+                if numeric_features.size > 0:
+                    numeric_features = numeric_features / (np.max(numeric_features, axis=0) + 1e-8)
+                
+                # Combinar características numéricas y TF-IDF
+                combined_features = np.hstack([numeric_features, tfidf_dense])
+                
+                # Entrenar modelo KNN
+                self.knn_model.fit(combined_features)
+                self.property_features = combined_features
+                self.is_trained = True
+                
+                logger.info(f"✅ Modelo IA emocional entrenado con {len(properties)} propiedades")
+            else:
+                self.is_trained = False
+                logger.warning("⚠️ No hay propiedades para entrenar el modelo")
+        except Exception as e:
+            self.is_trained = False
+            logger.error(f"❌ Error entrenando modelo IA emocional: {e}")
     
     def recommend(self, user_profile, available_properties, top_n=5):
-        """Genera recomendaciones basadas en perfil emocional del usuario"""
-        # TEMPORALMENTE: Retornar propiedades sin IA
-        return available_properties[:top_n]
+        """
+        Genera recomendaciones basadas en perfil emocional del usuario.
+        Usa KNN para encontrar propiedades similares al perfil emocional.
+        """
+        if not available_properties:
+            return []
+        
+        # Si no hay ML disponible o modelo no entrenado, usar método básico
+        if not ML_AVAILABLE or not self.is_trained or not self.knn_model:
+            return self._recommend_basic(user_profile, available_properties, top_n)
+        
+        try:
+            # Extraer perfil emocional del usuario
+            user_emotional_profile = user_profile.get('emotional_profile', {})
+            
+            # Crear vector de características del usuario basado en su perfil
+            user_features = self._extract_user_features(user_emotional_profile)
+            
+            # Extraer características de texto del perfil del usuario
+            user_text = self._extract_user_text(user_emotional_profile)
+            
+            # Transformar texto del usuario con TF-IDF
+            user_tfidf = self.vectorizer.transform([user_text])
+            
+            # Combinar características numéricas y TF-IDF del usuario
+            user_numeric = np.array([user_features])
+            user_numeric = user_numeric / (np.max(user_numeric, axis=0) + 1e-8) if user_numeric.size > 0 else user_numeric
+            user_combined = np.hstack([user_numeric, user_tfidf.toarray()])
+            
+            # Encontrar propiedades más similares usando KNN
+            distances, indices = self.knn_model.kneighbors(user_combined, n_neighbors=min(top_n, len(self.properties_index)))
+            
+            # Obtener propiedades recomendadas
+            recommended_properties = []
+            for idx in indices[0]:
+                if idx < len(self.properties_index):
+                    prop = self.properties_index[idx]
+                    # Añadir score de similitud (1 - distancia, ya que distancia coseno está invertida)
+                    similarity_score = 1 - distances[0][list(indices[0]).index(idx)]
+                    prop_with_score = prop.copy() if isinstance(prop, dict) else prop
+                    if isinstance(prop_with_score, dict):
+                        prop_with_score['_similarity_score'] = float(similarity_score)
+                        prop_with_score['_recommendation_reason'] = f"Similitud emocional: {similarity_score:.2%}"
+                    recommended_properties.append(prop_with_score)
+            
+            # Ordenar por score de similitud
+            recommended_properties.sort(key=lambda x: x.get('_similarity_score', 0), reverse=True)
+            
+            logger.info(f"✅ Recomendaciones generadas: {len(recommended_properties)} propiedades")
+            return recommended_properties[:top_n]
+            
+        except Exception as e:
+            logger.error(f"❌ Error generando recomendaciones IA: {e}")
+            # Fallback a método básico
+            return self._recommend_basic(user_profile, available_properties, top_n)
+    
+    def _extract_user_features(self, emotional_profile):
+        """Extrae características numéricas del perfil emocional del usuario"""
+        # Valores por defecto
+        features = [
+            0.5,  # Precio promedio
+            2.0 / 10.0,  # Habitaciones promedio
+            100.0 / 500.0,  # Área promedio
+            1.0 / 10.0,  # Baños promedio
+        ]
+        
+        # Características emocionales del usuario
+        emotional_features = [
+            1.0 if emotional_profile.get('family_friendly', 0) > 0.5 else 0.0,
+            1.0 if emotional_profile.get('luxury_preference', 0) > 0.5 else 0.0,
+            1.0 if emotional_profile.get('modern_taste', 0) > 0.5 else 0.0,
+            1.0 if emotional_profile.get('investment_focus', 0) > 0.5 else 0.0,
+            1.0 if emotional_profile.get('artistic_style', 0) > 0.5 else 0.0,
+            1.0 if emotional_profile.get('calm_preference', 0) > 0.5 else 0.0,
+        ]
+        
+        # Amenities preferidas del usuario
+        amenities_features = [
+            1.0 if emotional_profile.get('wants_garden', False) else 0.0,
+            1.0 if emotional_profile.get('wants_pool', False) else 0.0,
+            1.0 if emotional_profile.get('wants_parking', False) else 0.0,
+            1.0 if emotional_profile.get('wants_gym', False) else 0.0,
+            1.0 if emotional_profile.get('wants_elevator', False) else 0.0,
+        ]
+        
+        features.extend(emotional_features)
+        features.extend(amenities_features)
+        
+        return features
+    
+    def _extract_user_text(self, emotional_profile):
+        """Extrae texto del perfil emocional del usuario para TF-IDF"""
+        text_parts = []
+        
+        # Añadir preferencias emocionales como texto
+        if emotional_profile.get('family_friendly', 0) > 0.5:
+            text_parts.extend(['familiar', 'seguro', 'jardin', 'niños'])
+        if emotional_profile.get('luxury_preference', 0) > 0.5:
+            text_parts.extend(['lujoso', 'premium', 'exclusivo'])
+        if emotional_profile.get('modern_taste', 0) > 0.5:
+            text_parts.extend(['moderno', 'contemporaneo'])
+        if emotional_profile.get('investment_focus', 0) > 0.5:
+            text_parts.extend(['inversion', 'rentable'])
+        
+        return ' '.join(text_parts).lower()
+    
+    def _recommend_basic(self, user_profile, available_properties, top_n=5):
+        """
+        Método básico de recomendación sin ML (fallback).
+        Ordena propiedades por similitud simple basada en tags emocionales.
+        """
+        if not available_properties:
+            return []
+        
+        user_emotional_profile = user_profile.get('emotional_profile', {})
+        user_tags = []
+        
+        # Extraer tags preferidos del usuario
+        if user_emotional_profile.get('family_friendly', 0) > 0.5:
+            user_tags.extend(['familiar', 'seguro', 'jardin'])
+        if user_emotional_profile.get('luxury_preference', 0) > 0.5:
+            user_tags.extend(['lujoso', 'premium', 'exclusivo'])
+        if user_emotional_profile.get('modern_taste', 0) > 0.5:
+            user_tags.extend(['moderno', 'contemporaneo'])
+        
+        # Calcular score simple para cada propiedad
+        scored_properties = []
+        for prop in available_properties:
+            prop_tags = prop.get('emotional_tags', [])
+            if isinstance(prop_tags, str):
+                prop_tags = [prop_tags]
+            
+            # Contar coincidencias de tags
+            matches = sum(1 for tag in user_tags if tag in str(prop_tags).lower())
+            score = matches / max(len(user_tags), 1) if user_tags else 0.5
+            
+            prop_with_score = prop.copy() if isinstance(prop, dict) else prop
+            if isinstance(prop_with_score, dict):
+                prop_with_score['_similarity_score'] = score
+                prop_with_score['_recommendation_reason'] = f"Coincidencia de tags: {matches} de {len(user_tags)}"
+            scored_properties.append((score, prop_with_score))
+        
+        # Ordenar por score y retornar top N
+        scored_properties.sort(key=lambda x: x[0], reverse=True)
+        return [prop for _, prop in scored_properties[:top_n]]
 
 # INICIALIZAR IA
 emotion_engine = EmotionAwareRecommender()
@@ -607,46 +917,53 @@ def initialize_sample_data():
             }
         ]
         
-        for prop_data in sample_properties:
-            property = Property(**prop_data)
-            db.session.add(property)
-        
-        # Crear usuario de prueba
+        # Crear usuario de prueba primero
         test_user = User(
             email='usuario@habitatpro.com',
-            name='Usuario Demo',
-            preferences={
-                'max_price': 400000,
-                'min_bedrooms': 2,
-                'min_area': 80,
-                'garden': True,
-                'garage': False
-            },
-            emotional_profile={
-                'family_friendly': 0.8,
-                'luxury_preference': 0.3,
-                'modern_taste': 0.6,
-                'investment_focus': 0.4
-            }
+            name='Usuario Demo'
         )
         db.session.add(test_user)
+        db.session.flush()  # Para obtener el ID del usuario
+        
+        for prop_data in sample_properties:
+            # Asegurar que todas las propiedades tengan image_url y owner_id
+            if 'image_url' not in prop_data:
+                prop_data['image_url'] = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'
+            if 'user_id' not in prop_data:
+                prop_data['user_id'] = test_user.id
+            property = Property(**prop_data)
+            db.session.add(property)
         
         db.session.commit()
         logger.info(f"✅ {len(sample_properties)} propiedades de prueba creadas")
         
-        # Entrenar IA con los datos
+        # Entrenar IA emocional PropTech con los datos
         properties_data = []
         for prop in Property.query.all():
             properties_data.append({
+                'id': prop.id,
+                'title': prop.title,
+                'description': prop.description or '',
+                'price': prop.price or 0,
+                'bedrooms': prop.bedrooms or 0,
+                'bathrooms': prop.bathrooms or 0,
+                'area': prop.area or prop.surface or 0,
                 'emotional_tags': prop.emotional_tags or [],
                 'features': prop.features or [],
-                'description': prop.description or '',
-                'price': prop.price,
-                'bedrooms': prop.bedrooms,
-                'area': prop.area
+                'type': prop.property_type or prop.type or '',
+                'location': prop.location or ''
             })
         
-        emotion_engine.fit(properties_data)
+        # Entrenar modelo de recomendación emocional con KNN+TF-IDF
+        if properties_data:
+            logger.info(f"🧠 Entrenando modelo IA emocional PropTech con {len(properties_data)} propiedades...")
+            emotion_engine.fit(properties_data)
+            if emotion_engine.is_trained:
+                logger.info("✅ Modelo IA emocional entrenado exitosamente")
+            else:
+                logger.warning("⚠️ Modelo IA emocional en modo básico (fallback)")
+        else:
+            logger.warning("⚠️ No hay propiedades para entrenar modelo IA emocional")
 
 # APIS RESTFUL REALES
 @app.route('/api/properties', methods=['GET'])
@@ -723,16 +1040,23 @@ def get_properties():
                 prop_data['featuredTier'] = featured_by_property[prop.id]
             properties_data.append(prop_data)
         
-        # Aplicar IA emocional si hay usuario
+        # Aplicar IA emocional PropTech si hay usuario
         user_id = request.args.get('user_id')
         if user_id and properties_data:
-            user = User.query.get(user_id)
-            if user:
-                user_profile = {
-                    'preferences': getattr(user, 'preferences', None) or {},
-                    'emotional_profile': getattr(user, 'emotional_profile', None) or {}
-                }
-                properties_data = emotion_engine.recommend(user_profile, properties_data)
+            try:
+                user = User.query.get(user_id)
+                if user:
+                    user_profile = {
+                        'emotional_profile': getattr(user, 'emotional_profile', None) or {}
+                    }
+                    # Generar recomendaciones emocionales usando KNN+TF-IDF
+                    recommended = emotion_engine.recommend(user_profile, properties_data, top_n=len(properties_data))
+                    if recommended:
+                        properties_data = recommended
+                        logger.info(f"✅ Recomendaciones emocionales generadas para usuario {user_id}")
+            except Exception as e:
+                logger.error(f"❌ Error generando recomendaciones emocionales: {e}")
+                # Continuar sin recomendaciones si hay error
         
         return jsonify({
             'success': True,
@@ -931,9 +1255,7 @@ def create_user():
         
         user = User(
             email=data['email'],
-            name=data['name'],
-            preferences=data.get('preferences', {}),
-            emotional_profile=data.get('emotional_profile', {})
+            name=data['name']
         )
         
         db.session.add(user)
@@ -969,26 +1291,29 @@ def get_ai_recommendations():
             
         properties = query.limit(100).all()
         
-        # Convertir a formato para IA
+        # Convertir a formato para IA emocional PropTech
         properties_data = []
         for prop in properties:
             properties_data.append({
                 'id': prop.id,
                 'title': prop.title,
-                'description': prop.description,
-                'price': prop.price,
-                'type': prop.type,
-                'operation': prop.operation,
-                'location': prop.location,
-                'bedrooms': prop.bedrooms,
-                'bathrooms': prop.bathrooms,
-                'area': prop.area,
+                'description': prop.description or '',
+                'price': prop.price or 0,
+                'bedrooms': prop.bedrooms or 0,
+                'bathrooms': prop.bathrooms or 0,
+                'area': prop.area or prop.surface or 0,
+                'emotional_tags': prop.emotional_tags or [],
                 'features': prop.features or [],
-                'emotional_tags': prop.emotional_tags or []
+                'type': prop.property_type or prop.type or '',
+                'operation': prop.operation or '',
+                'location': prop.location or ''
             })
         
-        # Generar recomendaciones
-        recommendations = emotion_engine.recommend(user_profile, properties_data)
+        # Generar recomendaciones emocionales usando KNN+TF-IDF
+        user_profile_structured = {
+            'emotional_profile': user_profile.get('emotional_profile', {})
+        }
+        recommendations = emotion_engine.recommend(user_profile_structured, properties_data, top_n=10)
         
         return jsonify({
             'success': True,
@@ -1747,7 +2072,7 @@ def onboarding_tenant():
         admin = User.query.filter_by(email=admin_email).first()
         if not admin:
             admin = User(email=admin_email, name=f"Admin {name}")
-            admin.preferences = {'role': 'tenant_admin', 'tenant': slug, 'primary_color': primary_color, 'logo_url': logo_url}
+            # admin.preferences removido - no existe en el modelo User
             db.session.add(admin)
 
         # Insertar propiedades demo con marca de tenant en features
@@ -2015,55 +2340,72 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ Error inicializando Swagger: {e}")
 
-# CONFIGURACIÓN WEBSOCKET CORREGIDA
-@socketio.on('connect')
-def handle_connect():
-    """Manejar conexión WebSocket - VERSIÓN CORREGIDA"""
-    try:
-        socketio.emit('connection_established', {
-            'status': 'connected', 
-            'message': 'Conectado a HabitatPro IA',
-            'timestamp': datetime.utcnow().isoformat()
-        })
-        logger.info("✅ Cliente WebSocket conectado correctamente")
-    except Exception as e:
-        logger.error(f"❌ Error en WebSocket: {e}")
+# CONFIGURACIÓN WEBSOCKET CON NAMESPACES
+from flask_socketio import Namespace, emit
 
-@socketio.on('request_realtime_recommendations')
-def handle_realtime_recommendations(data):
-    """WebSocket para recomendaciones en tiempo real - VERSIÓN CORREGIDA"""
-    try:
-        user_id = data.get('user_id')
-        if user_id:
-            user = User.query.get(user_id)
-            if user:
-                # Obtener propiedades activas
-                properties = Property.query.filter_by(is_active=True).limit(20).all()
-                properties_data = []
-                
-                for prop in properties:
-                    properties_data.append({
-                        'id': prop.id,
-                        'title': prop.title,
-                        'price': prop.price,
-                        'location': prop.location,
-                        'emotional_tags': prop.emotional_tags or []
+class AINamespace(Namespace):
+    """Namespace para recomendaciones IA en tiempo real"""
+    
+    def on_connect(self):
+        """Manejar conexión al namespace de IA"""
+        try:
+            emit('connection_established', {
+                'status': 'connected', 
+                'message': 'Conectado a HabitatPro IA',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            logger.info("✅ Cliente WebSocket conectado al namespace /ai")
+        except Exception as e:
+            logger.error(f"❌ Error en WebSocket IA: {e}")
+    
+    def on_request_realtime_recommendations(self, data):
+        """WebSocket para recomendaciones en tiempo real"""
+        try:
+            user_id = data.get('user_id')
+            if user_id:
+                user = User.query.get(user_id)
+                if user:
+                    # Obtener propiedades activas
+                    properties = Property.query.filter_by(is_active=True).limit(20).all()
+                    properties_data = []
+                    
+                    for prop in properties:
+                        properties_data.append({
+                            'id': prop.id,
+                            'title': prop.title,
+                            'description': prop.description or '',
+                            'price': prop.price or 0,
+                            'bedrooms': prop.bedrooms or 0,
+                            'bathrooms': prop.bathrooms or 0,
+                            'area': prop.area or prop.surface or 0,
+                            'emotional_tags': prop.emotional_tags or [],
+                            'features': prop.features or [],
+                            'type': prop.property_type or prop.type or '',
+                            'location': prop.location or ''
+                        })
+                    
+                    # Generar recomendaciones emocionales usando KNN+TF-IDF
+                    user_profile = {
+                        'emotional_profile': getattr(user, 'emotional_profile', None) or {}
+                    }
+                    
+                    recommendations = emotion_engine.recommend(user_profile, properties_data, top_n=3)
+                    
+                    emit('realtime_recommendations', {
+                        'recommendations': recommendations,
+                        'timestamp': datetime.utcnow().isoformat()
                     })
-                
-                # Generar recomendaciones
-                user_profile = {
-                    'preferences': getattr(user, 'preferences', None) or {},
-                    'emotional_profile': getattr(user, 'emotional_profile', None) or {}
-                }
-                
-                recommendations = emotion_engine.recommend(user_profile, properties_data, top_n=3)
-                
-                socketio.emit('realtime_recommendations', {
-                    'recommendations': recommendations,
-                    'timestamp': datetime.utcnow().isoformat()
-                })
-    except Exception as e:
-        print(f"❌ Error en recomendaciones tiempo real: {e}")
+                else:
+                    emit('error', {'message': 'Usuario no encontrado'})
+            else:
+                emit('error', {'message': 'user_id es requerido'})
+        except Exception as e:
+            logger.error(f"❌ Error en recomendaciones tiempo real: {e}")
+            emit('error', {'message': str(e)})
+
+# Registrar namespace de IA
+socketio.on_namespace(AINamespace('/ai'))
+logger.info("✅ AINamespace('/ai') registrado")
 
 if __name__ == '__main__':
     with app.app_context():
