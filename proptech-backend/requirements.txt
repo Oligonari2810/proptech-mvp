@@ -23,6 +23,8 @@ redis==4.5.5
 
 # SocketIO
 flask-socketio==5.3.6
+python-socketio==5.11.3
+python-engineio==4.9.1
 slowapi==0.1.9
 
 # Monitoring

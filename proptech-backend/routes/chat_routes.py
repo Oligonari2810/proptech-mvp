@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
-from flask_socketio import emit, join_room, leave_room
-import json
+from flask_socketio import Namespace, emit, join_room, leave_room
 from datetime import datetime
+import logging
+
+logger = logging.getLogger('habitatpro')
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -9,22 +11,34 @@ chat_bp = Blueprint('chat', __name__)
 chat_messages = {}
 property_rooms = {}
 
-def register_socketio_events(socketio):
-    @socketio.on('connect')
-    def handle_connect():
-        print(f'Cliente conectado: {request.sid}')
+class ChatNamespace(Namespace):
+    """Namespace para chat de propiedades"""
+    
+    def on_connect(self):
+        """Manejar conexión al namespace de chat"""
+        logger.info("WS connected", extra={
+            "ns": self.namespace,
+            "sid": request.sid,
+            "event": "connect"
+        })
         emit('status', {'message': 'Conectado al chat'})
-
-    @socketio.on('disconnect')
-    def handle_disconnect():
-        print(f'Cliente desconectado: {request.sid}')
+    
+    def on_disconnect(self):
+        """Manejar desconexión del namespace de chat"""
+        logger.info("WS disconnected", extra={
+            "ns": self.namespace,
+            "sid": request.sid,
+            "event": "disconnect"
+        })
         # Limpiar salas del usuario
-        for room in property_rooms.get(request.sid, []):
-            leave_room(room)
-
-    @socketio.on('join_property_chat')
-    def handle_join_property_chat(data):
-        property_id = data.get('propertyId')
+        if request.sid in property_rooms:
+            for room in property_rooms[request.sid]:
+                leave_room(room)
+            del property_rooms[request.sid]
+    
+    def on_join_property_chat(self, data):
+        """Unirse al chat de una propiedad"""
+        property_id = data.get('propertyId') or data.get('property_id')
         if property_id:
             room = f'property_{property_id}'
             join_room(room)
@@ -42,12 +56,14 @@ def register_socketio_events(socketio):
                 })
             
             emit('status', {'message': f'Unido al chat de la propiedad {property_id}'})
-
-    @socketio.on('send_message')
-    def handle_send_message(data):
-        property_id = data.get('propertyId')
-        message_text = data.get('text')
-        broker_id = data.get('brokerId')
+        else:
+            emit('error', {'message': 'propertyId es requerido'})
+    
+    def on_send_message(self, data):
+        """Enviar mensaje en el chat de una propiedad"""
+        property_id = data.get('propertyId') or data.get('property_id')
+        message_text = data.get('text') or data.get('message')
+        broker_id = data.get('brokerId') or data.get('broker_id')
         timestamp = data.get('timestamp', datetime.utcnow().isoformat())
         
         if not property_id or not message_text:
@@ -76,10 +92,10 @@ def register_socketio_events(socketio):
         
         # Respuesta de confirmación
         emit('message_sent', {'status': 'success', 'messageId': message['id']})
-
-    @socketio.on('leave_property_chat')
-    def handle_leave_property_chat(data):
-        property_id = data.get('propertyId')
+    
+    def on_leave_property_chat(self, data):
+        """Salir del chat de una propiedad"""
+        property_id = data.get('propertyId') or data.get('property_id')
         if property_id:
             room = f'property_{property_id}'
             leave_room(room)
@@ -89,6 +105,11 @@ def register_socketio_events(socketio):
                 property_rooms[request.sid] = [r for r in property_rooms[request.sid] if r != room]
             
             emit('status', {'message': f'Salido del chat de la propiedad {property_id}'})
+
+def register_socketio_events(socketio):
+    """Registrar namespace de chat"""
+    socketio.on_namespace(ChatNamespace('/chat'))
+    logger.info("✅ ChatNamespace('/chat') registrado")
 
 # Endpoint REST para obtener historial de chat
 @chat_bp.route('/history/<int:property_id>', methods=['GET'])
@@ -112,9 +133,9 @@ def get_chat_history(property_id):
 def send_message_rest():
     """Enviar mensaje via REST API"""
     data = request.get_json()
-    property_id = data.get('propertyId')
-    message_text = data.get('text')
-    broker_id = data.get('brokerId')
+    property_id = data.get('propertyId') or data.get('property_id')
+    message_text = data.get('text') or data.get('message')
+    broker_id = data.get('brokerId') or data.get('broker_id')
     
     if not property_id or not message_text:
         return jsonify({'error': 'Datos de mensaje inválidos'}), 400
@@ -135,9 +156,8 @@ def send_message_rest():
         chat_messages[property_id] = []
     chat_messages[property_id].append(message)
     
-    # Enviar via WebSocket a la sala (requiere socketio global)
-    # room = f'property_{property_id}'
-    # socketio.emit('new_message', message, room=room)
+    # Nota: Para emitir via WebSocket desde aquí, se necesitaría acceso a socketio global
+    # Esto se puede hacer inyectando socketio en el contexto o usando un patrón singleton
     
     return jsonify({
         'success': True,
