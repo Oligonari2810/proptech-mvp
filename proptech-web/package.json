@@ -16,7 +16,7 @@
     "lucide-react": "^0.546.0",
     "mapbox-gl": "^3.10.0",
     "maplibre-gl": "^4.7.1",
-    "next": "15.2.8",
+    "next": "^15.2.4",
     "next-auth": "^5.0.0-beta.30",
     "next-cloudinary": "^6.16.0",
     "react": "^19.0.0",
