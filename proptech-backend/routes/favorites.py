@@ -1,112 +1,141 @@
+# Favoritos API Routes
 from flask import Blueprint, request, jsonify
-from models import db, Favorite
+from models import db, User, Property, Favorite
+from sqlalchemy import text
+import logging
 
-favorites_bp = Blueprint('favorites', __name__, url_prefix='/api/favorites')
+favorites_bp = Blueprint('favorites', __name__)
 
-# ✅ Obtener favoritos del usuario
-@favorites_bp.route('', methods=['GET'])
+@favorites_bp.route('/api/favorites', methods=['GET'])
 def get_favorites():
-    """Obtener todas las propiedades favoritas de un usuario"""
+    """Obtener favoritos del usuario"""
     try:
         user_id = request.args.get('user_id', type=int)
-        
         if not user_id:
-            return jsonify({"error": "user_id es requerido"}), 400
+            return jsonify({'success': False, 'error': 'user_id requerido'}), 400
         
-        favorites = Favorite.query.filter_by(user_id=user_id).all()
+        favorites = db.session.execute(text("""
+            SELECT f.id, f.user_id, f.property_id, f.created_at, f.notes,
+                   p.title, p.price, p.type, p.operation, p.location, p.images
+            FROM favorites f
+            JOIN properties p ON f.property_id = p.id
+            WHERE f.user_id = :user_id AND f.is_active = true
+            ORDER BY f.created_at DESC
+        """), {'user_id': user_id}).fetchall()
         
-        return jsonify({
-            "favorites": [{
-                "id": fav.id,
-                "user_id": fav.user_id,
-                "property_id": fav.property_id,
-                "notes": fav.notes,
-                "created_at": fav.created_at.isoformat() if fav.created_at else None
-            } for fav in favorites]
-        }), 200
+        favorites_data = []
+        for fav in favorites:
+            favorites_data.append({
+                'id': fav.id,
+                'property_id': fav.property_id,
+                'title': fav.title,
+                'price': fav.price,
+                'type': fav.type,
+                'operation': fav.operation,
+                'location': fav.location,
+                'images': fav.images or [],
+                'notes': fav.notes,
+                'created_at': fav.created_at.isoformat()
+            })
+        
+        return jsonify({'success': True, 'favorites': favorites_data}), 200
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error getting favorites: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ✅ Agregar a favoritos
-@favorites_bp.route('', methods=['POST'])
+@favorites_bp.route('/api/favorites', methods=['POST'])
 def add_favorite():
-    """Agregar una propiedad a favoritos"""
+    """Agregar propiedad a favoritos"""
     try:
         data = request.get_json()
-        
-        if not data:
-            return jsonify({"error": "Datos insuficientes"}), 400
-        
         user_id = data.get('user_id')
         property_id = data.get('property_id')
+        notes = data.get('notes', '')
         
         if not user_id or not property_id:
-            return jsonify({"error": "user_id y property_id son requeridos"}), 400
+            return jsonify({'success': False, 'error': 'user_id y property_id requeridos'}), 400
         
         # Verificar si ya existe
-        existing = Favorite.query.filter_by(
-            user_id=user_id,
-            property_id=property_id
-        ).first()
+        existing = db.session.execute(text("""
+            SELECT id FROM favorites 
+            WHERE user_id = :user_id AND property_id = :property_id AND is_active = true
+        """), {'user_id': user_id, 'property_id': property_id}).fetchone()
         
         if existing:
-            return jsonify({
-                "message": "Ya está en favoritos",
-                "favorite": {
-                    "id": existing.id,
-                    "user_id": existing.user_id,
-                    "property_id": existing.property_id
-                }
-            }), 200
+            return jsonify({'success': False, 'error': 'Ya está en favoritos'}), 400
         
         # Crear nuevo favorito
-        new_favorite = Favorite(
-            user_id=user_id,
-            property_id=property_id,
-            notes=data.get('notes')
-        )
+        db.session.execute(text("""
+            INSERT INTO favorites (user_id, property_id, notes, is_active, created_at)
+            VALUES (:user_id, :property_id, :notes, true, NOW())
+        """), {
+            'user_id': user_id,
+            'property_id': property_id,
+            'notes': notes
+        })
         
-        db.session.add(new_favorite)
         db.session.commit()
         
-        return jsonify({
-            "message": "Agregado a favoritos",
-            "favorite": {
-                "id": new_favorite.id,
-                "user_id": new_favorite.user_id,
-                "property_id": new_favorite.property_id
-            }
-        }), 201
+        return jsonify({'success': True, 'message': 'Agregado a favoritos'}), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error adding favorite: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ✅ Eliminar de favoritos
-@favorites_bp.route('/<int:property_id>', methods=['DELETE'])
-def remove_favorite(property_id):
-    """Eliminar una propiedad de favoritos"""
+@favorites_bp.route('/api/favorites/<int:favorite_id>', methods=['DELETE'])
+def remove_favorite(favorite_id):
+    """Eliminar favorito"""
     try:
         user_id = request.args.get('user_id', type=int)
-        
         if not user_id:
-            return jsonify({"error": "user_id es requerido"}), 400
+            return jsonify({'success': False, 'error': 'user_id requerido'}), 400
         
-        favorite = Favorite.query.filter_by(
-            user_id=user_id,
-            property_id=property_id
-        ).first()
+        # Soft delete
+        result = db.session.execute(text("""
+            UPDATE favorites 
+            SET is_active = false, updated_at = NOW()
+            WHERE id = :favorite_id AND user_id = :user_id
+        """), {'favorite_id': favorite_id, 'user_id': user_id})
         
-        if not favorite:
-            return jsonify({"error": "No encontrado en favoritos"}), 404
+        if result.rowcount == 0:
+            return jsonify({'success': False, 'error': 'Favorito no encontrado'}), 404
         
-        db.session.delete(favorite)
         db.session.commit()
         
-        return jsonify({"message": "Eliminado de favoritos"}), 200
+        return jsonify({'success': True, 'message': 'Eliminado de favoritos'}), 200
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error removing favorite: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
+@favorites_bp.route('/api/favorites/<int:favorite_id>/notes', methods=['PUT'])
+def update_favorite_notes(favorite_id):
+    """Actualizar notas del favorito"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        notes = data.get('notes', '')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'user_id requerido'}), 400
+        
+        result = db.session.execute(text("""
+            UPDATE favorites 
+            SET notes = :notes, updated_at = NOW()
+            WHERE id = :favorite_id AND user_id = :user_id AND is_active = true
+        """), {'favorite_id': favorite_id, 'user_id': user_id, 'notes': notes})
+        
+        if result.rowcount == 0:
+            return jsonify({'success': False, 'error': 'Favorito no encontrado'}), 404
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Notas actualizadas'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error updating favorite notes: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500

@@ -1,217 +1,268 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import NextAuthRoleGuard from '../../components/auth/NextAuthRoleGuard';
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import dynamic from 'next/dynamic'
+import { BrokerStats } from './components/BrokerStats'
+import { PropertyManagement } from './components/PropertyManagement'
+import { LeadsManager } from './components/LeadsManager'
+import { AutoResponderManager } from './components/AutoResponderManager'
+import { DocumentGenerator } from './components/DocumentGenerator'
+import { AIWriter } from './components/AIWriter'
+import { AutoTaggingManager } from './components/AutoTaggingManager'
+import { SalesPredictor } from './components/SalesPredictor'
+import { CompetitiveBenchmarking } from './components/CompetitiveBenchmarking'
 
-interface BrokerMetrics {
-  total_properties: number;
-  active_properties: number;
-  total_leads: number;
-  conversion_rate: number;
-  monthly_revenue: number;
-  pending_tasks: number;
+interface BrokerDashboardData {
+  user: {
+    id: string
+    name: string
+    email: string
+    avatar?: string
+    phone?: string
+    license: string
+    agency: string
+  }
+  stats: {
+    totalProperties: number
+    activeProperties: number
+    totalLeads: number
+    convertedLeads: number
+    monthlyRevenue: number
+    avgResponseTime: number
+  }
 }
 
-interface Property {
-  id: number;
-  title: string;
-  price: number;
-  status: string;
-  views: number;
-  leads: number;
-}
-
-export default function BrokerDashboard() {
-  const { data: session } = useSession();
-  const [metrics, setMetrics] = useState<BrokerMetrics | null>(null);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+function BrokerDashboard() {
+  const session = useSession()
+  const { data: sessionData, status } = session
+  const [dashboardData, setDashboardData] = useState<BrokerDashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'stats' | 'properties' | 'leads' | 'auto-responder' | 'documents' | 'ai-writer' | 'auto-tagging' | 'sales-predictor' | 'benchmarking'>('stats')
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    setLoading(true);
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
-      // Cargar métricas del broker
-      const metricsRes = await fetch(`${backendUrl}/api/admin/metrics`);
-      const metricsData = await metricsRes.json();
-      
-      // Cargar propiedades del broker
-      const propsRes = await fetch(`${backendUrl}/api/properties`);
-      const propsData = await propsRes.json();
-      
-      setMetrics({
-        total_properties: metricsData.metrics?.properties || 0,
-        active_properties: metricsData.metrics?.properties || 0,
-        total_leads: metricsData.metrics?.leads || 0,
-        conversion_rate: 12.5, // Mock - en producción calcular desde datos reales
-        monthly_revenue: metricsData.metrics?.revenue || 0,
-        pending_tasks: 5
-      });
-      
-      setProperties((propsData.properties || []).slice(0, 5));
-    } catch (err) {
-      console.error('Error loading dashboard:', err);
-    } finally {
-      setLoading(false);
+    const fetchBrokerData = async () => {
+      try {
+        // Simular datos del broker (integrar con API real después)
+        setDashboardData({
+          user: {
+            id: '1',
+            name: sessionData?.user?.name || 'Broker Demo',
+            email: sessionData?.user?.email || 'broker@habitatpro.com',
+            phone: '+34 600 789 123',
+            license: 'COAPI-12345',
+            agency: 'HabitatPro Real Estate'
+          },
+          stats: {
+            totalProperties: 25,
+            activeProperties: 18,
+            totalLeads: 156,
+            convertedLeads: 23,
+            monthlyRevenue: 125000,
+            avgResponseTime: 2.5
+          }
+        })
+      } catch (error) {
+        console.error('Error fetching broker data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  };
 
-  return (
-    <NextAuthRoleGuard allowedRoles={['broker', 'admin']}>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard Broker</h1>
-            <p className="mt-2 text-gray-600">
-              Bienvenido, {(session?.user as any)?.email || 'Broker'}
-            </p>
-          </div>
+    if (status === 'authenticated') {
+      fetchBrokerData()
+    }
+  }, [sessionData, status])
 
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando dashboard...</p>
-            </div>
-          ) : (
-            <>
-              {/* Métricas principales */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Propiedades Totales</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {metrics?.total_properties || 0}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-blue-100 rounded-full">
-                      <span className="text-2xl">🏠</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {metrics?.active_properties || 0} activas
-                  </p>
-                </div>
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
 
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Leads Totales</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {metrics?.total_leads || 0}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-green-100 rounded-full">
-                      <span className="text-2xl">📊</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Tasa de conversión: {metrics?.conversion_rate || 0}%
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Ingresos del Mes</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        ${(metrics?.monthly_revenue || 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-yellow-100 rounded-full">
-                      <span className="text-2xl">💰</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-green-600 mt-2">
-                    +12% vs mes anterior
-                  </p>
-                </div>
-              </div>
-
-              {/* Propiedades recientes */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-900">Mis Propiedades</h2>
-                </div>
-                <div className="p-6">
-                  {properties.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-600 mb-4">No tienes propiedades publicadas</p>
-                      <a
-                        href="/redesign/vender"
-                        className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                      >
-                        Publicar primera propiedad
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {properties.map((property) => (
-                        <div
-                          key={property.id}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">{property.title}</h3>
-                            <p className="text-sm text-gray-600">
-                              ${property.price.toLocaleString()} • {property.views} vistas • {property.leads} leads
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 text-xs rounded-full ${
-                              property.status === 'available' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {property.status}
-                            </span>
-                            <button className="text-indigo-600 hover:text-indigo-900 text-sm">
-                              Ver →
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a
-                  href="/redesign/vender"
-                  className="p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-2">➕ Publicar Propiedad</h3>
-                  <p className="text-sm text-gray-600">Agregar una nueva propiedad al catálogo</p>
-                </a>
-                <a
-                  href="/admin/users"
-                  className="p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-2">👥 Ver Leads</h3>
-                  <p className="text-sm text-gray-600">Gestionar contactos y leads</p>
-                </a>
-                <a
-                  href="/admin/metricas"
-                  className="p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-2">📊 Analíticas</h3>
-                  <p className="text-sm text-gray-600">Ver métricas detalladas</p>
-                </a>
-              </div>
-            </>
-          )}
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Acceso Requerido</h1>
+          <p className="text-gray-600 mb-6">Necesitas iniciar sesión como broker para acceder a este dashboard</p>
+          <a 
+            href="/auth/signin" 
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Iniciar Sesión
+          </a>
         </div>
       </div>
-    </NextAuthRoleGuard>
-  );
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard Broker</h1>
+              <p className="text-gray-600 mt-2">
+                Bienvenido, {dashboardData?.user.name} - {dashboardData?.user.agency}
+              </p>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Propiedades Activas</p>
+                <p className="text-2xl font-bold text-green-600">{dashboardData?.stats.activeProperties}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Leads Convertidos</p>
+                <p className="text-2xl font-bold text-blue-600">{dashboardData?.stats.convertedLeads}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Ingresos Mensuales</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {dashboardData?.stats.monthlyRevenue.toLocaleString()}€
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'stats'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Estadísticas
+            </button>
+            <button
+              onClick={() => setActiveTab('properties')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'properties'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Mis Propiedades
+            </button>
+            <button
+              onClick={() => setActiveTab('leads')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'leads'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Gestión de Leads
+            </button>
+            <button
+              onClick={() => setActiveTab('auto-responder')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'auto-responder'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Auto-Responder
+            </button>
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'documents'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Documentos
+            </button>
+            <button
+              onClick={() => setActiveTab('ai-writer')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'ai-writer'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              IA Redactora
+            </button>
+            <button
+              onClick={() => setActiveTab('auto-tagging')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'auto-tagging'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Auto-Tagging
+            </button>
+            <button
+              onClick={() => setActiveTab('sales-predictor')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'sales-predictor'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Predicción Ventas
+            </button>
+            <button
+              onClick={() => setActiveTab('benchmarking')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'benchmarking'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Benchmarking
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'stats' && dashboardData && (
+          <BrokerStats user={dashboardData.user} stats={dashboardData.stats} />
+        )}
+        {activeTab === 'properties' && (
+          <PropertyManagement />
+        )}
+        {activeTab === 'leads' && (
+          <LeadsManager />
+        )}
+        {activeTab === 'auto-responder' && (
+          <AutoResponderManager />
+        )}
+        {activeTab === 'documents' && (
+          <DocumentGenerator />
+        )}
+        {activeTab === 'ai-writer' && (
+          <AIWriter />
+        )}
+        {activeTab === 'auto-tagging' && (
+          <AutoTaggingManager />
+        )}
+        {activeTab === 'sales-predictor' && (
+          <SalesPredictor />
+        )}
+        {activeTab === 'benchmarking' && (
+          <CompetitiveBenchmarking />
+        )}
+      </div>
+    </div>
+  )
 }
 
+export default dynamic(() => Promise.resolve(BrokerDashboard), {
+  ssr: false
+})
