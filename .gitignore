@@ -1,36 +1,73 @@
+```
+# Documentation files that might be generated
+*.md
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
 # Dependencies
 node_modules/
 .venv/
 venv/
 __pycache__/
-*.pyc
+.mypy_cache/
+.pytest_cache/
 
-# Next.js
-.next/
-out/
+# Build artifacts
+dist/
 build/
+target/
+*.pyc
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
 
-# Environment
-.env
-.env.local
-.env.production
-*.log
-
-# IDE
+# System files
 .DS_Store
-*.swp
-.vscode/
-.idea/
-
-# Logs
-logs/
-*.log
-/tmp/
-
-# Testing
-coverage/
-.nyc_output/
-
-# OS
 Thumbs.db
-*.bak
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+```
