@@ -32,24 +32,68 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
 
     const initializeMap = async () => {
       try {
+        // Importar mapbox-gl dinámicamente
         const mapboxgl = (await import('mapbox-gl')).default;
         
-        if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-          throw new Error('Mapbox token not configured');
+        // Usar configuración centralizada
+        const { getMapboxToken, isValidMapboxToken } = await import('../lib/mapboxConfig');
+        const token = getMapboxToken();
+        
+        console.log('🔍 Mapbox Debug:', {
+          token_present: !!token,
+          token_valid: isValidMapboxToken(token),
+          token_length: token?.length || 0,
+          token_prefix: token?.substring(0, 10) || 'N/A'
+        });
+        
+        if (!isValidMapboxToken(token)) {
+          console.error('❌ Mapbox token no válido', { token_length: token?.length, token_prefix: token?.substring(0, 10) });
+          setMapError(true);
+          return;
         }
 
-        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        // Configurar token ANTES de crear el mapa
+        mapboxgl.accessToken = token;
+        console.log('✅ Token Mapbox configurado correctamente');
 
+        // Verificar que el contenedor existe
+        if (!mapContainer.current) {
+          console.error('❌ Contenedor de mapa no encontrado');
+          setMapError(true);
+          return;
+        }
+
+        // Crear mapa con manejo de errores
         const map = new mapboxgl.Map({
-          container: mapContainer.current!,
+          container: mapContainer.current,
           style: 'mapbox://styles/mapbox/light-v10',
-          center: [-69.9, 18.5], // República Dominicana
-          zoom: 9
+          center: items.length > 0 && items[0].longitude && items[0].latitude 
+            ? [items[0].longitude, items[0].latitude] 
+            : [-69.9312, 18.4861], // República Dominicana por defecto
+          zoom: items.length > 0 ? 11 : 10,
+          attributionControl: false // Desactivar si causa problemas
         });
 
         mapRef.current = map;
 
+        // Manejar errores del mapa
+        map.on('error', (e: any) => {
+          const errorDetails = {
+            error_message: e.error?.message || e.message || 'Error desconocido',
+            error_type: e.type,
+            error_code: e.error?.statusCode || e.statusCode || 'N/A',
+            token_present: !!token,
+            token_valid: token?.startsWith('pk.') || false,
+            container_exists: !!mapContainer.current,
+            style_loaded: map.isStyleLoaded()
+          };
+          console.error('❌ Error de Mapbox:', errorDetails);
+          console.error('Error completo:', e);
+          setMapError(true);
+        });
+
         map.on('load', () => {
+          console.log('✅ Mapbox cargado exitosamente');
           // Add source with clustering
           map.addSource('properties', {
             type: 'geojson',
@@ -206,18 +250,19 @@ export const MapCluster = ({ listings = [], properties = [] }: MapClusterProps) 
     };
   }, [items, mapError]);
 
-  if (mapError || !process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+  // Verificar token (siempre tiene fallback, pero mostrar loading si hay error)
+  if (mapError) {
     return (
-      <div className="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
+      <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-500">Mapa cargando...</div>
+          <div className="text-gray-500">Error al cargar el mapa. Verifica la configuración de Mapbox.</div>
           <div className="text-sm text-gray-400 mt-2">
-            Mostrando {items.length} propiedades en República Dominicana
+            Mostrando {items.length} propiedades
           </div>
         </div>
       </div>
     );
   }
 
-  return <div ref={mapContainer} className="w-full h-96 rounded-lg border" />;
+  return <div ref={mapContainer} className="w-full h-full rounded-lg border" />;
 };

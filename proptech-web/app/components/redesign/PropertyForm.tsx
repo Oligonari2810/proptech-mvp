@@ -1,0 +1,439 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Button from './Button';
+import Card from './Card';
+import DescriptionGenerator from '../ai/DescriptionGenerator';
+
+interface PropertyData {
+  // Paso 1: Información Básica
+  title: string;
+  type: string;
+  operation: string;
+  price: string;
+  location: string;
+  
+  // Paso 2: Detalles
+  bedrooms: string;
+  bathrooms: string;
+  area: string;
+  description: string;
+  
+  // Paso 3: Características
+  features: string[];
+  images: string[];
+}
+
+export default function PropertyForm() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<PropertyData>({
+    title: '',
+    type: 'apartamento',
+    operation: 'venta',
+    price: '',
+    location: '',
+    bedrooms: '',
+    bathrooms: '',
+    area: '',
+    description: '',
+    features: [],
+    images: []
+  });
+
+  const featuresOptions = ['Piscina', 'Garaje', 'Jardín', 'Terraza', 'Ascensor', 'Seguridad 24/7', 'Gimnasio', 'Sala de juegos'];
+
+  const handleChange = (field: keyof PropertyData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFeatureToggle = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter(f => f !== feature)
+        : [...prev.features, feature]
+    }));
+  };
+
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Validación paso 1: Información básica
+    if (!formData.title || formData.title.trim().length < 5) {
+      errors.title = 'El título debe tener al menos 5 caracteres';
+    }
+
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      errors.price = 'El precio debe ser mayor a 0';
+    }
+
+    if (!formData.location || formData.location.trim().length < 3) {
+      errors.location = 'La ubicación debe tener al menos 3 caracteres';
+    }
+
+    // Validación paso 2: Detalles
+    if (formData.bedrooms && (parseInt(formData.bedrooms) < 0 || parseInt(formData.bedrooms) > 20)) {
+      errors.bedrooms = 'El número de dormitorios debe ser entre 0 y 20';
+    }
+
+    if (formData.bathrooms && (parseInt(formData.bathrooms) < 0 || parseInt(formData.bathrooms) > 20)) {
+      errors.bathrooms = 'El número de baños debe ser entre 0 y 20';
+    }
+
+    if (formData.area && (parseFloat(formData.area) <= 0 || parseFloat(formData.area) > 10000)) {
+      errors.area = 'El área debe ser entre 1 y 10,000 m²';
+    }
+
+    if (formData.description && formData.description.length < 20) {
+      errors.description = 'La descripción debe tener al menos 20 caracteres';
+    }
+
+    // Validación paso 3: Imágenes
+    if (formData.images && formData.images.length > 0) {
+      const invalidUrls = formData.images.filter(url => {
+        try {
+          new URL(url);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+      if (invalidUrls.length > 0) {
+        errors.images = 'Algunas URLs de imágenes no son válidas';
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!session?.user) {
+      router.push('/auth/signin?callbackUrl=/redesign/vender');
+      return;
+    }
+
+    // Validación completa
+    if (!validateForm()) {
+      // Mostrar errores del paso actual
+      const stepErrors = Object.keys(validationErrors).filter(key => {
+        if (step === 1) return ['title', 'price', 'location'].includes(key);
+        if (step === 2) return ['bedrooms', 'bathrooms', 'area', 'description'].includes(key);
+        if (step === 3) return ['images'].includes(key);
+        return false;
+      });
+      
+      if (stepErrors.length > 0) {
+        alert(`Por favor corrige los siguientes errores:\n${stepErrors.map(k => `- ${validationErrors[k]}`).join('\n')}`);
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const userId = parseInt((session.user as any).id) || 1;
+
+      // Preparar datos para el backend
+      const payload = {
+        title: formData.title,
+        type: formData.type,
+        property_type: formData.type === 'apartamento' ? 'apartment' : formData.type === 'casa' ? 'house' : formData.type,
+        price: parseFloat(formData.price),
+        location: formData.location,
+        description: formData.description || 'Sin descripción',
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+        area: formData.area ? parseFloat(formData.area) : null,
+        surface: formData.area ? parseFloat(formData.area) : null,
+        features: formData.features,
+        images: formData.images,
+        image_url: formData.images.length > 0 ? formData.images[0] : undefined,
+        status: 'available',
+        user_id: userId,
+        brokerId: userId
+      };
+
+      const response = await fetch(`${backendUrl}/api/properties`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al publicar la propiedad');
+      }
+
+      const result = await response.json();
+      
+      // Redirigir a la propiedad creada o al listado
+      if (result.property?.id) {
+        alert('¡Propiedad publicada exitosamente!');
+        router.push(`/comprar?new=${result.property.id}`);
+      } else {
+        alert('¡Propiedad publicada exitosamente!');
+        router.push('/comprar');
+      }
+    } catch (error) {
+      console.error('Error al publicar propiedad:', error);
+      alert(error instanceof Error ? error.message : 'Error al publicar la propiedad. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderStep1 = () => (
+    <div className="space-y-6">
+      <h3 className="text-title text-dark-green mb-6">Información Básica</h3>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Título de la propiedad</label>
+        <input
+          type="text"
+          value={formData.title}
+          onChange={(e) => handleChange('title', e.target.value)}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-teal focus:border-transparent ${
+            validationErrors.title ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Ej: Apartamento luminoso en zona céntrica"
+        />
+        {validationErrors.title && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.title}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+          <select
+            value={formData.type}
+            onChange={(e) => handleChange('type', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+          >
+            <option value="apartamento">Apartamento</option>
+            <option value="casa">Casa</option>
+            <option value="local">Local</option>
+            <option value="terreno">Terreno</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Operación</label>
+          <select
+            value={formData.operation}
+            onChange={(e) => handleChange('operation', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+          >
+            <option value="venta">Venta</option>
+            <option value="alquiler">Alquiler</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Precio</label>
+          <input
+            type="number"
+            value={formData.price}
+            onChange={(e) => handleChange('price', e.target.value)}
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-teal ${
+              validationErrors.price ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="150000"
+          />
+          {validationErrors.price && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.price}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
+          <input
+            type="text"
+            value={formData.location}
+            onChange={(e) => handleChange('location', e.target.value)}
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-teal ${
+              validationErrors.location ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Santo Domingo, Distrito Nacional"
+          />
+          {validationErrors.location && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.location}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-6">
+      <h3 className="text-title text-dark-green mb-6">Detalles de la Propiedad</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Dormitorios</label>
+          <input
+            type="number"
+            value={formData.bedrooms}
+            onChange={(e) => handleChange('bedrooms', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+            placeholder="3"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Baños</label>
+          <input
+            type="number"
+            value={formData.bathrooms}
+            onChange={(e) => handleChange('bathrooms', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+            placeholder="2"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Área (m²)</label>
+          <input
+            type="number"
+            value={formData.area}
+            onChange={(e) => handleChange('area', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+            placeholder="120"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          rows={6}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+          placeholder="Describe tu propiedad en detalle..."
+        />
+        <div className="mt-2">
+          <DescriptionGenerator
+            propertyData={formData}
+            onDescriptionGenerated={(d) => handleChange('description', d)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <h3 className="text-title text-dark-green mb-6">Características y Extras</h3>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-4">Características</label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {featuresOptions.map((feature) => (
+            <button
+              key={feature}
+              type="button"
+              onClick={() => handleFeatureToggle(feature)}
+              className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                formData.features.includes(feature)
+                  ? 'bg-primary-teal text-white border-primary-teal'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-primary-teal'
+              }`}
+            >
+              {feature}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">URLs de Imágenes (una por línea)</label>
+        <textarea
+          value={formData.images.join('\n')}
+          onChange={(e) => handleChange('images', e.target.value.split('\n').filter(url => url.trim()))}
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-teal"
+          placeholder="https://ejemplo.com/imagen1.jpg&#10;https://ejemplo.com/imagen2.jpg"
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto py-12 px-4">
+      <div className="mb-8">
+        <h1 className="text-headline text-dark-green mb-4">Publica tu Propiedad</h1>
+        <div className="flex items-center gap-2 mb-6">
+          {[1, 2, 3].map((s) => (
+            <React.Fragment key={s}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                s <= step ? 'bg-primary-teal text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                {s}
+              </div>
+              {s < 3 && (
+                <div className={`h-1 w-20 ${s < step ? 'bg-primary-teal' : 'bg-gray-200'}`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      <Card>
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
+
+        <div className="flex justify-between mt-8 pt-6 border-t">
+          <Button
+            variant="outline"
+            onClick={() => setStep(Math.max(1, step - 1))}
+            disabled={step === 1}
+          >
+            ← Anterior
+          </Button>
+          
+          {step < 3 ? (
+            <Button 
+              variant="primary" 
+              onClick={() => {
+                // Validar paso actual antes de avanzar
+                const stepValid = step === 1
+                  ? formData.title && formData.price && formData.location
+                  : step === 2
+                  ? formData.bedrooms || formData.bathrooms || formData.area
+                  : true;
+                
+                if (stepValid) {
+                  setStep(step + 1);
+                } else {
+                  alert('Por favor completa los campos requeridos antes de continuar');
+                }
+              }}
+            >
+              Siguiente →
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Publicando...' : 'Publicar Propiedad'}
+            </Button>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+

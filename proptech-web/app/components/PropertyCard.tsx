@@ -1,8 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { memo, useState } from 'react'
 import Image from 'next/image'
 import { MessageCircle } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { FeaturedBadge } from './featured/FeaturedBadge'
+import { ListingTier } from '../lib/featured/types'
+import FavoriteButton from './FavoriteButton'
+import { useToast } from './ToastNotification'
 
 interface Property {
   id: number | string
@@ -20,17 +25,40 @@ interface Property {
   type?: string
   operation?: string
   emotional_tags?: string[]
+  featuredTier?: ListingTier
 }
 
 interface PropertyCardProps {
   property: Property
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+// Skeleton loading component
+const PropertyCardSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 animate-pulse">
+    <div className="h-48 bg-gray-200"></div>
+    <div className="p-6 space-y-3">
+      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className="h-4 bg-gray-200 rounded w-full"></div>
+    </div>
+  </div>
+);
+
+export const PropertyCard = memo(function PropertyCard({ property }: PropertyCardProps) {
+  const { addToast } = useToast();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
   const handleWhatsAppClick = () => {
     const message = `Hola, me interesa la propiedad: ${property.title} - ${property.price.toLocaleString('es-ES')}`;
     const url = `https://wa.me/+18091234567?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
+    addToast({
+      type: 'info',
+      title: 'WhatsApp abierto',
+      message: 'Serás redirigido a WhatsApp para contactar al broker',
+      duration: 2000,
+    });
   };
 
   // Get the image URL
@@ -40,24 +68,45 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const bathrooms = property.bathrooms || 0;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 relative">
+      {/* Featured Badge */}
+      {property.featuredTier && property.featuredTier !== 'basic' && (
+        <div className="absolute top-3 right-3 z-10">
+          <FeaturedBadge tier={property.featuredTier} />
+        </div>
+      )}
+
       {/* Imagen de la propiedad */}
       <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg relative">
-        {imageUrl ? (
-          <Image 
-            src={imageUrl} 
-            alt={property.title}
-            width={400}
-            height={192}
-            className="w-full h-full object-cover"
-            priority
-          />
+        {imageUrl && !imageError ? (
+          <>
+            {!imageLoaded && <PropertyCardSkeleton />}
+            <Image 
+              src={imageUrl} 
+              alt={property.title}
+              width={400}
+              height={192}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageError(true);
+                setImageLoaded(false);
+              }}
+              loading="lazy"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </>
         ) : (
           <div className="text-center">
             <div className="text-4xl mb-2">🏠</div>
             <div>{property.type || 'Propiedad'}</div>
           </div>
         )}
+        <div className="absolute top-4 left-4 z-10">
+          <FavoriteButton propertyId={Number(property.id)} />
+        </div>
         <div className="absolute top-4 right-4 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-semibold shadow-md">
           {property.operation === 'compra' ? 'Venta' : 'Alquiler'}
         </div>
@@ -145,5 +194,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
       </div>
     </div>
-  )
-}
+  );
+});
+
+PropertyCard.displayName = 'PropertyCard';

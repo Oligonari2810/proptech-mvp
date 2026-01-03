@@ -8,25 +8,47 @@
  * - Aplicar diseño visual enterprise (paleta brand/accent, tipografía Inter)
  * - Preservar NotificationBell y responsive design
  * - A11y y focus states mejorados
+ * - SEGURIDAD: Header condicional según autenticación
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { NotificationBell } from "./notifications/NotificationBell";
+import { UserDropdown } from "./UserDropdown";
 
 export function Header() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const isAuthenticated = !!session?.user;
+  const userRole = (session?.user as any)?.role;
 
-  // 🔗 Navegación principal (se mantiene igual)
-  const navItems = [
+  // 🔗 Navegación principal para usuarios públicos
+  const publicNavItems = [
     { href: "/comprar", label: "Comprar", icon: "🏠" },
     { href: "/alquilar", label: "Alquilar", icon: "🔑" },
     { href: "/invertir", label: "Invertir", icon: "💹" },
     { href: "/vender", label: "Vender", icon: "📈" },
-    { href: "/map", label: "Mapa", icon: "🗺️" },
-    { href: "/admin", label: "Admin", icon: "⚙️" },
+    { href: "/calculadora-impuestos", label: "Calculadora", icon: "🧮" },
+    { href: "/leyes-inmobiliarias", label: "Leyes RD", icon: "📚" },
+    { href: "/tramites-inmobiliarios", label: "Trámites", icon: "🧭" },
   ];
+
+  // 🔗 Enlaces adicionales para usuarios (se pueden mostrar en footer o menú desplegable)
+  const legalNavItems = [
+    { href: "/confotur", label: "CONFOTUR", icon: "🏖️" },
+  ];
+
+  // 🔗 Navegación para usuarios autenticados (NO incluir Admin ni Mi cuenta en nav principal)
+  const authenticatedNavItems = [
+    ...publicNavItems,
+    // Admin y Mi cuenta van en el dropdown de usuario
+  ];
+
+  // Determinar qué items mostrar según autenticación
+  // SIEMPRE mostrar solo navegación pública en el header principal
+  // Admin y opciones de usuario van en el dropdown
+  let navItems = publicNavItems;
 
   return (
     <header
@@ -40,23 +62,15 @@ export function Header() {
       {/* CONTENEDOR PRINCIPAL */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* LOGO + BRAND */}
+          {/* BRAND - SOLO TEXTO */}
           <Link
             href="/"
-            className="flex items-center gap-2"
+            className="flex items-center"
             aria-label="HabitatPro — Inicio"
           >
-            <Image
-              src="/file.svg"
-              alt="HabitatPro logo"
-              width={32}
-              height={32}
-              className="rounded-2xl shadow-soft"
-              priority
-            />
-            <span className="text-lg sm:text-xl font-extrabold tracking-tight text-ink-900">
-              HabitatPro
-            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 hover:text-brand-700 transition-colors">
+              HABITATPRO
+            </h1>
           </Link>
 
           {/* NAVEGACIÓN DESKTOP */}
@@ -80,20 +94,42 @@ export function Header() {
             })}
           </nav>
 
-          {/* CTA + NOTIFICATION */}
+          {/* CTA + NOTIFICATION + USER DROPDOWN */}
           <div className="flex items-center gap-4">
-            <NotificationBell />
-            <Link
-              href="/contacto"
-              className="
-                inline-flex items-center justify-center
-                px-4 py-2 rounded-2xl text-sm font-semibold
-                text-white bg-brand-600 hover:bg-brand-700
-                shadow-soft transition-colors
-              "
-            >
-              Contáctanos
-            </Link>
+            {isAuthenticated && <NotificationBell />}
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="
+                    inline-flex items-center justify-center
+                    px-4 py-2 rounded-2xl text-sm font-semibold
+                    text-ink-700 hover:text-ink-900
+                    transition-colors
+                  "
+                >
+                  Iniciar sesión
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="
+                    inline-flex items-center justify-center
+                    px-4 py-2 rounded-2xl text-sm font-semibold
+                    text-white bg-brand-600 hover:bg-brand-700
+                    shadow-soft transition-colors
+                  "
+                >
+                  Registrarse
+                </Link>
+              </>
+            ) : (
+              <UserDropdown
+                userEmail={session?.user?.email || undefined}
+                userName={session?.user?.name || undefined}
+                userRole={userRole}
+                avatarUrl={(session?.user as any)?.image || (session?.user as any)?.avatar_url || undefined}
+              />
+            )}
           </div>
         </div>
 

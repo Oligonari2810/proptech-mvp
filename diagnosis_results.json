@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-11-02T01:05:49.061250",
+  "health_check": "\u274c Health check FAILED: 500",
+  "properties_endpoint": "\u274c Properties endpoint FAILED: 500",
+  "auth_endpoint": "\u2705 Auth endpoint accessible",
+  "problems": [
+    "Health check failed: 500",
+    "Properties endpoint 500: {\"error\":\"(psycopg2.errors.UndefinedColumn) column properties.emotional_profile does not exist\\nLINE 1: ...ties.emotional_tags AS properties_emotional_tags, properties...\\n                            "
+  ],
+  "warnings": []
+}

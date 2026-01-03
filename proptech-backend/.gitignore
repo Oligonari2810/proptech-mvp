@@ -104,6 +104,8 @@ __pypackages__/
 celerybeat-schedule
 .env
 .env.local
+.env.secrets
+*.secrets
 
 # Excluir entorno virtual
 venv/

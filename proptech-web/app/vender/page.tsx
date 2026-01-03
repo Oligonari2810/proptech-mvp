@@ -1,9 +1,17 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+
+import React, { useState } from 'react';
+import { useToast } from '../components/ToastNotification';
+import { VoiceSearch } from '../components/VoiceSearch';
+import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import PropertyForm from '../components/PropertyForm'
+import { AddressAutocomplete } from '../components/AddressAutocomplete'
 
 export default function VenderPage() {
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('publicacion')
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -13,7 +21,31 @@ export default function VenderPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Convierte tu hogar en oportunidades</h1>
+          
+        {/* Voice Search Integration */}
+        <div className="mb-4 flex items-center gap-2">
+          <VoiceSearch
+            onResult={(text) => {
+              addToast({
+                type: 'success',
+                title: 'Voz reconocida',
+                message: `Buscando: "${text}"`,
+                duration: 2000,
+              });
+              // Nota: Esta página es para publicar propiedades, no para buscar
+            }}
+            onError={(error) => {
+              addToast({
+                type: 'error',
+                title: 'Error en búsqueda por voz',
+                message: error,
+                duration: 4000,
+              });
+            }}
+          />
+        </div>
+
+<h1 className="text-3xl font-bold text-gray-900">Convierte tu hogar en oportunidades</h1>
           <p className="text-gray-600 mt-2">
             Haz que tu propiedad brille con nuestra IA emocional y obtén el mejor precio de mercado
           </p>
@@ -56,10 +88,15 @@ export default function VenderPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Dirección de la propiedad</label>
-                    <input 
-                      type="text" 
-                      placeholder="Calle, número, ciudad..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    <AddressAutocomplete
+                      value=""
+                      onChange={(address, coords) => {
+                        // Actualizar estado local si es necesario
+                        console.log('Dirección seleccionada:', address, coords)
+                      }}
+                      placeholder="Buscar dirección en República Dominicana..."
+                      country="do"
+                      className="w-full"
                     />
                   </div>
                   <div>

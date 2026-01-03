@@ -1,9 +1,23 @@
 'use client';
-import { useState } from 'react';
-import { calculateHabitaScore, getScoreDescription, PropertyInput, ValuationResult } from '../lib/avm/habitascore';
-import { LeadSticky } from '../components/LeadSticky';
 
-export default async function ValorarPage() {
+// Page debe ser dinámica para evitar prerender
+export const dynamic = 'force-dynamic';
+import { useState } from 'react';
+import { 
+  calculateHabitaScore, 
+  calculateAdvancedHabitaScore,
+  calculateHabitaScoreWithEmotion,
+  getScoreDescription, 
+  PropertyInput, 
+  ValuationResult,
+  AdvancedValuationInput,
+  AdvancedValuationResult,
+} from '../lib/avm/habitascore';
+import { LeadSticky } from '../components/LeadSticky';
+import { AddressAutocomplete } from '../components/AddressAutocomplete';
+import EmotionalInsights from '../components/ai/EmotionalInsights';
+
+export default function ValorarPage() {
   const [formData, setFormData] = useState<PropertyInput>({
     area: 100,
     bedrooms: 3,
@@ -19,7 +33,8 @@ export default async function ValorarPage() {
     proximitySchools: 1
   });
 
-  const [result, setResult] = useState<ValuationResult | null>(null);
+  const [result, setResult] = useState<ValuationResult | AdvancedValuationResult | null>(null);
+  const [useEmotional, setUseEmotional] = useState(true); // Usar IA Emocional por defecto
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +44,14 @@ export default async function ValorarPage() {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const valuation = calculateHabitaScore(formData);
+    // Usar valoración avanzada con IA Emocional si está habilitada
+    let valuation: ValuationResult | AdvancedValuationResult;
+    if (useEmotional) {
+      valuation = calculateHabitaScoreWithEmotion(formData as AdvancedValuationInput);
+    } else {
+      valuation = calculateHabitaScore(formData);
+    }
+    
     setResult(valuation);
     setLoading(false);
   };
@@ -49,10 +71,28 @@ export default async function ValorarPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Valora tu Propiedad con IA
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Obtén una valoración instantánea y precisa con nuestro algoritmo HabitaScore, 
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-4">
+            Obtén una valoración instantánea y precisa con nuestro algoritmo HabitaScore IA Emocional, 
             especializado en el mercado inmobiliario dominicano.
           </p>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useEmotional}
+                onChange={(e) => setUseEmotional(e.target.checked)}
+                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                🧠❤️ Usar IA Emocional (recomendado)
+              </span>
+            </label>
+          </div>
+          {useEmotional && (
+            <p className="text-sm text-purple-600 italic">
+              La IA Emocional analiza calidad de vida, bienestar y comunidad más allá del precio
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -162,6 +202,23 @@ export default async function ValorarPage() {
               </div>
 
               {/* Location & Zone */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ubicación
+                  </label>
+                  <AddressAutocomplete
+                    value={formData.location}
+                    onChange={(address) => {
+                      handleInputChange('location', address);
+                    }}
+                    placeholder="Buscar dirección en República Dominicana..."
+                    country="do"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -325,6 +382,11 @@ export default async function ValorarPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Emotional Insights - Solo si es AdvancedValuationResult */}
+                {'emotional_score' in result && (
+                  <EmotionalInsights valuation={result as AdvancedValuationResult} />
+                )}
 
                 {/* Disclaimer */}
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">

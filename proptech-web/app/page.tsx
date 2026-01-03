@@ -4,6 +4,8 @@ import React from 'react'
 import Link from 'next/link'
 import GlobalSearch from './components/ui/GlobalSearch'
 import type { SearchState } from './components/ui/types/search'
+import { FeaturedSection } from './components/featured/FeaturedSection'
+import { EmotionalSearchChatbot } from './components/ai/EmotionalSearchChatbot'
 
 export default function HomePage() {
   // 🔧 Handler existente: conecta con tu lógica real (router / API / store)
@@ -47,6 +49,9 @@ export default function HomePage() {
         </div>
       </div>
       
+      {/* Propiedades Destacadas */}
+      <FeaturedSection title="Propiedades Destacadas" maxItems={6} />
+
       {/* Sección de navegación */}
       <div className="bg-[#F9F5EC] py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,6 +134,15 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+
+      {/* Chatbot de IA Emocional */}
+      <EmotionalSearchChatbot 
+        showSuggestions={true}
+        onPropertySelect={(property) => {
+          // Redirigir a la página de detalle de la propiedad
+          window.location.href = `/properties/${property.id}`;
+        }}
+      />
     </div>
   )
 }

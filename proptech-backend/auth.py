@@ -11,8 +11,10 @@ from flask import request, jsonify, current_app
 from authlib.integrations.flask_client import OAuth
 import os
 
-# Configuración JWT
-JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'habitatpro-super-secret-key-2024')
+# Configuración JWT - DEBE estar en .env
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+if not JWT_SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY no configurado. Usa scripts/generate_secrets.py para generarlo.")
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 24
 

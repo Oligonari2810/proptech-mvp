@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, JSON, Index
 from sqlalchemy.sql.sqltypes import Boolean  # ✅ Importar Boolean correctamente
 from sqlalchemy.orm import relationship
 import datetime
@@ -38,8 +38,8 @@ class User(db.Model):
     subscription_end = Column(DateTime, nullable=True)
 
     properties = relationship("Property", back_populates="owner", lazy=True)
-    buyer_contracts = relationship("SmartContract", foreign_keys="SmartContract.buyer_id", back_populates="buyer", lazy=True)
-    seller_contracts = relationship("SmartContract", foreign_keys="SmartContract.seller_id", back_populates="seller", lazy=True)
+    buyer_contracts = relationship("SmartContract", foreign_keys="[SmartContract.buyer_id]", back_populates="buyer", lazy=True)
+    seller_contracts = relationship("SmartContract", foreign_keys="[SmartContract.seller_id]", back_populates="seller", lazy=True)
 
 # ✅ Modelo de Propiedad
 class Property(db.Model):
@@ -55,9 +55,16 @@ class Property(db.Model):
     image_url = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="available")
     property_type = Column(String(50), nullable=False, default="apartment")  # ✅ Valor por defecto para evitar NULL
+    type = Column(String(50), nullable=True)  # Alias para property_type (compatibilidad)
+    operation = Column(String(20), nullable=True)  # compra, alquiler
     surface = Column(Float, nullable=True)  # Superficie en m²
+    area = Column(Float, nullable=True)  # Área total (alias de surface)
     bedrooms = Column(Integer, nullable=True)  # Habitaciones
     bathrooms = Column(Integer, nullable=True)  # Baños
+    features = Column(JSON, nullable=True)  # JSON con características
+    emotional_tags = Column(JSON, nullable=True)  # JSON con tags emocionales (legacy - mantener para compatibilidad)
+    emotional_profile = Column(JSON, nullable=True)  # JSON con perfil emocional rico: {vibes: [], lifestyle: [], community: [], energy: 1-10, privacy: 1-10, wellness: []}
+    images = Column(JSON, nullable=True)  # JSON con URLs de imágenes
     lot_size = Column(Float, nullable=True)  # Tamaño del terreno en m²
     year_built = Column(Integer, nullable=True)  # Año de construcción
     num_floors = Column(Integer, nullable=True)  # Número de pisos
@@ -68,10 +75,21 @@ class Property(db.Model):
     is_accessible = Column(Boolean, nullable=True, default=False)  # Es accesible
     is_luxury = Column(Boolean, nullable=True, default=False)  # Es propiedad de lujo
     is_bank_owned = Column(Boolean, nullable=True, default=False)  # Es propiedad de banco
-    has_virtual_tour = Column(Boolean, nullable=True, default=False)  # Tiene visita virtual
+    has_virtual_tour = Column(Boolean, nullable=True, default=False)
+    
+    # Índices para optimización de queries
+    __table_args__ = (
+        Index('idx_properties_operation', 'operation'),
+        Index('idx_properties_location', 'location'),
+        Index('idx_properties_price', 'price'),
+        Index('idx_properties_type', 'property_type'),
+        Index('idx_properties_active', 'is_active'),
+    )  # Tiene visita virtual
+    is_active = Column(Boolean, nullable=True, default=True)  # Propiedad activa/públicada
     published_date = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de publicación
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)  # Fecha de creación
 
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # ✅ `user_id` no puede ser NULL
 
     owner = relationship("User", back_populates="properties")
     valuations = relationship("Valuation", back_populates="property", lazy=True)
@@ -102,7 +120,7 @@ class Valuation(db.Model):
     __tablename__ = "valuation"
 
     id = Column(Integer, primary_key=True)
-    property_id = Column(Integer, ForeignKey("property.id"), nullable=False)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
     estimated_value = Column(Float, nullable=False)
     valuation_date = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -113,9 +131,9 @@ class SmartContract(db.Model):
     __tablename__ = "smart_contract"
 
     id = Column(Integer, primary_key=True)
-    property_id = Column(Integer, ForeignKey("property.id"), nullable=False)
-    buyer_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    seller_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     contract_hash = Column(String(256), nullable=False)
     status = Column(String(50), nullable=False, default="pending")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -123,3 +141,63 @@ class SmartContract(db.Model):
     property = relationship("Property", back_populates="contracts")
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer_contracts")
     seller = relationship("User", foreign_keys=[seller_id], back_populates="seller_contracts")
+
+# ✅ Modelo de Favoritos
+class Favorite(db.Model):
+    __tablename__ = "favorites"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'property_id', name='unique_user_property_favorite'),)
+
+# ✅ Modelo de Reviews y Ratings
+class Review(db.Model):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=True)
+    broker_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5 estrellas
+    title = Column(String(255), nullable=True)
+    comment = Column(Text, nullable=False)
+    category = Column(String(50), nullable=False, default="property")  # property, broker, process
+    verified = Column(Boolean, default=False)  # Solo reviews de transacciones completadas
+    tags = Column(JSON, nullable=True)  # Array de tags
+    images = Column(JSON, nullable=True)  # Array de URLs de imágenes
+    helpful_count = Column(Integer, default=0)  # Cuántos usuarios marcaron como útil
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_reviews_property', 'property_id'),
+        Index('idx_reviews_broker', 'broker_id'),
+        Index('idx_reviews_user', 'user_id'),
+        Index('idx_reviews_rating', 'rating'),
+        Index('idx_reviews_verified', 'verified'),
+    )
+
+# ✅ Modelo de Featured Listings
+class FeaturedListing(db.Model):
+    __tablename__ = "featured_listings"
+
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
+    tier = Column(String(50), nullable=False, default="featured")  # featured, premium, platinum
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, default=True)
+    priority = Column(Integer, nullable=True)  # Para ordenamiento (1 = más prioritario)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_featured_property', 'property_id'),
+        Index('idx_featured_tier', 'tier'),
+        Index('idx_featured_active', 'is_active'),
+        Index('idx_featured_dates', 'start_date', 'end_date'),
+    )

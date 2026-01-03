@@ -9,6 +9,8 @@ export interface PropertyData {
   type: string // Mapea a 'property_type' en backend
   operation: 'compra' | 'alquiler'
   location: string
+  latitude?: number // Coordenada latitud
+  longitude?: number // Coordenada longitud
   bedrooms?: number
   bathrooms?: number
   area?: number // Mapea a 'area_sq_m' en backend
@@ -32,7 +34,9 @@ function transformForBackend(data: PropertyData): any {
     property_type: data.type,
     area_sq_m: data.area,
     amenities: data.features,
-    tags: data.emotional_tags
+    tags: data.emotional_tags,
+    latitude: data.latitude, // Incluir coordenadas si están disponibles
+    longitude: data.longitude,
   }
 }
 

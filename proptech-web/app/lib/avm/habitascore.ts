@@ -146,3 +146,19 @@ export const getPriceEstimate = (score: number, area: number): { min: number; ma
   
   return { min, max, avg };
 };
+
+// Exportar funciones avanzadas de IA Emocional
+export {
+  calculateAdvancedHabitaScore,
+  calculateHabitaScoreWithEmotion,
+} from './emotionalValuation';
+
+export type {
+  AdvancedValuationInput,
+  AdvancedValuationResult,
+} from './emotionalValuation';
+
+export type {
+  EmotionalProfile,
+  EmotionalFactorsResult,
+} from './emotionalFactors';

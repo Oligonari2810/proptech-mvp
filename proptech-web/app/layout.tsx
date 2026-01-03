@@ -2,15 +2,44 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { Header } from './components/Header'
+import { PremiumHeader } from './components/PremiumHeader'
 import { FrontendMonitoring } from './components/Monitoring'
-import { generateOrganizationSchema } from '../lib/seo/schema'
+import { SessionProviderWrapper } from './providers/SessionProviderWrapper'
+import { ToastProvider } from './components/ToastNotification'
+import { generateHomepageSchemas } from '../lib/seo/schemaExtended'
+import GoogleAnalytics from './components/GoogleAnalytics'
+import SEOLinks from './components/SEOLinks'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'HabitatPro - Plataforma Inmobiliaria con IA Emocional',
-  description: 'La plataforma inmobiliaria más avanzada con IA emocional para encontrar tu hogar perfecto',
+  title: 'HabitatPro RD - Plataforma Inmobiliaria con IA Emocional | Propiedades República Dominicana',
+  description: 'Encuentra tu propiedad ideal en RD con IA emocional. Calculadoras hipotecarias, asesoría legal CONFOTUR y sistema de reputación verificada. La plataforma inmobiliaria más completa de República Dominicana.',
+  keywords: 'propiedades república dominicana, casas en venta santo domingo, apartamentos alquiler capital rd, inmobiliarias dominicanas, calculadora hipotecaria bancos rd, impuestos compra propiedad rd, ley confotur inversión extranjera',
+  openGraph: {
+    title: 'HabitatPro RD - Plataforma Inmobiliaria con IA Emocional',
+    description: 'Encuentra tu propiedad ideal en República Dominicana con IA emocional y herramientas legales completas',
+    url: 'https://habitatprord.com',
+    siteName: 'HabitatPro RD',
+    locale: 'es_DO',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'HabitatPro RD - Plataforma Inmobiliaria con IA',
+    description: 'Encuentra tu propiedad ideal en RD con IA emocional',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export default function RootLayout({
@@ -18,7 +47,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const organizationSchema = generateOrganizationSchema()
+  const schemas = generateHomepageSchemas()
   
   return (
     <html lang="es-DO">
@@ -27,20 +56,38 @@ export default function RootLayout({
         <link rel="alternate" hrefLang="es" href="https://habitatprord.com" />
         <link rel="alternate" hrefLang="es-DO" href="https://habitatprord.com" />
         <link rel="alternate" hrefLang="x-default" href="https://habitatprord.com" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
+        {/* Google Search Console Verification - Reemplazar con tu código */}
+        {process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && (
+          <meta
+            name="google-site-verification"
+            content={process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION}
+          />
+        )}
+        {/* Schema Markup: Organization, RealEstateAgent, WebSite */}
+        {schemas.map((schema, index) => (
+          <script
+            key={index}
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
+        ))}
       </head>
       <body className={inter.className}>
-        <FrontendMonitoring />
-        <a href="#main-content" className="skip-link">
-          Saltar al contenido principal
-        </a>
-        <Header />
-        <main id="main-content">
-          {children}
-        </main>
+        <SessionProviderWrapper>
+          <ToastProvider>
+            <FrontendMonitoring />
+            <a href="#main-content" className="skip-link">
+              Saltar al contenido principal
+            </a>
+            <GoogleAnalytics />
+            <SEOLinks />
+            <PremiumHeader />
+            <main id="main-content">
+              {children}
+            </main>
+          </ToastProvider>
+        </SessionProviderWrapper>
       </body>
     </html>
   )

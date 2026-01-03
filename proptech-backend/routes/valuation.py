@@ -4,6 +4,21 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from models import db, Valuation
+import sys
+import os
+import logging
+
+# Agregar ruta para importar AVM
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+try:
+    from avm.property_valuation import PropertyValuationModel
+    AVM_AVAILABLE = True
+    avm_model = PropertyValuationModel()
+except ImportError as e:
+    AVM_AVAILABLE = False
+    logging.warning(f"AVM model not available: {e}")
+
+logger = logging.getLogger('habitatpro')
 
 valuation_bp = Blueprint("valuation", __name__, url_prefix="/api/valuation")
 
@@ -38,6 +53,50 @@ modelo_tasacion.fit(X_scaled, y)
 
 modelo_plusvalia = GradientBoostingRegressor(n_estimators=200, learning_rate=0.1, random_state=42)
 modelo_plusvalia.fit(X_scaled, y)
+
+@valuation_bp.route("/avm", methods=["POST"])
+def avm_valuation():
+    """Valoración automatizada usando modelo AVM"""
+    if not AVM_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AVM model not available'
+        }), 503
+        
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Datos de propiedad requeridos'
+            }), 400
+        
+        # Obtener valoración del modelo AVM
+        valuation = avm_model.predict_valuation(data)
+        
+        if not valuation:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo calcular la valoración'
+            }), 400
+        
+        # Obtener explicación de factores
+        factors = avm_model.get_valuation_factors(data)
+        
+        return jsonify({
+            'success': True,
+            'valuation': valuation,
+            'factors_explanation': factors,
+            'disclaimer': 'Esta es una estimación automatizada. Consulte con un profesional para valoración oficial.'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"AVM Valuation error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor'
+        }), 500
 
 @valuation_bp.route("", methods=["POST"])
 def create_valuation():

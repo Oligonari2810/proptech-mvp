@@ -4,6 +4,7 @@ import AdminHeader from "../components/ui/AdminHeader";
 import StatCard from "../components/ui/StatCard";
 import Button from "../components/ui/Button";
 import { Skeleton } from "../components/ui/Skeleton";
+import NextAuthRoleGuard from "../components/auth/NextAuthRoleGuard";
 import { useState, useEffect } from "react";
 
 interface MetricsData {
@@ -60,7 +61,8 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="p-6 space-y-8">
+    <NextAuthRoleGuard allowedRoles={['admin']}>
+      <div className="p-6 space-y-8">
       <AdminHeader
         title="Panel de Control"
         subtitle={metrics ? `Última actualización: ${new Date(metrics.timestamp).toLocaleTimeString()}` : "Resumen operativo y métricas clave"}
@@ -141,6 +143,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </NextAuthRoleGuard>
   );
 }

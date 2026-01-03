@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useRouter } from 'next/navigation';
 
 interface PropertyCardProps {
   id: string;
@@ -22,10 +23,21 @@ export default function PropertyCard({
   area,
   onClick,
 }: PropertyCardProps) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick(id);
+    } else {
+      // Navegar a página de detalle
+      router.push(`/properties/${id}`);
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={() => onClick?.(id)}
+      onClick={handleClick}
       className="w-full text-left cursor-pointer rounded-3xl border border-gray-200 bg-white overflow-hidden shadow-card hover:shadow-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
       aria-label={`Propiedad ${title}`}
     >

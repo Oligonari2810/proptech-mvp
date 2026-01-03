@@ -2,11 +2,21 @@ import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: '*',
-      allow: ['/', '/comprar', '/alquilar', '/invertir', '/valorar', '/contacto'],
-      disallow: ['/admin', '/api/'],
-    },
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/dashboard/',
+          '/profile/',
+          '/auth/',
+          '/_next/',
+          '/static/',
+        ],
+      },
+    ],
     sitemap: 'https://habitatprord.com/sitemap.xml',
   }
 }
