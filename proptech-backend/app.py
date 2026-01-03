@@ -341,6 +341,17 @@ def initialize_sample_data():
         
         emotion_engine.fit(properties_data)
 
+# ENDPOINT RAÍZ - CORRECCIÓN DE ISSUE
+@app.route('/')
+def home():
+    return jsonify({
+        'app': 'HabitatPro',
+        'version': '2.0.0-enterprise',
+        'status': 'healthy',
+        'docs': '/api/health',
+        'message': 'HabitatPro - La primera proptech mundial'
+    })
+
 # APIS RESTFUL REALES
 @app.route('/api/properties', methods=['GET'])
 # # @limiter.limit("60/minute")
