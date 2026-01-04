@@ -48,10 +48,8 @@ function ComparatorContent() {
   const loadProperties = async (ids: (number | string)[]) => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       const promises = ids.map(id => 
-        fetch(`${backendUrl}/api/properties/${id}`).then(res => res.json())
+        fetch(`/api/backend/api/properties/${id}`, { cache: 'no-store' }).then(res => res.json())
       );
       
       const results = await Promise.all(promises);

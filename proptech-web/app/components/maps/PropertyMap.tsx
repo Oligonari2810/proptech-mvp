@@ -34,8 +34,7 @@ export default function PropertyMap({ properties, onPropertyClick, onPropertySel
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-        const response = await fetch(`${backendUrl}/api/properties/?include_coordinates=true`);
+        const response = await fetch(`/api/backend/api/properties/?include_coordinates=true`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
         }

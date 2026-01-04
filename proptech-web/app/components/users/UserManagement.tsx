@@ -33,14 +33,12 @@ export default function UserManagement() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       // Construir query params
       const params = new URLSearchParams();
       if (filters.role) params.append('role', filters.role);
       if (filters.search) params.append('search', filters.search);
       
-      const url = `${backendUrl}/api/admin/users${params.toString() ? `?${params.toString()}` : ''}`;
+      const url = `/api/backend/api/admin/users${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url);
       
       if (!response.ok) throw new Error('Error al cargar usuarios');
@@ -56,8 +54,7 @@ export default function UserManagement() {
 
   const handleRoleChange = async (userId: number, newRole: string) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/backend/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -80,8 +77,7 @@ export default function UserManagement() {
 
   const handleToggleActive = async (userId: number, isActive: boolean) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/backend/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',

@@ -37,10 +37,8 @@ export default function FeaturedListingsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       // Cargar mis propiedades
-      const propsResponse = await fetch(`${backendUrl}/api/properties?user_id=${(session?.user as any)?.id}`, {
+      const propsResponse = await fetch(`/api/backend/api/properties?user_id=${(session?.user as any)?.id}`, {
         headers: {
           'Authorization': `Bearer ${(session as any)?.accessToken || ''}`
         }
@@ -51,7 +49,7 @@ export default function FeaturedListingsPage() {
       }
 
       // Cargar mis featured listings
-      const featuredResponse = await fetch(`${backendUrl}/api/featured-listings/my-properties`, {
+      const featuredResponse = await fetch(`/api/backend/api/featured-listings/my-properties`, {
         headers: {
           'Authorization': `Bearer ${(session as any)?.accessToken || ''}`
         }
@@ -74,8 +72,7 @@ export default function FeaturedListingsPage() {
     }
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/featured-listings`, {
+      const response = await fetch(`/api/backend/api/featured-listings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,8 +104,7 @@ export default function FeaturedListingsPage() {
     if (!confirm('¿Estás seguro de eliminar este featured listing?')) return;
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/featured-listings/${listingId}`, {
+      const response = await fetch(`/api/backend/api/featured-listings/${listingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${(session as any)?.accessToken || ''}`

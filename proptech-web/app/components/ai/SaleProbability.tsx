@@ -24,8 +24,7 @@ export default function SaleProbability({ property }: { property: PropertyLike }
     const load = async () => {
       setLoading(true);
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-        const res = await fetch(`${backendUrl}/api/ai/sale-probability`, {
+        const res = await fetch(`/api/backend/api/ai/sale-probability`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

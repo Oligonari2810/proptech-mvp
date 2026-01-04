@@ -53,8 +53,6 @@ export default function ComprarPage() {
   const loadProperties = useCallback(async (filterParams?: FilterState) => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       // Construir query params para filtros
       const params = new URLSearchParams();
       // CRÍTICO: Filtrar por operation=compra
@@ -76,7 +74,7 @@ export default function ComprarPage() {
       }
 
       const queryString = params.toString();
-      const url = `${backendUrl}/api/properties${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/backend/api/properties${queryString ? `?${queryString}` : ''}`;
       
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('API failed');

@@ -31,8 +31,7 @@ export default function RedesignAlquilarPage() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-        const response = await fetch(`${backendUrl}/api/properties`, { 
+        const response = await fetch(`/api/backend/api/properties`, { 
           cache: 'no-store',
           headers: { 'Content-Type': 'application/json' }
         });

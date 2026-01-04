@@ -9,6 +9,7 @@ export interface FavoriteData {
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com'
+const viaProxy = (path: string) => (typeof window !== 'undefined' ? `/api/backend${path}` : `${BACKEND_URL}${path}`)
 
 /**
  * Agregar propiedad a favoritos
@@ -19,7 +20,7 @@ export async function addFavorite(propertyId: number, userId?: number): Promise<
       'Content-Type': 'application/json',
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/favorites`, {
+    const response = await fetch(viaProxy(`/api/favorites`), {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -40,7 +41,7 @@ export async function addFavorite(propertyId: number, userId?: number): Promise<
  */
 export async function removeFavorite(propertyId: number, userId?: number): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/favorites/${propertyId}`, {
+    const response = await fetch(viaProxy(`/api/favorites/${propertyId}`), {
       method: 'DELETE',
     })
 
@@ -56,7 +57,7 @@ export async function removeFavorite(propertyId: number, userId?: number): Promi
  */
 export async function getFavorites(userId?: number): Promise<any[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/favorites?user_id=${userId || ''}`)
+    const response = await fetch(viaProxy(`/api/favorites?user_id=${userId || ''}`))
     
     if (!response.ok) {
       return []

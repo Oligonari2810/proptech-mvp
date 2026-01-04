@@ -20,8 +20,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-        const response = await fetch(`${backendUrl}/api/admin/metrics`);
+        // Usar proxy interno para evitar CORS (Vercel previews)
+        const response = await fetch(`/api/admin/metrics`, { cache: "no-store" });
         const data = await response.json();
         
         if (data.status === 'success') {

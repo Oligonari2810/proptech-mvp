@@ -57,7 +57,8 @@ export function useProperties(operation: string = 'compra', filters: Record<stri
           ...filters
         }).toString()
 
-        const response = await fetch(`http://localhost:8000/api/properties?${queryParams}`)
+        // Usar proxy interno (evita CORS en Vercel/preview)
+        const response = await fetch(`/api/backend/api/properties?${queryParams}`, { cache: "no-store" })
         
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`)
@@ -96,7 +97,8 @@ export function useAIRecommendations(userProfile: AIRecommendation['user_profile
     setError(null)
     
     try {
-      const response = await fetch('http://localhost:8000/api/ai/recommend', {
+      // Usar proxy interno (evita CORS en Vercel/preview)
+      const response = await fetch('/api/backend/api/ai/recommend', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

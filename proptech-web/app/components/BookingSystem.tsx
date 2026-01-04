@@ -59,8 +59,6 @@ export function BookingSystem({
   const [isSuccess, setIsSuccess] = useState(false);
   const [bookingId, setBookingId] = useState<string>('');
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-
   // Generar slots disponibles (ejemplo: próximos 14 días)
   useEffect(() => {
     const slots: BookingSlot[] = [];
@@ -125,7 +123,7 @@ export function BookingSystem({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${backendUrl}/api/bookings`, {
+      const response = await fetch(`/api/backend/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

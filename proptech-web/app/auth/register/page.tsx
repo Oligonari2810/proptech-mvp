@@ -46,10 +46,8 @@ export default function RegisterPage() {
     }
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       // Registrar en backend
-      const response = await fetch(`${backendUrl}/api/auth/register`, {
+      const response = await fetch(`/api/backend/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

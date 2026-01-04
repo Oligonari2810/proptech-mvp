@@ -36,8 +36,6 @@ export default function DeveloperDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       // En producción, esto debería ser /api/developer/projects
       // Por ahora simulamos datos
       const mockProjects: Project[] = [

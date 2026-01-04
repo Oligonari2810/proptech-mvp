@@ -46,8 +46,6 @@ export default function InvertirPage() {
   const loadProperties = useCallback(async (filterParams?: FilterState) => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-
       const params = new URLSearchParams();
       if (filterParams?.minPrice) params.append('min_price', filterParams.minPrice.toString());
       if (filterParams?.maxPrice) params.append('max_price', filterParams.maxPrice.toString());
@@ -65,7 +63,7 @@ export default function InvertirPage() {
       }
 
       const queryString = params.toString();
-      const url = `${backendUrl}/api/properties${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/backend/api/properties${queryString ? `?${queryString}` : ''}`;
 
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('API failed');

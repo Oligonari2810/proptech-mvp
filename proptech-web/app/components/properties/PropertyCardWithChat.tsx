@@ -91,8 +91,7 @@ export default function PropertyCardWithChat({ property }: PropertyCardWithChatP
     };
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      const response = await fetch(`${backendUrl}/api/chat/send`, {
+      const response = await fetch(`/api/backend/api/chat/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

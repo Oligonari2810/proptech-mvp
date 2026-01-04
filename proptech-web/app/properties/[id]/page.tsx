@@ -60,9 +60,8 @@ export default function PropertyDetailPage() {
       let response = await fetch(`/api/properties-proxy?id=${propertyId}`, { cache: 'no-store' });
       let data = await response.json();
       if (!data || (!data.property && !data.id)) {
-        // Intento 2: ir directo al backend
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-        response = await fetch(`${backendUrl}/api/properties/${propertyId}`);
+        // Intento 2: proxy genérico (evita CORS en Vercel/preview)
+        response = await fetch(`/api/backend/api/properties/${propertyId}`, { cache: 'no-store' });
         data = await response.json();
       }
       if (!data || (!data.property && !data.id)) {
