@@ -306,6 +306,14 @@ try:
 except Exception as e:
     logger.warning(f"⚠️ Blueprint de valuation no disponible: {e}")
 
+# Importar y registrar blueprint de GEO (v4 placeholder)
+try:
+    from routes.geo import geo_bp
+    app.register_blueprint(geo_bp)
+    logger.info("✅ Blueprint de GEO registrado")
+except Exception as e:
+    logger.warning(f"⚠️ Blueprint de GEO no disponible: {e}")
+
 # Importar y registrar blueprint de chat
 try:
     from routes.chat_routes import chat_bp, register_socketio_events
