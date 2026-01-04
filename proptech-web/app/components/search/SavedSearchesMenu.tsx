@@ -9,6 +9,17 @@ export default function SavedSearchesMenu() {
   const { savedSearches, deleteSearch } = useSavedSearches()
   const [open, setOpen] = useState(false)
 
+  const toMapHref = (href: string) => {
+    try {
+      const u = new URL(href, 'http://local')
+      u.pathname = '/map'
+      return `${u.pathname}${u.search}`
+    } catch {
+      // Si viene malformado, al menos intenta abrir el mapa
+      return '/map'
+    }
+  }
+
   return (
     <div className="relative">
       <button
@@ -46,6 +57,13 @@ export default function SavedSearchesMenu() {
                           onClick={() => setOpen(false)}
                         >
                           Abrir →
+                        </Link>
+                        <Link
+                          href={toMapHref(s.href)}
+                          className="ml-3 inline-flex items-center text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+                          onClick={() => setOpen(false)}
+                        >
+                          Mapa →
                         </Link>
                       </div>
                     </div>

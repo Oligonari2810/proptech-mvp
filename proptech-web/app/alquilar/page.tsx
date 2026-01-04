@@ -75,6 +75,8 @@ function AlquilarInner() {
     } satisfies FilterState;
   }, []);
 
+  const selectedIdFromQuery = (searchParams.get('selected') || '').trim() || undefined;
+
   const queryFromFilters = useCallback((f: FilterState) => {
     const params = new URLSearchParams();
     params.set('operation', 'alquiler');
@@ -246,8 +248,12 @@ function AlquilarInner() {
           <PropertySplitView
             properties={filteredProperties}
             useRedesign={useRedesign}
-            onPropertySelect={(property) => {
-              console.log('Property selected:', property);
+            initialSelectedId={selectedIdFromQuery}
+            onSelectionChange={(property) => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (property) params.set('selected', String(property.id));
+              else params.delete('selected');
+              router.replace(`/alquilar?${params.toString()}`);
             }}
           />
         )}

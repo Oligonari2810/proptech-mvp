@@ -78,6 +78,8 @@ function ComprarInner() {
     } satisfies FilterState;
   }, []);
 
+  const selectedIdFromQuery = (searchParams.get('selected') || '').trim() || undefined;
+
   const queryFromFilters = useCallback((f: FilterState) => {
     const params = new URLSearchParams();
     // Fuente de verdad: URL. Mantenemos operation fijo en /comprar.
@@ -258,8 +260,13 @@ function ComprarInner() {
             <PropertySplitView
               properties={filteredProperties}
               useRedesign={useRedesign}
-              onPropertySelect={(property) => {
-                console.log('Property selected:', property);
+              initialSelectedId={selectedIdFromQuery}
+              onSelectionChange={(property) => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (property) params.set('selected', String(property.id));
+                else params.delete('selected');
+                // Mantener ruta actual
+                router.replace(`/comprar?${params.toString()}`);
               }}
             />
             <div className="hidden lg:block absolute top-4 right-4 z-10 w-96">

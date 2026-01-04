@@ -262,6 +262,31 @@ export default function MapPage() {
     propertiesRef.current = properties;
   }, [properties]);
 
+  // Selección ↔ URL (?selected=)
+  useEffect(() => {
+    try {
+      const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      const selected = (qs.get("selected") || "").trim();
+      if (!selected) return;
+      const found = properties.find((p) => String(p.id) === selected);
+      if (found) setSelectedProperty(found);
+    } catch {
+      // noop
+    }
+  }, [properties]);
+
+  const setSelectedInUrl = (id: string | null) => {
+    if (typeof window === "undefined") return;
+    try {
+      const url = new URL(window.location.href);
+      if (id) url.searchParams.set("selected", id);
+      else url.searchParams.delete("selected");
+      window.history.replaceState({}, "", url.toString());
+    } catch {
+      // noop
+    }
+  };
+
   useEffect(() => {
     // Configurar clustering/layers una sola vez cuando el mapa está listo
     const map = mapRef.current;
@@ -396,7 +421,10 @@ export default function MapPage() {
         if (!propId) return;
 
         const p = propertiesRef.current.find((x) => String(x.id) === propId);
-        if (p) setSelectedProperty(p);
+        if (p) {
+          setSelectedProperty(p);
+          setSelectedInUrl(propId);
+        }
 
         try {
           const coords = feature?.geometry?.coordinates;
@@ -525,7 +553,10 @@ export default function MapPage() {
               </div>
             </div>
             <button 
-              onClick={() => setSelectedProperty(null)}
+              onClick={() => {
+                setSelectedProperty(null);
+                setSelectedInUrl(null);
+              }}
               className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
             >
               Cerrar detalles
