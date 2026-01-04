@@ -102,9 +102,12 @@ app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET', 'your-git
 from models import db
 db.init_app(app)
 
-# CORS configuration for production
-# IMPORTANTE: Agregar todos los dominios de Vercel posibles
-allowed_origins = [
+# CORS configuration
+# - En producción: restringir orígenes explícitos y (opcionalmente) previews de Vercel
+# - En desarrollo: permitir el Origin que venga
+import re
+
+DEFAULT_ALLOWED_ORIGINS = [
     'https://habitatprord.com',
     'https://www.habitatprord.com',
     'https://habitatprord.vercel.app',
@@ -115,6 +118,26 @@ allowed_origins = [
     'http://localhost:3003',
     'http://localhost:3004',
 ]
+
+def _parse_csv_env(name: str) -> list[str]:
+    raw = os.getenv(name, '').strip()
+    if not raw:
+        return []
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+allowed_origins = _parse_csv_env('CORS_ALLOWED_ORIGINS') or DEFAULT_ALLOWED_ORIGINS
+ALLOW_VERCEL_PREVIEW = os.getenv('ALLOW_VERCEL_PREVIEW', '').lower() in ('1', 'true', 'yes', 'on')
+_VERCEL_PREVIEW_RE = re.compile(r"^https://[a-z0-9-]+\.vercel\.app$", re.IGNORECASE)
+
+def is_allowed_origin(origin: str | None) -> bool:
+    if not origin:
+        return False
+    if origin in allowed_origins:
+        return True
+    # Permitir previews de Vercel solo si se habilita explícitamente
+    if ALLOW_VERCEL_PREVIEW and _VERCEL_PREVIEW_RE.match(origin):
+        return True
+    return False
 
 # CORS MANUAL - Solución definitiva sin Flask-CORS
 # Configuración CORS manual para evitar dependencias problemáticas
@@ -128,7 +151,7 @@ def after_request(response):
     
     if is_production:
         # Producción: solo orígenes permitidos
-        if origin in allowed_origins:
+        if is_allowed_origin(origin):
             response.headers.add('Access-Control-Allow-Origin', origin)
             response.headers.add('Access-Control-Allow-Credentials', 'true')
     else:
@@ -136,6 +159,9 @@ def after_request(response):
         if origin:
             response.headers.add('Access-Control-Allow-Origin', origin)
     
+    # Importante para caches/CDNs cuando se varía por Origin
+    response.headers.add('Vary', 'Origin')
+
     # Headers CORS estándar
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
@@ -154,13 +180,14 @@ def handle_preflight():
         is_production = os.getenv('FLASK_ENV') == 'production' or os.getenv('ENVIRONMENT') == 'production'
         
         if is_production:
-            if origin in allowed_origins:
+            if is_allowed_origin(origin):
                 response.headers.add('Access-Control-Allow-Origin', origin)
                 response.headers.add('Access-Control-Allow-Credentials', 'true')
         else:
             if origin:
                 response.headers.add('Access-Control-Allow-Origin', origin)
         
+        response.headers.add('Vary', 'Origin')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
         return response
@@ -188,13 +215,7 @@ except ImportError:
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "https://habitatprord.com",
-        "https://proptech-mvp-1.onrender.com"
-    ],
+    cors_allowed_origins=(allowed_origins + (["https://proptech-mvp-1.onrender.com"] if "https://proptech-mvp-1.onrender.com" not in allowed_origins else [])),
     async_mode=async_mode,
     ping_interval=25,
     ping_timeout=20,
