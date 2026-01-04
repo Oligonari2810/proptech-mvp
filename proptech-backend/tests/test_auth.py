@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from app import app
     from models import db, User
-    from werkzeug.security import generate_password_hash
+    from auth import AuthService
 except ImportError as e:
     pytest.skip(f"Dependencias no disponibles: {e}", allow_module_level=True)
 
@@ -22,7 +22,8 @@ def test_user(client):
     with app.app_context():
         user = User(
             email='test@habitatpro.com',
-            password_hash=generate_password_hash('Test123!'),
+            # El backend usa AuthService (bcrypt) en /api/auth/login
+            password_hash=AuthService.hash_password('Test123!'),
             name='Test User',
             role='user',
             is_active=True

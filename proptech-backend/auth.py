@@ -53,7 +53,11 @@ class AuthService:
     @staticmethod
     def verify_password(password: str, hashed: str) -> bool:
         """Verificar password"""
-        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+        try:
+            # bcrypt lanza ValueError si el hash/salt es inválido (p.ej. hashes legacy)
+            return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+        except Exception:
+            return False
     
     @staticmethod
     def generate_token(user_id: int, role: str = 'user') -> str:

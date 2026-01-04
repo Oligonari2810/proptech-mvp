@@ -36,7 +36,8 @@ def test_property(client):
         )
         db.session.add(property)
         db.session.commit()
-        return property
+        # Devolver ID primitivo para evitar DetachedInstanceError fuera de la sesión
+        return property.id
 
 def test_get_properties(client, test_property):
     """Test obtener lista de propiedades"""
@@ -62,10 +63,10 @@ def test_get_properties_filter_by_operation(client, test_property):
 
 def test_get_property_by_id(client, test_property):
     """Test obtener propiedad por ID"""
-    response = client.get(f'/api/properties/{test_property.id}')
+    response = client.get(f'/api/properties/{test_property}')
     assert response.status_code == 200
     data = response.get_json()
-    assert data.get('id') == test_property.id
+    assert data.get('id') == test_property
     assert data.get('title') == 'Test Property'
 
 def test_get_property_not_found(client):
