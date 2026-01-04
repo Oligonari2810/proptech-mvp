@@ -1,5 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { getMapboxToken, isValidMapboxToken } from "../lib/mapboxConfig";
+import type MapboxGL from "mapbox-gl";
 
 interface Property {
   id: string;
@@ -9,14 +11,34 @@ interface Property {
   bedrooms: number;
   area?: number;
   square_meters?: number;
-  lat: number;
-  lng: number;
+  latitude?: number;
+  longitude?: number;
+  // Soporte legacy/variantes
+  lat?: number;
+  lng?: number;
 }
 
 export default function MapPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  type MapboxMap = InstanceType<MapboxGL["Map"]>;
+  type MapboxMarker = InstanceType<MapboxGL["Marker"]>;
+  type MapboxModule = Pick<MapboxGL, "Map" | "Marker" | "Popup" | "accessToken">;
+
+  const mapRef = useRef<MapboxMap | null>(null);
+  const markersRef = useRef<MapboxMarker[]>([]);
+  const mapboxRef = useRef<MapboxModule | null>(null);
+
+  const getCoords = (property: Property): { lat: number; lng: number } | null => {
+    const lat = property.latitude ?? property.lat;
+    const lng = property.longitude ?? property.lng;
+    if (typeof lat !== "number" || typeof lng !== "number") return null;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -32,9 +54,15 @@ export default function MapPage() {
       } catch (err) {
         console.error('Error loading properties:', err);
         // Fallback de demostración para no bloquear la vista
-        setProperties([
-          { id: 'demo-1', title: 'Propiedad Demo', price: 250000, location: 'Santo Domingo', latitude: 18.4861, longitude: -69.9312 },
-        ] as any);
+        setProperties([{
+          id: "demo-1",
+          title: "Propiedad Demo",
+          price: 250000,
+          location: "Santo Domingo",
+          latitude: 18.4861,
+          longitude: -69.9312,
+          bedrooms: 2,
+        }]);
       } finally {
         clearTimeout(timeout);
       }
@@ -47,100 +75,96 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
-    // Cargar MapBox con credenciales reales
-    const loadMapbox = () => {
-      const script = document.createElement('script');
-      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-      script.onload = () => {
-        const link = document.createElement('link');
-        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-        
-        // Inicializar mapa después de cargar
-        setTimeout(() => {
-          initMap();
-        }, 100);
-      };
-      document.head.appendChild(script);
-    };
-
-    const initMap = async () => {
-      if (typeof window !== 'undefined' && (window as any).mapboxgl) {
-        // Usar token directamente (este componente carga Mapbox manualmente)
-        const token = (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string) || 
-                      'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzOTgwZDAwY241MmtwbHJ6aWFsazIxIn0.-k_hECMvvQyjKCgqHbQHAA';
-        
-        console.log('🔍 Mapbox Token Debug:', {
-          token_present: !!token,
-          token_valid: token?.startsWith('pk.') && token.length > 20,
-          token_prefix: token?.substring(0, 10),
-          mapboxgl_available: !!(window as any).mapboxgl
-        });
-        
-        if (!token || !token.startsWith('pk.') || token.length < 20) {
-          console.error('❌ Token Mapbox inválido');
+    // Inicializar Mapbox una sola vez
+    const init = async () => {
+      try {
+        const token = getMapboxToken();
+        if (!isValidMapboxToken(token)) {
+          setMapError("Token de Mapbox no configurado o inválido. Define NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.");
           return;
         }
-        
-        (window as any).mapboxgl.accessToken = token;
-        
-        try {
-          const map = new (window as any).mapboxgl.Map({
-            container: 'map-container',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-69.9312, 18.4861], // República Dominicana (corregido)
-            zoom: 10
-          });
-          
-          map.on('error', (e: any) => {
-            console.error('❌ Error Mapbox en /map:', e);
-            console.error('Error details:', {
-              message: e.error?.message || e.message,
-              code: e.error?.statusCode || 'N/A'
-            });
-          });
-          
-          map.on('load', () => {
-            console.log('✅ Mapbox cargado en /map');
-          });
 
-        map.on('load', () => {
-          setMapLoaded(true);
-          
-          // Agregar marcadores para cada propiedad
-          properties.forEach((property: Property) => {
-            if (property.lat && property.lng) {
-              const marker = new window.mapboxgl.Marker()
-                .setLngLat([property.lng, property.lat])
-                .addTo(map);
-              
-              // Popup con información de la propiedad
-              const popup = new window.mapboxgl.Popup()
-                .setHTML(`
-                  <div class="p-2">
-                    <h3 class="font-bold">${property.title}</h3>
-                    <p class="text-sm text-gray-600">${property.location}</p>
-                    <p class="text-lg font-bold text-blue-600">€${property.price?.toLocaleString() || 'N/A'}</p>
-                    <button onclick="selectProperty('${property.id}')" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
-                      Ver detalles
-                    </button>
-                  </div>
-                `);
-              
-              marker.setPopup(popup);
-            }
-          });
-        });
-        } catch (error) {
-          console.error('❌ Error creando mapa:', error);
+        const mapboxgl = (await import("mapbox-gl")).default as unknown as MapboxModule;
+        mapboxRef.current = mapboxgl;
+        mapboxgl.accessToken = token;
+
+        const container = document.getElementById("map-container");
+        if (!container) {
+          setMapError("No se encontró el contenedor del mapa.");
+          return;
         }
-      } else {
-        console.error('❌ mapboxgl no disponible en window');
+
+        const map = new mapboxgl.Map({
+          container,
+          style: "mapbox://styles/mapbox/streets-v12",
+          center: [-69.9312, 18.4861],
+          zoom: 10,
+        });
+
+        mapRef.current = map;
+
+        map.on("error", (e: unknown) => {
+          console.error("❌ Error Mapbox en /map:", e);
+          const maybeAny = e as { error?: { message?: string }; message?: string } | null;
+          setMapError(maybeAny?.error?.message || maybeAny?.message || "Error cargando el mapa");
+        });
+
+        map.on("load", () => {
+          setMapLoaded(true);
+        });
+      } catch (e: unknown) {
+        console.error("❌ Error inicializando Mapbox:", e);
+        setMapError(e instanceof Error ? e.message : "Error inicializando Mapbox");
       }
     };
 
-    loadMapbox();
+    init();
+
+    return () => {
+      // Cleanup
+      try {
+        markersRef.current.forEach((m) => m.remove());
+        markersRef.current = [];
+        mapRef.current?.remove();
+        mapRef.current = null;
+      } catch {
+        // noop
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Actualizar marcadores al cambiar propiedades o al cargar el mapa
+    const map = mapRef.current;
+    const mapboxgl = mapboxRef.current;
+    if (!map || !mapboxgl) return;
+
+    // Limpiar marcadores previos
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    properties.forEach((property) => {
+      const coords = getCoords(property);
+      if (!coords) return;
+
+      const marker = new mapboxgl.Marker()
+        .setLngLat([coords.lng, coords.lat])
+        .addTo(map);
+
+      const popup = new mapboxgl.Popup().setHTML(`
+        <div class="p-2">
+          <h3 class="font-bold">${property.title}</h3>
+          <p class="text-sm text-gray-600">${property.location}</p>
+          <p class="text-lg font-bold text-blue-600">€${property.price?.toLocaleString() || "N/A"}</p>
+          <button onclick="selectProperty('${property.id}')" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
+            Ver detalles
+          </button>
+        </div>
+      `);
+
+      marker.setPopup(popup);
+      markersRef.current.push(marker);
+    });
   }, [properties]);
 
   // Función global para seleccionar propiedad
@@ -173,7 +197,15 @@ export default function MapPage() {
             className="h-full w-full"
             style={{ minHeight: '400px' }}
           >
-            {!mapLoaded && (
+            {!!mapError && (
+              <div className="h-full flex items-center justify-center bg-red-50">
+                <div className="text-center max-w-md px-6">
+                  <p className="text-red-700 font-semibold mb-2">No se pudo cargar el mapa</p>
+                  <p className="text-red-700 text-sm">{mapError}</p>
+                </div>
+              </div>
+            )}
+            {!mapError && !mapLoaded && (
               <div className="h-full flex items-center justify-center bg-gray-100">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>

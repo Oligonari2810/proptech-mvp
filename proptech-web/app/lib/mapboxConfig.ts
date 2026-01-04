@@ -3,8 +3,11 @@
  * Soluciona problemas de carga de token en cliente/producción
  */
 
-// Token de fallback público (para desarrollo)
-const FALLBACK_TOKEN = 'pk.eyJ1Ijoib2xpZ29uYXJpMjgxMCIsImEiOiJjbTdzOTgwZDAwY241MmtwbHJ6aWFsazIxIn0.-k_hECMvvQyjKCgqHbQHAA';
+declare global {
+  interface Window {
+    __MAPBOX_TOKEN__?: string;
+  }
+}
 
 /**
  * Obtiene el token de Mapbox de forma confiable
@@ -14,8 +17,8 @@ export function getMapboxToken(): string {
   // En cliente, intentar múltiples fuentes
   if (typeof window !== 'undefined') {
     // 1. Variable global (si se setea manualmente)
-    if ((window as any).__MAPBOX_TOKEN__) {
-      return (window as any).__MAPBOX_TOKEN__;
+    if (window.__MAPBOX_TOKEN__) {
+      return window.__MAPBOX_TOKEN__;
     }
     
     // 2. Atributo data-* en HTML (útil para producción)
@@ -39,9 +42,9 @@ export function getMapboxToken(): string {
     }
   }
   
-  // 5. Fallback público (solo para desarrollo)
-  console.warn('⚠️ Usando token de Mapbox público (fallback). Configura NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN en producción.');
-  return FALLBACK_TOKEN;
+  // 5. Sin fallback hardcodeado (evita exponer tokens en el repo)
+  console.warn('⚠️ Token de Mapbox no configurado. Define NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN (o NEXT_PUBLIC_MAPBOX_TOKEN).');
+  return '';
 }
 
 /**
@@ -60,7 +63,7 @@ export function isValidMapboxToken(token: string | null | undefined): boolean {
 export function setMapboxTokenGlobal(token?: string): void {
   const finalToken = token || getMapboxToken();
   if (typeof window !== 'undefined') {
-    (window as any).__MAPBOX_TOKEN__ = finalToken;
+    window.__MAPBOX_TOKEN__ = finalToken;
   }
 }
 
