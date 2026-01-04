@@ -24,8 +24,6 @@ export function PropertyChatbot({ propertyId, onClose, className = '' }: Propert
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-
   // Scroll al final de los mensajes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,7 +61,7 @@ export function PropertyChatbot({ propertyId, onClose, className = '' }: Propert
     try {
       // Si hay propertyId, usar endpoint de chat por propiedad
       if (propertyId) {
-        const response = await fetch(`${backendUrl}/api/chat/send`, {
+        const response = await fetch(`/api/backend/api/chat/send`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

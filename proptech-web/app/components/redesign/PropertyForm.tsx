@@ -139,7 +139,6 @@ export default function PropertyForm() {
     setLoading(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const userId = parseInt((session.user as any).id) || 1;
 
       // Preparar datos para el backend
@@ -162,7 +161,7 @@ export default function PropertyForm() {
         brokerId: userId
       };
 
-      const response = await fetch(`${backendUrl}/api/properties`, {
+      const response = await fetch(`/api/backend/api/properties`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

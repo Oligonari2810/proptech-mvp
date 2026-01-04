@@ -48,8 +48,6 @@ export default function AlquilarPage() {
   const loadProperties = useCallback(async (filterParams?: FilterState) => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-
       const params = new URLSearchParams();
       // CRÍTICO: Filtrar por operation=alquiler
       params.append('operation', 'alquiler');
@@ -69,7 +67,7 @@ export default function AlquilarPage() {
       }
 
       const queryString = params.toString();
-      const url = `${backendUrl}/api/properties${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/backend/api/properties${queryString ? `?${queryString}` : ''}`;
 
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('API failed');

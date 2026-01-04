@@ -29,8 +29,7 @@ export function PropertyReviews({ propertyId, initialReviews = [], initialSummar
 
   const loadReviews = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/reviews/property/${propertyId}`);
+      const response = await fetch(`/api/backend/api/reviews/property/${propertyId}`, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         setReviews(data.reviews || []);
@@ -50,8 +49,7 @@ export function PropertyReviews({ propertyId, initialReviews = [], initialSummar
   }) => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/reviews`, {
+      const response = await fetch(`/api/backend/api/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,8 +77,7 @@ export function PropertyReviews({ propertyId, initialReviews = [], initialSummar
 
   const handleHelpful = async (reviewId: string, helpful: boolean) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      await fetch(`${backendUrl}/api/reviews/${reviewId}/helpful`, {
+      await fetch(`/api/backend/api/reviews/${reviewId}/helpful`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,11 +2,12 @@ import { MetadataRoute } from 'next'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://habitatprord.com'
+  const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com'
   
   // Obtener propiedades dinámicamente con manejo seguro de errores
   let properties: any[] = []
   try {
-    const response = await fetch('https://proptech-mvp-1.onrender.com/api/properties?is_active=true', {
+    const response = await fetch(`${backendBase}/api/properties?is_active=true`, {
       next: { revalidate: 3600 }, // Cache por 1 hora
       headers: {
         'Content-Type': 'application/json',

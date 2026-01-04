@@ -81,8 +81,7 @@ export default function LeadPipeline({ initialLeads, onChange }: LeadPipelinePro
       setLoading(true);
       setError(null);
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-        const res = await fetch(`${backendUrl}/api/crm/leads`, { cache: 'no-store' });
+        const res = await fetch(`/api/backend/api/crm/leads`, { cache: 'no-store' });
         if (!res.ok) throw new Error('Endpoint no disponible');
         const data = await res.json();
         const leads = data.leads || data || [];

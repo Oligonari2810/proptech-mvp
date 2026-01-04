@@ -35,10 +35,9 @@ export function FeaturedSection({ title = 'Propiedades Destacadas', maxItems = 6
   const loadFeaturedProperties = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
       const url = tier
-        ? `${backendUrl}/api/properties/featured?tier=${tier}&limit=${maxItems}`
-        : `${backendUrl}/api/properties/featured?limit=${maxItems}`;
+        ? `/api/backend/api/properties/featured?tier=${tier}&limit=${maxItems}`
+        : `/api/backend/api/properties/featured?limit=${maxItems}`;
 
       const response = await fetch(url, { cache: 'no-store' });
       if (response.ok) {
@@ -56,8 +55,7 @@ export function FeaturedSection({ title = 'Propiedades Destacadas', maxItems = 6
 
   const loadFallbackProperties = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      const response = await fetch(`${backendUrl}/api/properties?limit=${maxItems}`, { cache: 'no-store' });
+      const response = await fetch(`/api/backend/api/properties?limit=${maxItems}`, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         const properties = (data.properties || data || []).map((prop: any) => ({
