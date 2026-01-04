@@ -125,7 +125,12 @@ def _parse_csv_env(name: str) -> list[str]:
         return []
     return [item.strip() for item in raw.split(',') if item.strip()]
 
-allowed_origins = _parse_csv_env('CORS_ALLOWED_ORIGINS') or DEFAULT_ALLOWED_ORIGINS
+# Compatibilidad: algunos despliegues usan CORS_ORIGINS (template viejo)
+allowed_origins = (
+    _parse_csv_env('CORS_ALLOWED_ORIGINS')
+    or _parse_csv_env('CORS_ORIGINS')
+    or DEFAULT_ALLOWED_ORIGINS
+)
 ALLOW_VERCEL_PREVIEW = os.getenv('ALLOW_VERCEL_PREVIEW', '').lower() in ('1', 'true', 'yes', 'on')
 _VERCEL_PREVIEW_RE = re.compile(r"^https://[a-z0-9-]+\.vercel\.app$", re.IGNORECASE)
 
