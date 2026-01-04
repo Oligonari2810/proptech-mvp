@@ -66,8 +66,10 @@ def test_get_property_by_id(client, test_property):
     response = client.get(f'/api/properties/{test_property}')
     assert response.status_code == 200
     data = response.get_json()
-    assert data.get('id') == test_property
-    assert data.get('title') == 'Test Property'
+    # La API puede responder como objeto directo o envuelto en {success, property}
+    prop = data.get("property", data) if isinstance(data, dict) else data
+    assert prop.get('id') == test_property
+    assert prop.get('title') == 'Test Property'
 
 def test_get_property_not_found(client):
     """Test obtener propiedad inexistente"""
