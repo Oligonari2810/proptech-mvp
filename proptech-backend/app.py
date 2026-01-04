@@ -102,6 +102,16 @@ app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET', 'your-git
 from models import db
 db.init_app(app)
 
+# PostGIS bootstrap (necesario para columnas Geometry y queries GEO)
+try:
+    with app.app_context():
+        if db.engine.dialect.name == "postgresql":
+            db.session.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+            db.session.commit()
+            logger.info("✅ PostGIS extension verificada/creada")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo inicializar PostGIS: {e}")
+
 # CORS configuration
 # - En producción: restringir orígenes explícitos y (opcionalmente) previews de Vercel
 # - En desarrollo: permitir el Origin que venga
@@ -305,6 +315,14 @@ try:
     logger.info("✅ Blueprint de valuation (AVM) registrado")
 except Exception as e:
     logger.warning(f"⚠️ Blueprint de valuation no disponible: {e}")
+
+# Importar y registrar blueprint de GEO (v4 placeholder)
+try:
+    from routes.geo import geo_bp
+    app.register_blueprint(geo_bp)
+    logger.info("✅ Blueprint de GEO registrado")
+except Exception as e:
+    logger.warning(f"⚠️ Blueprint de GEO no disponible: {e}")
 
 # Importar y registrar blueprint de chat
 try:

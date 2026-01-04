@@ -11,18 +11,6 @@ from app import app, emotion_engine, db, Property, User
 
 
 @pytest.fixture
-def client():
-    """Cliente de prueba Flask"""
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.drop_all()
-
-
-@pytest.fixture
 def sample_properties():
     """Propiedades de prueba para entrenar el modelo"""
     return [

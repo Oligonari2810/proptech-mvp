@@ -12,22 +12,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from app import app
     from models import db, User
-    from werkzeug.security import generate_password_hash
+    from auth import AuthService
 except ImportError as e:
     pytest.skip(f"Dependencias no disponibles: {e}", allow_module_level=True)
-
-@pytest.fixture
-def client():
-    """Crear cliente de test"""
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.drop_all()
 
 @pytest.fixture
 def test_user(client):
@@ -35,7 +22,8 @@ def test_user(client):
     with app.app_context():
         user = User(
             email='test@habitatpro.com',
-            password_hash=generate_password_hash('Test123!'),
+            # El backend usa AuthService (bcrypt) en /api/auth/login
+            password_hash=AuthService.hash_password('Test123!'),
             name='Test User',
             role='user',
             is_active=True
@@ -50,7 +38,7 @@ def test_health_endpoint(client):
     assert response.status_code == 200
     data = response.get_json()
     assert 'status' in data
-    assert 'checks' in data
+    assert 'services' in data
 
 def test_register_endpoint(client):
     """Test registro de usuario"""

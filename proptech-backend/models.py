@@ -2,7 +2,11 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, JSON, Index
 from sqlalchemy.sql.sqltypes import Boolean  # ✅ Importar Boolean correctamente
 from sqlalchemy.orm import relationship
+from sqlalchemy import event
 import datetime
+
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKTElement
 
 db = SQLAlchemy()
 
@@ -51,6 +55,8 @@ class Property(db.Model):
     location = Column(String(255), nullable=False)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    # Geo v4: punto geoespacial (WGS84, SRID 4326)
+    geom = Column(Geometry(geometry_type="POINT", srid=4326), nullable=True)
     description = Column(Text, nullable=False)
     image_url = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="available")
@@ -114,6 +120,33 @@ class Property(db.Model):
             'square_meters': self.surface if self.surface is not None else 0,
             'brokerId': 1  # Default broker
         }
+
+
+def _sync_geom_from_latlng(target: Property) -> None:
+    """
+    Mantener `geom` alineado con `latitude/longitude`.
+    - PostGIS espera POINT(lng lat) en SRID 4326.
+    - En SQLite se guarda como WKT (texto) si no hay tipo geo real.
+    """
+    try:
+        lat = getattr(target, "latitude", None)
+        lng = getattr(target, "longitude", None)
+        if lat is None or lng is None:
+            return
+        target.geom = WKTElement(f"POINT({lng} {lat})", srid=4326)
+    except Exception:
+        # No bloquear operaciones por falla geo en MVP
+        return
+
+
+@event.listens_for(Property, "before_insert")
+def _property_before_insert(mapper, connection, target: Property):  # pragma: no cover
+    _sync_geom_from_latlng(target)
+
+
+@event.listens_for(Property, "before_update")
+def _property_before_update(mapper, connection, target: Property):  # pragma: no cover
+    _sync_geom_from_latlng(target)
 
 # ✅ Modelo de Tasación Inteligente
 class Valuation(db.Model):

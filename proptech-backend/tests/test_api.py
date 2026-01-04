@@ -16,22 +16,13 @@ except ImportError as e:
     pytest.skip(f"Dependencias no disponibles: {e}", allow_module_level=True)
 
 @pytest.fixture
-def client():
-    """Crear cliente de test"""
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.drop_all()
-
-@pytest.fixture
 def test_property(client):
     """Crear propiedad de test"""
     with app.app_context():
+        user = User(email="owner@test.com", role="user", is_active=True)
+        db.session.add(user)
+        db.session.commit()
+
         property = Property(
             title='Test Property',
             description='Test Description',
@@ -39,11 +30,14 @@ def test_property(client):
             location='Test Location',
             property_type='casa',
             operation='compra',
-            is_active=True
+            is_active=True,
+            image_url='https://example.com/test.jpg',
+            user_id=user.id,
         )
         db.session.add(property)
         db.session.commit()
-        return property
+        # Devolver ID primitivo para evitar DetachedInstanceError fuera de la sesión
+        return property.id
 
 def test_get_properties(client, test_property):
     """Test obtener lista de propiedades"""
@@ -69,11 +63,13 @@ def test_get_properties_filter_by_operation(client, test_property):
 
 def test_get_property_by_id(client, test_property):
     """Test obtener propiedad por ID"""
-    response = client.get(f'/api/properties/{test_property.id}')
+    response = client.get(f'/api/properties/{test_property}')
     assert response.status_code == 200
     data = response.get_json()
-    assert data.get('id') == test_property.id
-    assert data.get('title') == 'Test Property'
+    # La API puede responder como objeto directo o envuelto en {success, property}
+    prop = data.get("property", data) if isinstance(data, dict) else data
+    assert prop.get('id') == test_property
+    assert prop.get('title') == 'Test Property'
 
 def test_get_property_not_found(client):
     """Test obtener propiedad inexistente"""
