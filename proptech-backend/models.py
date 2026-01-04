@@ -5,13 +5,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import event
 import datetime
 
-try:
-    # Geo (PostGIS / fallback en SQLite)
-    from geoalchemy2 import Geometry
-    from geoalchemy2.elements import WKTElement
-except Exception:  # pragma: no cover
-    Geometry = None  # type: ignore
-    WKTElement = None  # type: ignore
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKTElement
 
 db = SQLAlchemy()
 
@@ -60,11 +55,8 @@ class Property(db.Model):
     location = Column(String(255), nullable=False)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    # Geo v4: punto geoespacial (WGS84). En SQLite se almacena como texto/afin.
-    if Geometry is not None:
-        geom = Column(Geometry(geometry_type="POINT", srid=4326, management=False), nullable=True)
-    else:  # fallback si GeoAlchemy2 no está disponible
-        geom = Column(Text, nullable=True)
+    # Geo v4: punto geoespacial (WGS84, SRID 4326)
+    geom = Column(Geometry(geometry_type="POINT", srid=4326), nullable=True)
     description = Column(Text, nullable=False)
     image_url = Column(String(255), nullable=False)
     status = Column(String(50), nullable=False, default="available")
@@ -141,11 +133,6 @@ def _sync_geom_from_latlng(target: Property) -> None:
         lng = getattr(target, "longitude", None)
         if lat is None or lng is None:
             return
-        if WKTElement is None:
-            # Fallback simple: guardar WKT
-            target.geom = f"POINT({lng} {lat})"
-            return
-        # GeoAlchemy2: WKTElement
         target.geom = WKTElement(f"POINT({lng} {lat})", srid=4326)
     except Exception:
         # No bloquear operaciones por falla geo en MVP
