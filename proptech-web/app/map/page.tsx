@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { getMapboxToken, isValidMapboxToken } from "../lib/mapboxConfig";
-import type MapboxGL from "mapbox-gl";
 
 interface Property {
   id: string;
@@ -24,9 +23,9 @@ export default function MapPage() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
 
-  type MapboxMap = InstanceType<MapboxGL["Map"]>;
-  type MapboxMarker = InstanceType<MapboxGL["Marker"]>;
-  type MapboxModule = Pick<MapboxGL, "Map" | "Marker" | "Popup" | "accessToken">;
+  type MapboxModule = typeof import("mapbox-gl")["default"];
+  type MapboxMap = InstanceType<MapboxModule["Map"]>;
+  type MapboxMarker = InstanceType<MapboxModule["Marker"]>;
 
   const mapRef = useRef<MapboxMap | null>(null);
   const markersRef = useRef<MapboxMarker[]>([]);

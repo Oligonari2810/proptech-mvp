@@ -25,8 +25,8 @@ export default function AdminPage() {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const response = await fetch(`${backendUrl}/api/admin/metrics`);
+      // Usar proxy interno para evitar CORS (Vercel previews)
+      const response = await fetch(`/api/admin/metrics`, { cache: "no-store" });
       const data = await response.json();
       
       if (data.status === 'success') {
