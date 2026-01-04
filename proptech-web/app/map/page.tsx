@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { getMapboxToken, isValidMapboxToken } from "../lib/mapboxConfig";
+import SavedSearchesMenu from "../components/search/SavedSearchesMenu";
+import { SaveSearchButton } from "../components/SaveSearchButton";
 
 interface Property {
   id: string | number;
@@ -452,6 +454,17 @@ export default function MapPage() {
       <div className="bg-white border-b border-gray-200 p-4">
         <h1 className="text-2xl font-bold text-ink-900">Mapa de Propiedades</h1>
         <p className="text-ink-600">Explora propiedades en el mapa interactivo con MapBox</p>
+        <div className="mt-3 flex items-center gap-3">
+          <SavedSearchesMenu />
+          <SaveSearchButton
+            href={
+              typeof window !== "undefined"
+                ? `/map${window.location.search || ""}`
+                : "/map"
+            }
+            defaultName="Mapa"
+          />
+        </div>
         <div className="mt-2 text-sm text-gray-500">
           {properties.length} propiedades cargadas • {mapLoaded ? "Mapa cargado" : "Cargando mapa..."} •{" "}
           {propertiesSource === "geo" ? "Vista (bbox)" : "Listado completo"}

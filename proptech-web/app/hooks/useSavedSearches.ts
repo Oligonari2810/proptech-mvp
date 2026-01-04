@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react'
 export interface SavedSearch {
   id: string
   name: string
-  filters: {
+  // Fuente de verdad: link con query params (compartible)
+  href: string
+  // Legacy (compatibilidad): algunos componentes antiguos guardaban filtros estructurados
+  filters?: {
     priceRange?: [number, number]
     bedrooms?: number
     location?: string
     propertyType?: string
   }
-  createdAt: Date
+  createdAt: string
 }
 
 export const useSavedSearches = () => {
@@ -19,7 +22,14 @@ export const useSavedSearches = () => {
   useEffect(() => {
     const saved = localStorage.getItem('habitatpro-saved-searches')
     if (saved) {
-      setSavedSearches(JSON.parse(saved))
+      try {
+        const parsed = JSON.parse(saved) as SavedSearch[]
+        // Normalizar createdAt (string) y filtrar entradas inválidas
+        const normalized = (Array.isArray(parsed) ? parsed : []).filter((x) => x && typeof x.href === 'string' && x.href.length > 0)
+        setSavedSearches(normalized)
+      } catch {
+        setSavedSearches([])
+      }
     }
   }, [])
 
@@ -27,7 +37,7 @@ export const useSavedSearches = () => {
     const newSearch: SavedSearch = {
       ...search,
       id: Date.now().toString(),
-      createdAt: new Date()
+      createdAt: new Date().toISOString()
     }
     
     const updatedSearches = [...savedSearches, newSearch]

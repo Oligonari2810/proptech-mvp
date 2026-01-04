@@ -9,6 +9,8 @@ import { VoiceSearch } from '../components/VoiceSearch';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SmartFilters from '../components/search/SmartFilters';
+import SavedSearchesMenu from '../components/search/SavedSearchesMenu';
+import { SaveSearchButton } from '../components/SaveSearchButton';
 import PropertySplitView from '../components/split-view/PropertySplitView';
 import { EmotionalSearchChatbot } from '../components/ai/EmotionalSearchChatbot';
 import PropertyRecommendations from '../components/ai/PropertyRecommendations';
@@ -193,12 +195,14 @@ function ComprarInner() {
             
             {/* Toggle de rediseño */}
             <div className="flex items-center gap-3">
+              <SavedSearchesMenu />
               <Link
                 href={`/map?${queryFromFilters(filters).toString()}`}
                 className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Ver en mapa
               </Link>
+              <SaveSearchButton href={`/comprar?${queryFromFilters(filters).toString()}`} defaultName="Comprar" />
               <div className="bg-white p-2 rounded-lg shadow-sm border">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

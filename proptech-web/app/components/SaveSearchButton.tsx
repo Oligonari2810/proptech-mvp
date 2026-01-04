@@ -3,17 +3,13 @@ import { useState } from 'react'
 import { useSavedSearches } from '../hooks/useSavedSearches'
 
 interface SaveSearchButtonProps {
-  filters: {
-    priceRange?: [number, number]
-    bedrooms?: number
-    location?: string
-    propertyType?: string
-  }
+  href: string
+  defaultName?: string
 }
 
-export const SaveSearchButton = ({ filters }: SaveSearchButtonProps) => {
+export const SaveSearchButton = ({ href, defaultName }: SaveSearchButtonProps) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [searchName, setSearchName] = useState('')
+  const [searchName, setSearchName] = useState(defaultName || '')
   const { saveSearch } = useSavedSearches()
 
   const handleSave = () => {
@@ -21,7 +17,7 @@ export const SaveSearchButton = ({ filters }: SaveSearchButtonProps) => {
     
     saveSearch({
       name: searchName,
-      filters
+      href
     })
     
     setSearchName('')
