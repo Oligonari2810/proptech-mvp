@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { LoadingOptimized, PageLoading, SectionLoading } from '../components/LoadingOptimized';
 import { useToast } from '../components/ToastNotification';
 import { VoiceSearch } from '../components/VoiceSearch';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
+import SavedSearchesMenu from '../components/search/SavedSearchesMenu';
+import { SaveSearchButton } from '../components/SaveSearchButton';
 
 interface ListingProperty {
   id: string | number;
@@ -35,32 +38,69 @@ interface FilterState {
   features?: string[];
 }
 
-export default function InvertirPage() {
+function InvertirInner() {
   const { addToast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [allProperties, setAllProperties] = useState<ListingProperty[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<ListingProperty[]>([]);
   const [useRedesign, setUseRedesign] = useState(false);
   const [filters, setFilters] = useState<FilterState>({});
   const [loading, setLoading] = useState(true);
 
-  const loadProperties = useCallback(async (filterParams?: FilterState) => {
+  const filtersFromQuery = useCallback((sp: { get: (k: string) => string | null }) => {
+    const num = (v: string | null) => {
+      if (!v) return undefined;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    };
+    const features: string[] = [];
+    if ((sp.get('has_pool') || '').toLowerCase() === 'true') features.push('Piscina');
+    if ((sp.get('has_garage') || '').toLowerCase() === 'true') features.push('Garaje');
+    if ((sp.get('has_elevator') || '').toLowerCase() === 'true') features.push('Ascensor');
+
+    return {
+      minPrice: num(sp.get('min_price')),
+      maxPrice: num(sp.get('max_price')),
+      bedrooms: num(sp.get('bedrooms')),
+      bathrooms: num(sp.get('bathrooms')),
+      minArea: num(sp.get('min_surface')),
+      maxArea: num(sp.get('max_surface')),
+      location: sp.get('location') || undefined,
+      propertyType: sp.get('property_type') || undefined,
+      features: features.length ? features : undefined,
+    } satisfies FilterState;
+  }, []);
+
+  const selectedIdFromQuery = (searchParams.get('selected') || '').trim() || undefined;
+
+  const queryFromFilters = useCallback((f: FilterState) => {
+    const params = new URLSearchParams();
+    params.set('operation', 'inversion');
+    if (f.minPrice != null) params.set('min_price', String(f.minPrice));
+    if (f.maxPrice != null) params.set('max_price', String(f.maxPrice));
+    if (f.bedrooms != null) params.set('bedrooms', String(f.bedrooms));
+    if (f.bathrooms != null) params.set('bathrooms', String(f.bathrooms));
+    if (f.minArea != null) params.set('min_surface', String(f.minArea));
+    if (f.maxArea != null) params.set('max_surface', String(f.maxArea));
+    if (f.location) params.set('location', f.location);
+    if (f.propertyType) params.set('property_type', f.propertyType);
+
+    const feats = f.features || [];
+    if (feats.includes('Piscina')) params.set('has_pool', 'true');
+    if (feats.includes('Garaje')) params.set('has_garage', 'true');
+    if (feats.includes('Ascensor')) params.set('has_elevator', 'true');
+    return params;
+  }, []);
+
+  const loadProperties = useCallback(async (sp?: { toString: () => string }) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filterParams?.minPrice) params.append('min_price', filterParams.minPrice.toString());
-      if (filterParams?.maxPrice) params.append('max_price', filterParams.maxPrice.toString());
-      if (filterParams?.bedrooms) params.append('bedrooms', filterParams.bedrooms.toString());
-      if (filterParams?.bathrooms) params.append('bathrooms', filterParams.bathrooms.toString());
-      if (filterParams?.minArea) params.append('min_surface', filterParams.minArea.toString());
-      if (filterParams?.maxArea) params.append('max_surface', filterParams.maxArea.toString());
-      if (filterParams?.location) params.append('location', filterParams.location);
-      if (filterParams?.propertyType) params.append('property_type', filterParams.propertyType);
-
-      if (filterParams?.features) {
-        if (filterParams.features.includes('Piscina')) params.append('has_pool', 'true');
-        if (filterParams.features.includes('Garaje')) params.append('has_garage', 'true');
-        if (filterParams.features.includes('Ascensor')) params.append('has_elevator', 'true');
-      }
+      const fromUrl = new URLSearchParams(sp?.toString() || '');
+      for (const [k, v] of fromUrl.entries()) params.set(k, v);
+      // Consistencia: /invertir = inversion
+      params.set('operation', 'inversion');
 
       const queryString = params.toString();
       const url = `/api/backend/api/properties${queryString ? `?${queryString}` : ''}`;
@@ -115,18 +155,21 @@ export default function InvertirPage() {
   }, []);
 
   useEffect(() => {
-    loadProperties();
+    const parsed = filtersFromQuery(searchParams);
+    setFilters(parsed);
+    loadProperties(searchParams);
     try {
       const byEnv = process.env.NEXT_PUBLIC_REDESIGN_ENABLED === 'true';
       const byLocal = typeof window !== 'undefined' && localStorage.getItem('redesign-enabled') === 'true';
       setUseRedesign(!!(byEnv || byLocal));
     } catch {}
-  }, [loadProperties]);
+  }, [loadProperties, searchParams, filtersFromQuery]);
 
   const handleFilterChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
-    loadProperties(newFilters);
-  }, [loadProperties]);
+    const qs = queryFromFilters(newFilters);
+    router.replace(`/invertir?${qs.toString()}`);
+  }, [router, queryFromFilters]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -136,6 +179,14 @@ export default function InvertirPage() {
             <h1 className="text-3xl font-bold text-gray-900">Oportunidades de Inversión</h1>
 
             <div className="flex items-center gap-4">
+              <SavedSearchesMenu />
+              <SaveSearchButton href={`/invertir?${queryFromFilters(filters).toString()}`} defaultName="Invertir" />
+              <Link
+                href={`/map?${queryFromFilters(filters).toString()}`}
+                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Ver en mapa
+              </Link>
               <Link
                 href="/confotur"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
@@ -224,12 +275,24 @@ export default function InvertirPage() {
           <PropertySplitView
             properties={filteredProperties}
             useRedesign={useRedesign}
-            onPropertySelect={(property) => {
-              console.log('Property selected:', property);
+            initialSelectedId={selectedIdFromQuery}
+            onSelectionChange={(property) => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (property) params.set('selected', String(property.id));
+              else params.delete('selected');
+              router.replace(`/invertir?${params.toString()}`);
             }}
           />
         )}
       </div>
     </div>
+  );
+}
+
+export default function InvertirPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <InvertirInner />
+    </Suspense>
   );
 }

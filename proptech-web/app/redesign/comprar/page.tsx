@@ -3,7 +3,8 @@
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import RedesignPropertyCard from '../../components/redesign/PropertyCard';
 import '../../styles/redesign/globals.css';
 import '../../styles/redesign/theme.css';
@@ -26,16 +27,20 @@ interface Property {
   emotional_tags?: string[];
 }
 
-export default function RedesignComprarPage() {
+function RedesignComprarInner() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // MISMO endpoint que la página original, NUEVA presentación
     const fetchProperties = async () => {
       try {
-        const response = await fetch(`/api/backend/api/properties`, { 
+        const params = new URLSearchParams(searchParams.toString());
+        // Consistencia: /redesign/comprar siempre compra
+        params.set('operation', 'compra');
+        const response = await fetch(`/api/backend/api/properties?${params.toString()}`, { 
           cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
@@ -70,7 +75,7 @@ export default function RedesignComprarPage() {
     };
 
     fetchProperties();
-  }, []);
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -144,6 +149,15 @@ export default function RedesignComprarPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RedesignComprarPage() {
+  // Next.js requiere Suspense boundary cuando se usa useSearchParams en page
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-warm-bg p-8" />}>
+      <RedesignComprarInner />
+    </Suspense>
   );
 }
 

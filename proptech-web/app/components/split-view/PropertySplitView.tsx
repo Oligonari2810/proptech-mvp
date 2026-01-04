@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import OriginalPropertyCard from '../ui/PropertyCard';
 import RedesignPropertyCard from '../redesign/PropertyCard';
 import { MapCluster } from '../MapCluster';
@@ -24,21 +24,32 @@ interface PropertySplitViewProps {
   properties: Property[];
   useRedesign?: boolean;
   onPropertySelect?: (property: Property) => void;
+  onSelectionChange?: (property: Property | null) => void;
+  initialSelectedId?: string;
 }
 
 export default function PropertySplitView({ 
   properties, 
   useRedesign = false,
-  onPropertySelect 
+  onPropertySelect,
+  onSelectionChange,
+  initialSelectedId
 }: PropertySplitViewProps) {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
+
+  useEffect(() => {
+    if (!initialSelectedId) return;
+    const found = properties.find((p) => String(p.id) === String(initialSelectedId));
+    if (found) setSelectedProperty(found);
+  }, [initialSelectedId, properties]);
 
   // Filtrar propiedades con coordenadas para el mapa
   const mapProperties = properties.filter(p => p.latitude && p.longitude);
 
   const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property);
+    onSelectionChange?.(property);
     if (onPropertySelect) {
       onPropertySelect(property);
     }
@@ -53,10 +64,9 @@ export default function PropertySplitView({
     }
   };
 
-  const handleListPropertyClick = (property: Property) => {
-    setSelectedProperty(property);
-    // Centrar mapa en la propiedad
-    // Esto se puede mejorar con control del mapa via ref
+  const clearSelection = () => {
+    setSelectedProperty(null);
+    onSelectionChange?.(null);
   };
 
   return (
@@ -112,7 +122,7 @@ export default function PropertySplitView({
                     <div
                       key={property.id}
                       id={`property-${property.id}`}
-                      onClick={() => handleListPropertyClick(property)}
+                      onClick={() => handlePropertyClick(property)}
                       className={`cursor-pointer transition-all ${
                         selectedProperty?.id === property.id 
                           ? 'ring-2 ring-blue-500 ring-offset-2' 
@@ -164,7 +174,7 @@ export default function PropertySplitView({
             <div className="container mx-auto px-4 py-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {properties.map((property) => (
-                  <div key={property.id}>
+                  <div key={property.id} onClick={() => handlePropertyClick(property)} className="cursor-pointer">
                     {useRedesign ? (
                       <RedesignPropertyCard property={property} onClick={() => {}} />
                     ) : (
@@ -216,7 +226,7 @@ export default function PropertySplitView({
               </p>
             </div>
             <button
-              onClick={() => setSelectedProperty(null)}
+              onClick={clearSelection}
               className="text-gray-400 hover:text-gray-600"
             >
               ✕
