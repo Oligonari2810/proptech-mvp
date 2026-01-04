@@ -131,12 +131,16 @@ allowed_origins = (
     or _parse_csv_env('CORS_ORIGINS')
     or DEFAULT_ALLOWED_ORIGINS
 )
+ALLOW_ALL_CORS = os.getenv('CORS_ALLOW_ALL', '').lower() in ('1', 'true', 'yes', 'on')
 ALLOW_VERCEL_PREVIEW = os.getenv('ALLOW_VERCEL_PREVIEW', '').lower() in ('1', 'true', 'yes', 'on')
 _VERCEL_PREVIEW_RE = re.compile(r"^https://[a-z0-9-]+\.vercel\.app$", re.IGNORECASE)
 
 def is_allowed_origin(origin: str | None) -> bool:
     if not origin:
         return False
+    # Modo MVP: permitir cualquier Origin (reflejado) si se habilita explícitamente
+    if ALLOW_ALL_CORS:
+        return True
     if origin in allowed_origins:
         return True
     # Permitir previews de Vercel solo si se habilita explícitamente
