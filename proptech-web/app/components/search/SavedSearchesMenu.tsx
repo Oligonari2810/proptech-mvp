@@ -9,6 +9,9 @@ export default function SavedSearchesMenu() {
   const { savedSearches, deleteSearch, saveSearch } = useSavedSearches()
   const [open, setOpen] = useState(false)
 
+  const getPathname = () => (typeof window !== 'undefined' ? window.location.pathname : '/')
+  const getSearch = () => (typeof window !== 'undefined' ? window.location.search || '' : '')
+
   const toMapHref = (href: string) => {
     try {
       const u = new URL(href, 'http://local')
@@ -18,6 +21,45 @@ export default function SavedSearchesMenu() {
       // Si viene malformado, al menos intenta abrir el mapa
       return '/map'
     }
+  }
+
+  const defaultOperationForPath = (pathname: string) => {
+    if (pathname.startsWith('/alquilar')) return 'alquiler'
+    if (pathname.startsWith('/invertir')) return 'inversion'
+    return 'compra'
+  }
+
+  const clearFiltersHref = () => {
+    const pathname = getPathname()
+    const params = new URLSearchParams()
+    // Mantener operation por página para consistencia
+    const op = defaultOperationForPath(pathname)
+    if (pathname.startsWith('/comprar')) params.set('operation', 'compra')
+    else if (pathname.startsWith('/alquilar')) params.set('operation', 'alquiler')
+    else if (pathname.startsWith('/invertir')) params.set('operation', 'inversion')
+    else if (pathname.startsWith('/map')) params.set('operation', op)
+    return `${pathname}${params.toString() ? `?${params.toString()}` : ''}`
+  }
+
+  const openNearMe = () => {
+    if (typeof window === 'undefined') return
+    if (!('geolocation' in navigator)) return
+
+    const current = new URLSearchParams(getSearch())
+    // No mandamos center/zoom al backend, pero sí para posicionar el mapa
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        current.set('center', `${longitude.toFixed(6)},${latitude.toFixed(6)}`)
+        current.set('zoom', '12')
+        current.delete('selected')
+        window.location.href = `/map?${current.toString()}`
+      },
+      () => {
+        // Si falla permisos/timeout, no hacemos nada
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 }
+    )
   }
 
   const PRESETS: Array<{ name: string; href: string }> = [
@@ -63,6 +105,29 @@ export default function SavedSearchesMenu() {
             <button onClick={() => setOpen(false)} className="text-sm text-gray-500 hover:text-gray-800">
               Cerrar
             </button>
+          </div>
+
+          {/* Acciones rápidas contextuales */}
+          <div className="p-3 border-b bg-white">
+            <div className="flex items-center gap-2">
+              <Link
+                href={clearFiltersHref()}
+                className="text-xs font-semibold text-gray-700 hover:text-gray-900"
+                onClick={() => setOpen(false)}
+              >
+                Limpiar filtros
+              </Link>
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  openNearMe()
+                }}
+                className="ml-auto text-xs font-semibold text-blue-600 hover:text-blue-800"
+                title="Centra el mapa en tu ubicación"
+              >
+                Cerca de mí
+              </button>
+            </div>
           </div>
 
           {/* Presets aprobados (one-click) */}

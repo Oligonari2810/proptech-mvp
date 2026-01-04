@@ -172,11 +172,32 @@ export default function MapPage() {
           return;
         }
 
+        // Soportar links compartibles: /map?center=lng,lat&zoom=12
+        let initialCenter: [number, number] = [-69.9312, 18.4861];
+        let initialZoom = 10;
+        try {
+          const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+          const center = (qs.get("center") || "").trim();
+          const zoomRaw = (qs.get("zoom") || "").trim();
+          if (center) {
+            const parts = center.split(",").map((x) => Number(x.trim()));
+            if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+              initialCenter = [parts[0], parts[1]];
+            }
+          }
+          if (zoomRaw) {
+            const z = Number(zoomRaw);
+            if (Number.isFinite(z)) initialZoom = Math.max(2, Math.min(18, z));
+          }
+        } catch {
+          // noop
+        }
+
         const map = new mapboxgl.Map({
           container,
           style: "mapbox://styles/mapbox/streets-v12",
-          center: [-69.9312, 18.4861],
-          zoom: 10,
+          center: initialCenter,
+          zoom: initialZoom,
         });
 
         mapRef.current = map;
