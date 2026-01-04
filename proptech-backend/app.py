@@ -1521,9 +1521,15 @@ def get_version():
     })
 
 # ROOT ENDPOINT
-@app.route('/', methods=['GET'])
-def home():
-    """Root endpoint - API information"""
+# Nota: Ya existe un endpoint raíz en este archivo (def home en la sección "ENDPOINT RAÍZ").
+# Tener dos funciones con el mismo nombre/end-point rompe el arranque de Flask/Gunicorn:
+# AssertionError: View function mapping is overwriting an existing endpoint function: home
+#
+# Si necesitas conservar este payload “extendido”, muévelo a otra ruta (por ejemplo `/api/info`)
+# o cambia el nombre/endpoint.
+@app.route('/api/info', methods=['GET'])
+def api_info():
+    """API information endpoint (antes estaba duplicado en `/`)"""
     return jsonify({
         'app': 'HabitatPro',
         'version': '2.0.0-enterprise',
