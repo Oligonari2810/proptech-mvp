@@ -5,6 +5,7 @@ Configuración global para tests
 import pytest
 import sys
 import os
+from sqlalchemy import text
 
 # Agregar el directorio del proyecto al path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,4 +26,36 @@ def setup_test_environment():
     os.environ['FLASK_ENV'] = 'testing'
     yield
     # Cleanup si es necesario
+
+
+@pytest.fixture
+def client():
+    """
+    Cliente Flask para tests usando DATABASE_URL del entorno.
+    CI usa Postgres+PostGIS (postgis/postgis).
+    """
+    from app import app
+    from models import db
+
+    app.config["TESTING"] = True
+    # Respetar DATABASE_URL ya seteada por CI (Postgres)
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///:memory:")
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "test-secret-key")
+
+    with app.test_client() as client:
+        with app.app_context():
+            # PostGIS debe existir antes de crear tablas con Geometry
+            try:
+                if db.engine.dialect.name == "postgresql":
+                    db.session.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+                    db.session.commit()
+            except Exception:
+                # Si falla, que el test falle en create_all (no ocultar)
+                raise
+
+            db.drop_all()
+            db.create_all()
+            yield client
+            db.session.remove()
+            db.drop_all()
 

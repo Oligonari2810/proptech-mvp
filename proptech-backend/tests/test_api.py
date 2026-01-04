@@ -16,22 +16,13 @@ except ImportError as e:
     pytest.skip(f"Dependencias no disponibles: {e}", allow_module_level=True)
 
 @pytest.fixture
-def client():
-    """Crear cliente de test"""
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.drop_all()
-
-@pytest.fixture
 def test_property(client):
     """Crear propiedad de test"""
     with app.app_context():
+        user = User(email="owner@test.com", role="user", is_active=True)
+        db.session.add(user)
+        db.session.commit()
+
         property = Property(
             title='Test Property',
             description='Test Description',
@@ -39,7 +30,9 @@ def test_property(client):
             location='Test Location',
             property_type='casa',
             operation='compra',
-            is_active=True
+            is_active=True,
+            image_url='https://example.com/test.jpg',
+            user_id=user.id,
         )
         db.session.add(property)
         db.session.commit()

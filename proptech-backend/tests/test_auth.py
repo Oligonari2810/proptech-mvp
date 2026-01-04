@@ -17,19 +17,6 @@ except ImportError as e:
     pytest.skip(f"Dependencias no disponibles: {e}", allow_module_level=True)
 
 @pytest.fixture
-def client():
-    """Crear cliente de test"""
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.drop_all()
-
-@pytest.fixture
 def test_user(client):
     """Crear usuario de test"""
     with app.app_context():
@@ -50,7 +37,7 @@ def test_health_endpoint(client):
     assert response.status_code == 200
     data = response.get_json()
     assert 'status' in data
-    assert 'checks' in data
+    assert 'services' in data
 
 def test_register_endpoint(client):
     """Test registro de usuario"""
