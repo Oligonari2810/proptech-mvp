@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useSavedSearches } from '../../hooks/useSavedSearches'
 
 export default function SavedSearchesMenu() {
-  const { savedSearches, deleteSearch } = useSavedSearches()
+  const { savedSearches, deleteSearch, saveSearch } = useSavedSearches()
   const [open, setOpen] = useState(false)
 
   const toMapHref = (href: string) => {
@@ -17,6 +17,33 @@ export default function SavedSearchesMenu() {
     } catch {
       // Si viene malformado, al menos intenta abrir el mapa
       return '/map'
+    }
+  }
+
+  const PRESETS: Array<{ name: string; href: string }> = [
+    {
+      name: 'Comprar: Santo Domingo < 300k (2+ hab)',
+      href: '/comprar?operation=compra&location=Santo%20Domingo&max_price=300000&bedrooms=2',
+    },
+    {
+      name: 'Alquilar: Punta Cana (2+ hab, < 1500)',
+      href: '/alquilar?operation=alquiler&location=Punta%20Cana&max_price=1500&bedrooms=2',
+    },
+    {
+      name: 'Inversión: Punta Cana < 350k',
+      href: '/invertir?operation=inversion&location=Punta%20Cana&max_price=350000',
+    },
+    {
+      name: 'Lujo: 3+ baños, > 500k',
+      href: '/comprar?operation=compra&min_price=500000&bathrooms=3',
+    },
+  ]
+
+  const savePreset = (preset: { name: string; href: string }) => {
+    try {
+      saveSearch({ name: preset.name, href: preset.href })
+    } catch {
+      // noop
     }
   }
 
@@ -36,6 +63,41 @@ export default function SavedSearchesMenu() {
             <button onClick={() => setOpen(false)} className="text-sm text-gray-500 hover:text-gray-800">
               Cerrar
             </button>
+          </div>
+
+          {/* Presets aprobados (one-click) */}
+          <div className="p-3 border-b bg-gray-50">
+            <div className="text-xs font-semibold text-gray-700 mb-2">Presets</div>
+            <div className="space-y-2">
+              {PRESETS.map((p) => (
+                <div key={p.href} className="bg-white border rounded-lg p-2">
+                  <div className="text-xs font-semibold text-gray-800 truncate">{p.name}</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Link
+                      href={p.href}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      onClick={() => setOpen(false)}
+                    >
+                      Abrir →
+                    </Link>
+                    <Link
+                      href={toMapHref(p.href)}
+                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+                      onClick={() => setOpen(false)}
+                    >
+                      Mapa →
+                    </Link>
+                    <button
+                      onClick={() => savePreset(p)}
+                      className="ml-auto text-xs font-semibold text-gray-700 hover:text-gray-900"
+                      title="Guardar preset"
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {savedSearches.length === 0 ? (
