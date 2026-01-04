@@ -25,7 +25,8 @@ export function middleware(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.vercel-insights.com https://api.mapbox.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com;
-    img-src 'self' blob: data: https: https://api.mapbox.com https://*.tiles.mapbox.com;
+    # MVP: permitir imágenes http(s) porque algunos datos/BD pueden venir con URLs http/localhost
+    img-src 'self' blob: data: https: http: https://api.mapbox.com https://*.tiles.mapbox.com;
     font-src 'self' https://fonts.gstatic.com https://api.mapbox.com;
     connect-src 'self' https://proptech-mvp-1.onrender.com ${backendOrigin} ${isDev ? 'http://localhost:8000 http://127.0.0.1:8000' : ''} https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com;
     worker-src 'self' blob:;

@@ -125,13 +125,22 @@ def _parse_csv_env(name: str) -> list[str]:
         return []
     return [item.strip() for item in raw.split(',') if item.strip()]
 
-allowed_origins = _parse_csv_env('CORS_ALLOWED_ORIGINS') or DEFAULT_ALLOWED_ORIGINS
+# Compatibilidad: algunos despliegues usan CORS_ORIGINS (template viejo)
+allowed_origins = (
+    _parse_csv_env('CORS_ALLOWED_ORIGINS')
+    or _parse_csv_env('CORS_ORIGINS')
+    or DEFAULT_ALLOWED_ORIGINS
+)
+ALLOW_ALL_CORS = os.getenv('CORS_ALLOW_ALL', '').lower() in ('1', 'true', 'yes', 'on')
 ALLOW_VERCEL_PREVIEW = os.getenv('ALLOW_VERCEL_PREVIEW', '').lower() in ('1', 'true', 'yes', 'on')
 _VERCEL_PREVIEW_RE = re.compile(r"^https://[a-z0-9-]+\.vercel\.app$", re.IGNORECASE)
 
 def is_allowed_origin(origin: str | None) -> bool:
     if not origin:
         return False
+    # Modo MVP: permitir cualquier Origin (reflejado) si se habilita explícitamente
+    if ALLOW_ALL_CORS:
+        return True
     if origin in allowed_origins:
         return True
     # Permitir previews de Vercel solo si se habilita explícitamente
@@ -1050,6 +1059,18 @@ def get_properties():
         # Convertir a JSON
         properties_data = []
         for prop in properties:
+            # Normalizar imagen para frontend:
+            # - algunos registros tienen images vacío o NULL
+            # - algunos tienen image_url pero el endpoint no lo devolvía
+            image_url = getattr(prop, 'image_url', None) or None
+            images = prop.images if isinstance(getattr(prop, 'images', None), list) else []
+            if not images and image_url:
+                images = [image_url]
+            if not image_url and images:
+                image_url = images[0]
+            if not image_url:
+                image_url = 'https://via.placeholder.com/800x600?text=HabitatPro'
+
             prop_data = {
                 'id': prop.id,
                 'title': prop.title,
@@ -1064,7 +1085,8 @@ def get_properties():
                 'features': prop.features or [],
                 'emotional_tags': prop.emotional_tags or [],
                 'emotional_profile': getattr(prop, 'emotional_profile', None) or {},  # Safe access with getattr
-                'images': prop.images or [],
+                'image_url': image_url,
+                'images': images,
                 'created_at': prop.created_at.isoformat() if prop.created_at else None
             }
             # Añadir featuredTier si existe
@@ -1144,7 +1166,8 @@ def create_property():
             'area': property.area,
             'features': property.features or [],
             'emotional_tags': property.emotional_tags or [],
-            'images': property.images or [],
+            'image_url': getattr(property, 'image_url', None) or (property.images[0] if isinstance(property.images, list) and property.images else 'https://via.placeholder.com/800x600?text=HabitatPro'),
+            'images': property.images if isinstance(property.images, list) and property.images else ([getattr(property, 'image_url', None)] if getattr(property, 'image_url', None) else []),
             'created_at': property.created_at.isoformat()
         }
         
@@ -1173,7 +1196,8 @@ def get_property_detail(property_id):
             'area': property.area or property.surface,
             'features': property.features or [],
             'emotional_tags': property.emotional_tags or [],
-            'images': property.images or [],
+            'image_url': getattr(property, 'image_url', None) or (property.images[0] if isinstance(property.images, list) and property.images else 'https://via.placeholder.com/800x600?text=HabitatPro'),
+            'images': property.images if isinstance(property.images, list) and property.images else ([getattr(property, 'image_url', None)] if getattr(property, 'image_url', None) else []),
             'is_active': property.is_active if hasattr(property, 'is_active') else True,
             'status': property.status if hasattr(property, 'status') else 'available',
             'created_at': property.created_at.isoformat() if property.created_at else None
@@ -1239,7 +1263,8 @@ def update_property(property_id):
             'area': property.area or property.surface,
             'features': property.features or [],
             'emotional_tags': property.emotional_tags or [],
-            'images': property.images or [],
+            'image_url': getattr(property, 'image_url', None) or (property.images[0] if isinstance(property.images, list) and property.images else 'https://via.placeholder.com/800x600?text=HabitatPro'),
+            'images': property.images if isinstance(property.images, list) and property.images else ([getattr(property, 'image_url', None)] if getattr(property, 'image_url', None) else []),
             'is_active': property.is_active if hasattr(property, 'is_active') else True,
             'status': property.status if hasattr(property, 'status') else 'available',
             'created_at': property.created_at.isoformat() if property.created_at else None

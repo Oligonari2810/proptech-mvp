@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+  const raw = (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com').trim()
+  const baseWithScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  const base = baseWithScheme.replace(/\/api\/?$/i, "").replace(/\/+$/g, "")
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

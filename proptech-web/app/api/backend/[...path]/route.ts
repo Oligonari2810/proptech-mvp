@@ -1,5 +1,16 @@
 export const dynamic = "force-dynamic";
 
+function getBackendBase(): string {
+  const raw =
+    (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "https://proptech-mvp-1.onrender.com").trim();
+
+  // Permitir que el usuario ponga "proptech-mvp-1.onrender.com" sin esquema
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  // Normalizar: si alguien pone ".../api", dejamos solo el origin/base
+  return withScheme.replace(/\/api\/?$/i, "").replace(/\/+$/g, "");
+}
+
 function isSafePathSegment(seg: string): boolean {
   if (!seg) return false;
   if (seg === "." || seg === "..") return false;
@@ -21,7 +32,7 @@ function isAllowedUpstreamPath(joined: string): boolean {
 }
 
 async function forward(request: Request, pathParts: string[]) {
-  const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || "https://proptech-mvp-1.onrender.com";
+  const backendBase = getBackendBase();
   const incomingUrl = new URL(request.url);
 
   if (!pathParts.every(isSafePathSegment)) {
