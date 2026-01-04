@@ -3,10 +3,11 @@
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useToast } from '../components/ToastNotification';
 import { VoiceSearch } from '../components/VoiceSearch';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import SmartFilters from '../components/search/SmartFilters';
 import PropertySplitView from '../components/split-view/PropertySplitView';
 import { EmotionalSearchChatbot } from '../components/ai/EmotionalSearchChatbot';
@@ -41,37 +42,68 @@ interface FilterState {
   features?: string[];
 }
 
-export default function ComprarPage() {
+function ComprarInner() {
   const { addToast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [allProperties, setAllProperties] = useState<ListingProperty[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<ListingProperty[]>([]);
   const [useRedesign, setUseRedesign] = useState(false);
   const [filters, setFilters] = useState<FilterState>({});
   const [loading, setLoading] = useState(true);
 
+  const filtersFromQuery = useCallback((sp: { get: (k: string) => string | null }) => {
+    const num = (v: string | null) => {
+      if (!v) return undefined;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    };
+    const features: string[] = [];
+    if ((sp.get('has_pool') || '').toLowerCase() === 'true') features.push('Piscina');
+    if ((sp.get('has_garage') || '').toLowerCase() === 'true') features.push('Garaje');
+    if ((sp.get('has_elevator') || '').toLowerCase() === 'true') features.push('Ascensor');
+
+    return {
+      minPrice: num(sp.get('min_price')),
+      maxPrice: num(sp.get('max_price')),
+      bedrooms: num(sp.get('bedrooms')),
+      bathrooms: num(sp.get('bathrooms')),
+      minArea: num(sp.get('min_surface')),
+      maxArea: num(sp.get('max_surface')),
+      location: sp.get('location') || undefined,
+      propertyType: sp.get('property_type') || undefined,
+      features: features.length ? features : undefined,
+    } satisfies FilterState;
+  }, []);
+
+  const queryFromFilters = useCallback((f: FilterState) => {
+    const params = new URLSearchParams();
+    // Fuente de verdad: URL. Mantenemos operation fijo en /comprar.
+    params.set('operation', 'compra');
+    if (f.minPrice != null) params.set('min_price', String(f.minPrice));
+    if (f.maxPrice != null) params.set('max_price', String(f.maxPrice));
+    if (f.bedrooms != null) params.set('bedrooms', String(f.bedrooms));
+    if (f.bathrooms != null) params.set('bathrooms', String(f.bathrooms));
+    if (f.minArea != null) params.set('min_surface', String(f.minArea));
+    if (f.maxArea != null) params.set('max_surface', String(f.maxArea));
+    if (f.location) params.set('location', f.location);
+    if (f.propertyType) params.set('property_type', f.propertyType);
+
+    const feats = f.features || [];
+    if (feats.includes('Piscina')) params.set('has_pool', 'true');
+    if (feats.includes('Garaje')) params.set('has_garage', 'true');
+    if (feats.includes('Ascensor')) params.set('has_elevator', 'true');
+
+    return params;
+  }, []);
+
   // Cargar propiedades del backend
-  const loadProperties = useCallback(async (filterParams?: FilterState) => {
+  const loadProperties = useCallback(async (sp?: { toString: () => string }) => {
     setLoading(true);
     try {
-      // Construir query params para filtros
-      const params = new URLSearchParams();
-      // CRÍTICO: Filtrar por operation=compra
-      params.append('operation', 'compra');
-      if (filterParams?.minPrice) params.append('min_price', filterParams.minPrice.toString());
-      if (filterParams?.maxPrice) params.append('max_price', filterParams.maxPrice.toString());
-      if (filterParams?.bedrooms) params.append('bedrooms', filterParams.bedrooms.toString());
-      if (filterParams?.bathrooms) params.append('bathrooms', filterParams.bathrooms.toString());
-      if (filterParams?.minArea) params.append('min_surface', filterParams.minArea.toString());
-      if (filterParams?.maxArea) params.append('max_surface', filterParams.maxArea.toString());
-      if (filterParams?.location) params.append('location', filterParams.location);
-      if (filterParams?.propertyType) params.append('property_type', filterParams.propertyType);
-      
-      // Filtros booleanos
-      if (filterParams?.features) {
-        if (filterParams.features.includes('Piscina')) params.append('has_pool', 'true');
-        if (filterParams.features.includes('Garaje')) params.append('has_garage', 'true');
-        if (filterParams.features.includes('Ascensor')) params.append('has_elevator', 'true');
-      }
+      const params = new URLSearchParams(sp?.toString() || '');
+      // CRÍTICO: Filtrar por operation=compra (siempre)
+      params.set('operation', 'compra');
 
       const queryString = params.toString();
       const url = `/api/backend/api/properties${queryString ? `?${queryString}` : ''}`;
@@ -129,7 +161,10 @@ export default function ComprarPage() {
   }, []);
 
   useEffect(() => {
-    loadProperties();
+    // URL es la fuente de verdad: parsea filtros y carga
+    const parsed = filtersFromQuery(searchParams);
+    setFilters(parsed);
+    loadProperties(searchParams);
     
     // Feature flag: env o localStorage
     try {
@@ -137,13 +172,14 @@ export default function ComprarPage() {
       const byLocal = typeof window !== 'undefined' && localStorage.getItem('redesign-enabled') === 'true';
       setUseRedesign(!!(byEnv || byLocal));
     } catch {}
-  }, [loadProperties]);
+  }, [loadProperties, searchParams, filtersFromQuery]);
 
   // Aplicar filtros
   const handleFilterChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
-    loadProperties(newFilters);
-  }, [loadProperties]);
+    const qs = queryFromFilters(newFilters);
+    router.replace(`/comprar?${qs.toString()}`);
+  }, [router, queryFromFilters]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -156,7 +192,14 @@ export default function ComprarPage() {
             </h1>
             
             {/* Toggle de rediseño */}
-            <div className="bg-white p-2 rounded-lg shadow-sm border">
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/map?${queryFromFilters(filters).toString()}`}
+                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Ver en mapa
+              </Link>
+              <div className="bg-white p-2 rounded-lg shadow-sm border">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -168,6 +211,7 @@ export default function ComprarPage() {
                 />
                 <span className="text-sm">🎨 Rediseño</span>
               </label>
+            </div>
             </div>
           </div>
           
@@ -238,5 +282,14 @@ export default function ComprarPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ComprarPage() {
+  // Next.js requiere Suspense boundary cuando se usa useSearchParams en page
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <ComprarInner />
+    </Suspense>
   );
 }

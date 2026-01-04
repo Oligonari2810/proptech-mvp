@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface FilterState {
   minPrice?: number;
@@ -22,6 +22,13 @@ interface SmartFiltersProps {
 export default function SmartFilters({ onFilterChange, initialFilters = {} }: SmartFiltersProps) {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Mantener sincronizado el estado interno cuando cambian los filtros iniciales (URL/estado externo)
+  useEffect(() => {
+    setFilters(initialFilters || {});
+    // No disparamos onFilterChange aquí para evitar loops:
+    // el caller ya es la fuente de verdad y se encarga de fetch + URL.
+  }, [initialFilters]);
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
     const newFilters = { ...filters, [key]: value };

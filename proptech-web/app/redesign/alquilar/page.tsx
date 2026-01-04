@@ -3,7 +3,8 @@
 // Page debe ser dinámica para evitar prerender
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import RedesignPropertyCard from '../../components/redesign/PropertyCard';
 import '../../styles/redesign/globals.css';
 import '../../styles/redesign/theme.css';
@@ -24,25 +25,24 @@ interface Property {
   emotional_tags?: string[];
 }
 
-export default function RedesignAlquilarPage() {
+function RedesignAlquilarInner() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await fetch(`/api/backend/api/properties`, { 
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('operation', 'alquiler');
+        const response = await fetch(`/api/backend/api/properties?${params.toString()}`, { 
           cache: 'no-store',
           headers: { 'Content-Type': 'application/json' }
         });
         
         if (response.ok) {
           const data = await response.json();
-          // Filtrar solo propiedades en alquiler
-          const alquilerProps = (data.properties || data || []).filter(
-            (p: Property) => p.operation === 'alquiler' || !p.operation
-          );
-          setProperties(alquilerProps);
+          setProperties(data.properties || data || []);
         }
       } catch (err) {
         console.log('Using fallback data');
@@ -64,7 +64,7 @@ export default function RedesignAlquilarPage() {
     };
 
     fetchProperties();
-  }, []);
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -112,6 +112,15 @@ export default function RedesignAlquilarPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RedesignAlquilarPage() {
+  // Next.js requiere Suspense boundary cuando se usa useSearchParams en page
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-warm-bg p-8" />}>
+      <RedesignAlquilarInner />
+    </Suspense>
   );
 }
 
