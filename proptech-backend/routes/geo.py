@@ -162,6 +162,15 @@ def geo_within():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
 
+    # Limitar resultados (evitar overload del mapa)
+    raw_limit = request.args.get("limit", "").strip()
+    try:
+        limit = int(raw_limit) if raw_limit else 500
+    except ValueError:
+        limit = 500
+    # Cap MVP: evita que un cliente pida demasiado
+    limit = max(1, min(limit, 2000))
+
     # Envelope WGS84
     envelope = func.ST_MakeEnvelope(min_lng, min_lat, max_lng, max_lat, 4326)
 
@@ -169,7 +178,7 @@ def geo_within():
         Property.query.filter(Property.is_active == True)  # noqa: E712
         .filter(Property.geom.isnot(None))
         .filter(func.ST_Intersects(Property.geom, envelope))
-        .limit(500)
+        .limit(limit)
     )
 
     properties = []
@@ -191,5 +200,5 @@ def geo_within():
             }
         )
 
-    return jsonify({"success": True, "bbox": bbox, "count": len(properties), "properties": properties})
+    return jsonify({"success": True, "bbox": bbox, "count": len(properties), "limit": limit, "properties": properties})
 
