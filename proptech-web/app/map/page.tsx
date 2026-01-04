@@ -23,6 +23,7 @@ export default function MapPage() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [propertiesSource, setPropertiesSource] = useState<"geo" | "all">("all");
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
   type MapboxModule = typeof import("mapbox-gl")["default"];
   type MapboxMap = InstanceType<MapboxModule["Map"]>;
@@ -34,9 +35,11 @@ export default function MapPage() {
   const propertiesRef = useRef<Property[]>([]);
 
   const SOURCE_ID = "properties-src";
+  const SOURCE_HEAT_ID = "properties-heat-src";
   const LAYER_CLUSTERS = "properties-clusters";
   const LAYER_CLUSTER_COUNT = "properties-cluster-count";
   const LAYER_UNCLUSTERED = "properties-unclustered";
+  const LAYER_HEATMAP = "properties-heatmap";
 
   const getCoords = (property: Property): { lat: number; lng: number } | null => {
     const lat = property.latitude ?? property.lat;
@@ -91,7 +94,20 @@ export default function MapPage() {
     const zoom = typeof map.getZoom === "function" ? map.getZoom() : 10;
     const limit = zoom < 9 ? 250 : zoom < 12 ? 750 : 1500;
 
-    const res = await fetch(`/api/backend/api/geo/within?bbox=${encodeURIComponent(bbox)}&limit=${limit}`, {
+    // Pasar filtros desde la URL (/map?operation=compra&min_price=...)
+    const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    // Allowlist para evitar filtrar por cualquier cosa
+    const allow = new Set(["operation", "property_type", "type", "min_price", "max_price", "bedrooms", "bathrooms"]);
+    const extra = new URLSearchParams();
+    for (const [k, v] of qs.entries()) {
+      if (allow.has(k) && v) extra.set(k, v);
+    }
+    // Persistir para mostrar en UI
+    setActiveFilters(Object.fromEntries(extra.entries()));
+
+    const url = `/api/backend/api/geo/within?bbox=${encodeURIComponent(bbox)}&limit=${limit}&${extra.toString()}`;
+
+    const res = await fetch(url, {
       cache: "no-store",
       signal,
       headers: { Accept: "application/json" },
@@ -259,6 +275,43 @@ export default function MapPage() {
         clusterRadius: 50,
       } as any);
 
+      // Fuente sin clustering para heatmap (mismo dataset)
+      map.addSource(SOURCE_HEAT_ID, {
+        type: "geojson",
+        data: toFeatureCollection([]),
+      } as any);
+
+      // Heatmap (se muestra solo en zoom bajo)
+      map.addLayer({
+        id: LAYER_HEATMAP,
+        type: "heatmap",
+        source: SOURCE_HEAT_ID,
+        maxzoom: 10,
+        paint: {
+          "heatmap-weight": ["interpolate", ["linear"], ["coalesce", ["get", "price"], 0], 0, 0, 1000000, 1],
+          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 0.8, 10, 1.8],
+          "heatmap-color": [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0,
+            "rgba(0,0,0,0)",
+            0.2,
+            "rgba(14,165,233,0.35)",
+            0.4,
+            "rgba(37,99,235,0.55)",
+            0.6,
+            "rgba(124,58,237,0.65)",
+            0.8,
+            "rgba(239,68,68,0.75)",
+            1,
+            "rgba(239,68,68,0.95)",
+          ],
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 18, 10, 40],
+          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 0, 0.9, 10, 0.0],
+        },
+      } as any);
+
       map.addLayer({
         id: LAYER_CLUSTERS,
         type: "circle",
@@ -297,6 +350,23 @@ export default function MapPage() {
           "circle-opacity": 0.9,
         },
       } as any);
+
+      const updateVisibility = () => {
+        const z = map.getZoom();
+        const showHeat = z < 9;
+        // Heatmap
+        try {
+          map.setLayoutProperty(LAYER_HEATMAP, "visibility", showHeat ? "visible" : "none");
+          map.setLayoutProperty(LAYER_CLUSTERS, "visibility", showHeat ? "none" : "visible");
+          map.setLayoutProperty(LAYER_CLUSTER_COUNT, "visibility", showHeat ? "none" : "visible");
+          map.setLayoutProperty(LAYER_UNCLUSTERED, "visibility", showHeat ? "none" : "visible");
+        } catch {
+          // noop
+        }
+      };
+
+      updateVisibility();
+      map.on("zoom", updateVisibility);
 
       map.on("click", LAYER_CLUSTERS, (e: unknown) => {
         const evt = e as { point?: { x: number; y: number }; features?: Array<{ properties?: any }> };
@@ -370,7 +440,10 @@ export default function MapPage() {
     if (!map || !mapLoaded) return;
     const src = map.getSource(SOURCE_ID) as unknown as { setData?: (data: any) => void };
     if (!src?.setData) return;
-    src.setData(toFeatureCollection(properties));
+    const fc = toFeatureCollection(properties);
+    src.setData(fc);
+    const heat = map.getSource(SOURCE_HEAT_ID) as unknown as { setData?: (data: any) => void };
+    if (heat?.setData) heat.setData(fc);
   }, [properties, mapLoaded]);
 
   return (
@@ -382,6 +455,15 @@ export default function MapPage() {
         <div className="mt-2 text-sm text-gray-500">
           {properties.length} propiedades cargadas • {mapLoaded ? "Mapa cargado" : "Cargando mapa..."} •{" "}
           {propertiesSource === "geo" ? "Vista (bbox)" : "Listado completo"}
+          {Object.keys(activeFilters).length > 0 ? (
+            <>
+              {" "}
+              • Filtros:{" "}
+              {Object.entries(activeFilters)
+                .map(([k, v]) => `${k}=${v}`)
+                .join(" · ")}
+            </>
+          ) : null}
         </div>
       </div>
 

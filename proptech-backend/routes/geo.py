@@ -143,6 +143,30 @@ def _parse_bbox(value: str) -> tuple[float, float, float, float]:
     return min_lng, min_lat, max_lng, max_lat
 
 
+def _parse_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+    s = str(value).strip()
+    if not s:
+        return None
+    try:
+        return int(s)
+    except ValueError:
+        return None
+
+
+def _parse_float(value: str | None) -> float | None:
+    if value is None:
+        return None
+    s = str(value).strip()
+    if not s:
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
 @geo_bp.get("/within")
 def geo_within():
     """
@@ -163,23 +187,40 @@ def geo_within():
         return jsonify({"success": False, "error": str(e)}), 400
 
     # Limitar resultados (evitar overload del mapa)
-    raw_limit = request.args.get("limit", "").strip()
-    try:
-        limit = int(raw_limit) if raw_limit else 500
-    except ValueError:
-        limit = 500
-    # Cap MVP: evita que un cliente pida demasiado
-    limit = max(1, min(limit, 2000))
+    limit = _parse_int(request.args.get("limit"))
+    limit = 500 if limit is None else limit
+    limit = max(1, min(limit, 2000))  # cap MVP
+
+    # Filtros opcionales (alineados con /api/properties)
+    operation = (request.args.get("operation") or "").strip() or None
+    # soportar property_type y type (legacy)
+    property_type = (request.args.get("property_type") or request.args.get("type") or "").strip() or None
+    min_price = _parse_float(request.args.get("min_price"))
+    max_price = _parse_float(request.args.get("max_price"))
+    bedrooms = _parse_int(request.args.get("bedrooms"))
+    bathrooms = _parse_int(request.args.get("bathrooms"))
 
     # Envelope WGS84
     envelope = func.ST_MakeEnvelope(min_lng, min_lat, max_lng, max_lat, 4326)
 
-    query = (
-        Property.query.filter(Property.is_active == True)  # noqa: E712
-        .filter(Property.geom.isnot(None))
-        .filter(func.ST_Intersects(Property.geom, envelope))
-        .limit(limit)
-    )
+    query = Property.query.filter(Property.is_active == True)  # noqa: E712
+    query = query.filter(Property.geom.isnot(None))
+    query = query.filter(func.ST_Intersects(Property.geom, envelope))
+
+    if operation:
+        query = query.filter(Property.operation == operation)
+    if property_type:
+        query = query.filter(Property.property_type == property_type)
+    if min_price is not None:
+        query = query.filter(Property.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Property.price <= max_price)
+    if bedrooms is not None:
+        query = query.filter(Property.bedrooms >= bedrooms)
+    if bathrooms is not None:
+        query = query.filter(Property.bathrooms >= bathrooms)
+
+    query = query.limit(limit)
 
     properties = []
     for p in query.all():
@@ -200,5 +241,21 @@ def geo_within():
             }
         )
 
-    return jsonify({"success": True, "bbox": bbox, "count": len(properties), "limit": limit, "properties": properties})
+    return jsonify(
+        {
+            "success": True,
+            "bbox": bbox,
+            "count": len(properties),
+            "limit": limit,
+            "filters": {
+                "operation": operation,
+                "property_type": property_type,
+                "min_price": min_price,
+                "max_price": max_price,
+                "bedrooms": bedrooms,
+                "bathrooms": bathrooms,
+            },
+            "properties": properties,
+        }
+    )
 
