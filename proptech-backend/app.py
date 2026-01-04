@@ -106,9 +106,36 @@ db.init_app(app)
 try:
     with app.app_context():
         if db.engine.dialect.name == "postgresql":
+            # Solo ejecutar bootstrap completo si Geo está habilitado
+            feature_geo = os.getenv("FEATURE_GEO", "").lower() in ("1", "true", "yes", "on")
+
+            # Extensión (siempre segura)
             db.session.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+
+            if feature_geo:
+                # MVP: bootstrap idempotente para evitar pasos manuales en producción
+                # (si ya existe vía Alembic, esto no hace nada)
+                db.session.execute(
+                    text(
+                        """
+                        ALTER TABLE properties
+                        ADD COLUMN IF NOT EXISTS geom geometry(Point, 4326)
+                        """
+                    )
+                )
+                db.session.execute(
+                    text(
+                        """
+                        UPDATE properties
+                        SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
+                        WHERE geom IS NULL AND longitude IS NOT NULL AND latitude IS NOT NULL
+                        """
+                    )
+                )
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_properties_geom ON properties USING GIST (geom)"))
+
             db.session.commit()
-            logger.info("✅ PostGIS extension verificada/creada")
+            logger.info("✅ PostGIS verificado (extensión + bootstrap geo)")
 except Exception as e:
     logger.warning(f"⚠️ No se pudo inicializar PostGIS: {e}")
 

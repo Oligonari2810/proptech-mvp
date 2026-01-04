@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from sqlalchemy import func
+from sqlalchemy import func, text
 
-from models import Property
+from models import Property, db
 from utils.feature_flags import FeatureFlags
 
 geo_bp = Blueprint("geo", __name__, url_prefix="/api/geo")
@@ -11,7 +11,126 @@ geo_bp = Blueprint("geo", __name__, url_prefix="/api/geo")
 def geo_health():
     if not FeatureFlags.GEO:
         return jsonify({"success": False, "error": "FEATURE_GEO_DISABLED"}), 404
-    return jsonify({"success": True, "status": "ok"})
+    try:
+        dialect = db.engine.dialect.name
+        if dialect != "postgresql":
+            return jsonify(
+                {
+                    "success": True,
+                    "status": "ok",
+                    "dialect": dialect,
+                    "postgis": False,
+                    "notes": "Geo bbox requiere PostgreSQL+PostGIS",
+                }
+            )
+
+        ext = db.session.execute(
+            text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname='postgis') AS ok")
+        ).mappings().first()
+        col = db.session.execute(
+            text(
+                """
+                SELECT EXISTS(
+                  SELECT 1
+                  FROM information_schema.columns
+                  WHERE table_name='properties' AND column_name='geom'
+                ) AS ok
+                """
+            )
+        ).mappings().first()
+        idx = db.session.execute(
+            text(
+                """
+                SELECT EXISTS(
+                  SELECT 1
+                  FROM pg_indexes
+                  WHERE tablename='properties' AND indexname='idx_properties_geom'
+                ) AS ok
+                """
+            )
+        ).mappings().first()
+
+        stats = db.session.execute(
+            text(
+                """
+                SELECT
+                  COUNT(*)::int AS total,
+                  COUNT(*) FILTER (WHERE geom IS NULL)::int AS geom_null,
+                  COUNT(*) FILTER (WHERE longitude IS NOT NULL AND latitude IS NOT NULL)::int AS has_latlng
+                FROM properties
+                """
+            )
+        ).mappings().first()
+
+        needs_backfill = bool(stats and stats.get("has_latlng", 0) > 0 and stats.get("geom_null", 0) > 0)
+
+        return jsonify(
+            {
+                "success": True,
+                "status": "ok",
+                "dialect": dialect,
+                "postgis": bool(ext and ext.get("ok")),
+                "geom_column": bool(col and col.get("ok")),
+                "gist_index": bool(idx and idx.get("ok")),
+                "stats": stats or {},
+                "needs_backfill": needs_backfill,
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@geo_bp.post("/backfill")
+def geo_backfill():
+    """
+    Backfill idempotente para producción (MVP).
+    Requiere token de admin/super_admin cuando AuthService está disponible.
+    """
+    if not FeatureFlags.GEO:
+        return jsonify({"success": False, "error": "FEATURE_GEO_DISABLED"}), 404
+
+    # Best-effort auth (no romper si AuthService no está disponible por config)
+    try:
+        from auth import AuthService  # local import para evitar ciclos
+
+        user = AuthService.get_current_user()
+        if not user:
+            return jsonify({"success": False, "error": "UNAUTHORIZED"}), 401
+        if getattr(user, "role", None) not in ("admin", "super_admin"):
+            return jsonify({"success": False, "error": "FORBIDDEN"}), 403
+    except Exception:
+        return jsonify({"success": False, "error": "AUTH_NOT_AVAILABLE"}), 501
+
+    try:
+        if db.engine.dialect.name != "postgresql":
+            return jsonify({"success": False, "error": "POSTGRES_REQUIRED"}), 400
+
+        db.session.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+        db.session.execute(
+            text(
+                """
+                ALTER TABLE properties
+                ADD COLUMN IF NOT EXISTS geom geometry(Point, 4326)
+                """
+            )
+        )
+        res = db.session.execute(
+            text(
+                """
+                UPDATE properties
+                SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
+                WHERE geom IS NULL AND longitude IS NOT NULL AND latitude IS NOT NULL
+                """
+            )
+        )
+        updated = getattr(res, "rowcount", None)
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_properties_geom ON properties USING GIST (geom)"))
+        db.session.commit()
+
+        return jsonify({"success": True, "updated": updated})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 def _parse_bbox(value: str) -> tuple[float, float, float, float]:

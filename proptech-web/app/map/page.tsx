@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { getMapboxToken, isValidMapboxToken } from "../lib/mapboxConfig";
 
 interface Property {
-  id: string;
+  id: string | number;
   title: string;
   price: number;
   location: string;
@@ -22,6 +22,7 @@ export default function MapPage() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [propertiesSource, setPropertiesSource] = useState<"geo" | "all">("all");
 
   type MapboxModule = typeof import("mapbox-gl")["default"];
   type MapboxMap = InstanceType<MapboxModule["Map"]>;
@@ -30,6 +31,8 @@ export default function MapPage() {
   const mapRef = useRef<MapboxMap | null>(null);
   const markersRef = useRef<MapboxMarker[]>([]);
   const mapboxRef = useRef<MapboxModule | null>(null);
+  const inflightRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<number | null>(null);
 
   const getCoords = (property: Property): { lat: number; lng: number } | null => {
     const lat = property.latitude ?? property.lat;
@@ -39,21 +42,52 @@ export default function MapPage() {
     return { lat, lng };
   };
 
+  const loadAllProperties = async (signal?: AbortSignal) => {
+    const res = await fetch(`/api/properties-proxy`, { cache: "no-store", signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data.properties || [];
+    setPropertiesSource("all");
+    setProperties(list);
+  };
+
+  const loadPropertiesWithinViewport = async (map: MapboxMap, signal?: AbortSignal) => {
+    // bbox: minLng,minLat,maxLng,maxLat
+    const b = map.getBounds();
+    if (!b) throw new Error("NO_BOUNDS");
+    const west = Number(b.getWest().toFixed(6));
+    const south = Number(b.getSouth().toFixed(6));
+    const east = Number(b.getEast().toFixed(6));
+    const north = Number(b.getNorth().toFixed(6));
+    const bbox = `${west},${south},${east},${north}`;
+
+    const res = await fetch(`/api/backend/api/geo/within?bbox=${encodeURIComponent(bbox)}`, {
+      cache: "no-store",
+      signal,
+      headers: { Accept: "application/json" },
+    });
+
+    // Si GEO no está activo (404) o falla, hacemos fallback al endpoint clásico
+    if (!res.ok) {
+      throw new Error(`GEO_HTTP_${res.status}`);
+    }
+
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data.properties || [];
+    setPropertiesSource("geo");
+    setProperties(list);
+  };
+
   useEffect(() => {
+    // Precarga mínima (si GEO todavía no está listo o el mapa tarda)
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/properties-proxy`, { cache: 'no-store', signal: controller.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.properties || []);
-        setProperties(list);
-      } catch (err) {
-        console.error('Error loading properties:', err);
-        // Fallback de demostración para no bloquear la vista
-        setProperties([{
+    loadAllProperties(controller.signal).catch((err) => {
+      console.error("Error loading properties:", err);
+      // Fallback de demostración para no bloquear la vista
+      setPropertiesSource("all");
+      setProperties([
+        {
           id: "demo-1",
           title: "Propiedad Demo",
           price: 250000,
@@ -61,12 +95,9 @@ export default function MapPage() {
           latitude: 18.4861,
           longitude: -69.9312,
           bedrooms: 2,
-        }]);
-      } finally {
-        clearTimeout(timeout);
-      }
-    };
-    load();
+        },
+      ]);
+    }).finally(() => clearTimeout(timeout));
     return () => {
       controller.abort();
       clearTimeout(timeout);
@@ -133,6 +164,55 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
+    // Cargar por viewport (bbox) cuando el mapa ya está listo
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    const schedule = () => {
+      // Debounce de movimientos/zoom
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      debounceRef.current = window.setTimeout(async () => {
+        // Cancelar request anterior
+        if (inflightRef.current) inflightRef.current.abort();
+        const controller = new AbortController();
+        inflightRef.current = controller;
+
+        try {
+          await loadPropertiesWithinViewport(map, controller.signal);
+        } catch (err) {
+          // Solo fallback si realmente falla el GEO
+          console.warn("Fallo GEO dentro de viewport, usando fallback:", err);
+          try {
+            await loadAllProperties(controller.signal);
+          } catch (e2) {
+            console.error("Fallback loadAllProperties también falló:", e2);
+          }
+        }
+      }, 350);
+    };
+
+    // Inicial
+    schedule();
+
+    // Actualizar al mover/zoom
+    map.on("moveend", schedule);
+    map.on("zoomend", schedule);
+
+    return () => {
+      try {
+        map.off("moveend", schedule);
+        map.off("zoomend", schedule);
+      } catch {
+        // noop
+      }
+      if (inflightRef.current) inflightRef.current.abort();
+      inflightRef.current = null;
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    };
+  }, [mapLoaded]);
+
+  useEffect(() => {
     // Actualizar marcadores al cambiar propiedades o al cargar el mapa
     const map = mapRef.current;
     const mapboxgl = mapboxRef.current;
@@ -155,7 +235,7 @@ export default function MapPage() {
           <h3 class="font-bold">${property.title}</h3>
           <p class="text-sm text-gray-600">${property.location}</p>
           <p class="text-lg font-bold text-blue-600">€${property.price?.toLocaleString() || "N/A"}</p>
-          <button onclick="selectProperty('${property.id}')" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
+          <button onclick="selectProperty('${String(property.id)}')" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
             Ver detalles
           </button>
         </div>
@@ -169,7 +249,7 @@ export default function MapPage() {
   // Función global para seleccionar propiedad
   useEffect(() => {
     (window as unknown as Record<string, unknown>).selectProperty = (propertyId: string) => {
-      const property = properties.find((p: Property) => p.id === propertyId);
+      const property = properties.find((p: Property) => String(p.id) === propertyId);
       if (property) {
         setSelectedProperty(property);
       }
@@ -183,7 +263,8 @@ export default function MapPage() {
         <h1 className="text-2xl font-bold text-ink-900">Mapa de Propiedades</h1>
         <p className="text-ink-600">Explora propiedades en el mapa interactivo con MapBox</p>
         <div className="mt-2 text-sm text-gray-500">
-          {properties.length} propiedades cargadas • {mapLoaded ? 'Mapa cargado' : 'Cargando mapa...'}
+          {properties.length} propiedades cargadas • {mapLoaded ? "Mapa cargado" : "Cargando mapa..."} •{" "}
+          {propertiesSource === "geo" ? "Vista (bbox)" : "Listado completo"}
         </div>
       </div>
 
