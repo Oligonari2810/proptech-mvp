@@ -5,6 +5,8 @@ Endpoint para verificar salud del backend
 from flask import Blueprint, jsonify
 import logging
 from datetime import datetime
+import os
+from sqlalchemy import text
 
 logger = logging.getLogger('habitatpro')
 
@@ -24,10 +26,11 @@ def health_check():
     
     # Verificar base de datos
     try:
-        from app import db
-        from models import Property
-        # Query simple para verificar conexión
-        count = Property.query.count()
+        # Importar db inicializada por app.py (no usar ORM para count: evita fallos por columnas nuevas)
+        from models import db
+        db.session.execute(text('SELECT 1'))
+        # Count robusto (no referencia columnas específicas)
+        count = db.session.execute(text('SELECT COUNT(*)::int FROM properties')).scalar() or 0
         health_status['services']['database'] = {
             'status': 'healthy',
             'properties_count': count
@@ -75,8 +78,9 @@ def health_check():
         logger.warning(f"Service check error: {str(e)}")
     
     # Determinar código de estado HTTP
-    if overall_healthy:
+    # En Render/producción MVP: no devolver 503 por problemas parciales (evita que el LB marque la app como down).
+    strict = os.getenv('HEALTHCHECK_STRICT', '').lower() in ('1', 'true', 'yes', 'on')
+    if overall_healthy or not strict:
         return jsonify(health_status), 200
-    else:
-        return jsonify(health_status), 503  # Service Unavailable si hay problemas
+    return jsonify(health_status), 503  # Modo estricto opcional
 

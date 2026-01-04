@@ -1518,8 +1518,9 @@ def health_check():
         try:
             db.session.execute(text('SELECT 1'))
             health_status['services']['database'] = 'healthy'
-            health_status['metrics']['total_properties'] = Property.query.count()
-            health_status['metrics']['total_users'] = User.query.count()
+            # No usar ORM count aquí: si la DB está desfasada (ej. falta geom) puede romper el healthcheck.
+            health_status['metrics']['total_properties'] = db.session.execute(text("SELECT COUNT(*)::int FROM properties")).scalar() or 0
+            health_status['metrics']['total_users'] = db.session.execute(text("SELECT COUNT(*)::int FROM users")).scalar() or 0
             health_status['services']['properties'] = 'operational'
         except Exception as e:
             health_status['services']['database'] = 'unhealthy'
@@ -1564,11 +1565,11 @@ def health_check():
             health_status['services']['ai_engine'] = 'unavailable'
             logger.warning(f"AI Engine check error: {e}")
         
-        # Determinar código HTTP según estado
-        if health_status['status'] == 'healthy':
+        # En MVP: no devolver 503 por degradación parcial (Render health checks).
+        strict = os.getenv('HEALTHCHECK_STRICT', '').lower() in ('1', 'true', 'yes', 'on')
+        if health_status['status'] == 'healthy' or not strict:
             return jsonify(health_status), 200
-        else:
-            return jsonify(health_status), 503  # Service Unavailable si hay problemas
+        return jsonify(health_status), 503  # Modo estricto opcional
             
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}", exc_info=True)
