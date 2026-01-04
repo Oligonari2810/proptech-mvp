@@ -67,6 +67,7 @@ export interface EmotionalSearchResponse {
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
+const viaProxy = (path: string) => (typeof window !== 'undefined' ? `/api/backend${path}` : `${BACKEND_URL}${path}`);
 
 export async function searchEmotional(query: string, options?: Partial<EmotionalSearchRequest>): Promise<EmotionalSearchResponse> {
   try {
@@ -75,10 +76,10 @@ export async function searchEmotional(query: string, options?: Partial<Emotional
       ...options,
     };
 
-    console.log('📡 Llamando a:', `${BACKEND_URL}/api/ai/emotional-search`);
+    console.log('📡 Llamando a:', viaProxy(`/api/ai/emotional-search`));
     console.log('📤 Request:', request);
 
-    const response = await fetch(`${BACKEND_URL}/api/ai/emotional-search`, {
+    const response = await fetch(viaProxy(`/api/ai/emotional-search`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

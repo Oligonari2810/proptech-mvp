@@ -42,8 +42,6 @@ export default function ProfilePage() {
 
   const fetchUserData = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
-      
       const token = localStorage.getItem('habitatpro_token');
       
       const headers: HeadersInit = {
@@ -54,7 +52,7 @@ export default function ProfilePage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${backendUrl}/api/auth/me`, {
+      const response = await fetch(`/api/backend/api/auth/me`, {
         headers,
       });
 
@@ -107,7 +105,6 @@ export default function ProfilePage() {
     setSaveMessage(null);
     
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
       const token = localStorage.getItem('habitatpro_token');
       
       const headers: HeadersInit = {
@@ -118,7 +115,7 @@ export default function ProfilePage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${backendUrl}/api/auth/me`, {
+      const response = await fetch(`/api/backend/api/auth/me`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(formData),

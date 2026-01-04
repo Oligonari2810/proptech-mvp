@@ -53,6 +53,7 @@ export interface CreatePropertyResponse {
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com'
+const viaProxy = (path: string) => (typeof window !== 'undefined' ? `/api/backend${path}` : `${BACKEND_URL}${path}`)
 
 /**
  * Crea una nueva propiedad en el backend
@@ -74,7 +75,7 @@ export async function createProperty(
     // Transformar datos para backend schema
     const backendData = transformForBackend(propertyData)
     
-    const response = await fetch(`${BACKEND_URL}/api/properties`, {
+    const response = await fetch(viaProxy(`/api/properties`), {
       method: 'POST',
       headers,
       body: JSON.stringify(backendData),
@@ -107,7 +108,7 @@ export async function createProperty(
  */
 export async function getProperty(id: number): Promise<any> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/properties/${id}`)
+    const response = await fetch(viaProxy(`/api/properties/${id}`))
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -137,7 +138,7 @@ export async function updateProperty(
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/properties/${id}`, {
+    const response = await fetch(viaProxy(`/api/properties/${id}`), {
       method: 'PUT',
       headers,
       body: JSON.stringify(propertyData),

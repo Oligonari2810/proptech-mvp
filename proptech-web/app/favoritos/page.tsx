@@ -58,11 +58,10 @@ export default function FavoritosPage() {
       const favs = await getFavorites(userId);
       
       // Cargar detalles de propiedades
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://proptech-mvp-1.onrender.com';
       const propertiesWithDetails = await Promise.all(
         favs.map(async (fav: any) => {
           try {
-            const res = await fetch(`${backendUrl}/api/properties/${fav.property_id}`);
+            const res = await fetch(`/api/backend/api/properties/${fav.property_id}`, { cache: 'no-store' });
             if (res.ok) {
               const propData = await res.json();
               return { ...fav, property: propData.property || propData };

@@ -33,8 +33,6 @@ export default function AdminPropertiesPage() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-
   // Obtener token JWT para autenticación
   const getAuthToken = (): string | null => {
     // Intentar obtener token de localStorage (si se usa AuthContext)
@@ -60,7 +58,7 @@ export default function AdminPropertiesPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${backendUrl}/api/properties`, {
+      const response = await fetch(`/api/backend/api/properties`, {
         method: 'GET',
         headers,
       });
@@ -98,7 +96,7 @@ export default function AdminPropertiesPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${backendUrl}/api/properties/${propertyId}`, {
+      const response = await fetch(`/api/backend/api/properties/${propertyId}`, {
         method: 'DELETE',
         headers,
       });
@@ -127,7 +125,7 @@ export default function AdminPropertiesPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${backendUrl}/api/properties/${property.id}`, {
+      const response = await fetch(`/api/backend/api/properties/${property.id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({
