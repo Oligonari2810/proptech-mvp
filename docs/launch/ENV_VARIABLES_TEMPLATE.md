@@ -45,8 +45,10 @@ FLASK_ENV=production
 SECRET_KEY=pegar_secret_generado_aqui
 JWT_SECRET_KEY=pegar_jwt_secret_generado_aqui
 
-# CORS Origins (actualizar con tu dominio Vercel)
-CORS_ORIGINS=https://habitatprord.com,https://*.vercel.app
+# CORS (actualizar con tu dominio Vercel)
+# Nota: el código usa `CORS_ALLOWED_ORIGINS` (CSV) y un flag opcional para previews.
+CORS_ALLOWED_ORIGINS=https://habitatprord.com,https://www.habitatprord.com,http://localhost:3000
+ALLOW_VERCEL_PREVIEW=true
 
 # Port (Render lo asigna automáticamente, pero puedes definirlo)
 PORT=10000
