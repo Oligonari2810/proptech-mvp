@@ -26,6 +26,7 @@ export default function MapPage() {
   const [mapError, setMapError] = useState<string | null>(null);
   const [propertiesSource, setPropertiesSource] = useState<"geo" | "all">("all");
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [linkCopied, setLinkCopied] = useState(false);
 
   type MapboxModule = typeof import("mapbox-gl")["default"];
   type MapboxMap = InstanceType<MapboxModule["Map"]>;
@@ -656,6 +657,29 @@ export default function MapPage() {
             }
             defaultName="Mapa"
           />
+          <button
+            onClick={async () => {
+              try {
+                const url = typeof window !== "undefined" ? window.location.href : "";
+                if (!url) return;
+                if (navigator.share) {
+                  await navigator.share({ title: "HabitatPro • Mapa", url });
+                  return;
+                }
+                if (navigator.clipboard?.writeText) {
+                  await navigator.clipboard.writeText(url);
+                }
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 1200);
+              } catch {
+                // noop
+              }
+            }}
+            className="px-3 py-2 text-sm bg-white border rounded-lg hover:bg-gray-50"
+            title="Compartir o copiar link"
+          >
+            {linkCopied ? "Copiado" : "Compartir"}
+          </button>
         </div>
         <div className="mt-2 text-sm text-gray-500">
           {properties.length} propiedades cargadas • {mapLoaded ? "Mapa cargado" : "Cargando mapa..."} •{" "}

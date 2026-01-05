@@ -12,6 +12,7 @@ export default function SavedSearchesMenu() {
 
   const getPathname = () => (typeof window !== 'undefined' ? window.location.pathname : '/')
   const getSearch = () => (typeof window !== 'undefined' ? window.location.search || '' : '')
+  const getOrigin = () => (typeof window !== 'undefined' ? window.location.origin : '')
 
   const toMapHref = (href: string) => {
     try {
@@ -26,11 +27,12 @@ export default function SavedSearchesMenu() {
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
+      const full = text.startsWith('http') ? text : `${getOrigin()}${text}`
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text)
+        await navigator.clipboard.writeText(full)
       } else if (typeof document !== 'undefined') {
         const ta = document.createElement('textarea')
-        ta.value = text
+        ta.value = full
         ta.style.position = 'fixed'
         ta.style.left = '-9999px'
         document.body.appendChild(ta)
