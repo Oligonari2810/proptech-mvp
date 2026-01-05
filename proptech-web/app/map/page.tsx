@@ -35,6 +35,7 @@ export default function MapPage() {
   const inflightRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<number | null>(null);
   const propertiesRef = useRef<Property[]>([]);
+  const initialBboxRef = useRef<string | null>(null);
 
   const SOURCE_ID = "properties-src";
   const SOURCE_HEAT_ID = "properties-heat-src";
@@ -126,6 +127,33 @@ export default function MapPage() {
     setProperties(list);
   };
 
+  const loadPropertiesWithinBbox = async (bbox: string, map: MapboxMap, signal?: AbortSignal) => {
+    // Ajustar límite por zoom (menos puntos cuando estás lejos)
+    const zoom = typeof map.getZoom === "function" ? map.getZoom() : 10;
+    const limit = zoom < 9 ? 250 : zoom < 12 ? 750 : 1500;
+
+    const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const allow = new Set(["operation", "property_type", "type", "min_price", "max_price", "bedrooms", "bathrooms"]);
+    const extra = new URLSearchParams();
+    for (const [k, v] of qs.entries()) {
+      if (allow.has(k) && v) extra.set(k, v);
+    }
+    setActiveFilters(Object.fromEntries(extra.entries()));
+
+    const url = `/api/backend/api/geo/within?bbox=${encodeURIComponent(bbox)}&limit=${limit}&${extra.toString()}`;
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`GEO_HTTP_${res.status}`);
+
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data.properties || [];
+    setPropertiesSource("geo");
+    setProperties(list);
+  };
+
   useEffect(() => {
     // Precarga mínima (si GEO todavía no está listo o el mapa tarda)
     const controller = new AbortController();
@@ -172,13 +200,31 @@ export default function MapPage() {
           return;
         }
 
-        // Soportar links compartibles: /map?center=lng,lat&zoom=12
+        // Soportar links compartibles:
+        // - /map?bbox=minLng,minLat,maxLng,maxLat (prioritario)
+        // - /map?center=lng,lat&zoom=12
         let initialCenter: [number, number] = [-69.9312, 18.4861];
         let initialZoom = 10;
+        let initialBbox: [number, number, number, number] | null = null;
         try {
           const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+          const bboxRaw = (qs.get("bbox") || "").trim();
           const center = (qs.get("center") || "").trim();
           const zoomRaw = (qs.get("zoom") || "").trim();
+
+          if (bboxRaw) {
+            const parts = bboxRaw.split(",").map((x) => Number(x.trim()));
+            if (
+              parts.length === 4 &&
+              parts.every((n) => Number.isFinite(n)) &&
+              parts[0] <= parts[2] &&
+              parts[1] <= parts[3]
+            ) {
+              initialBbox = [parts[0], parts[1], parts[2], parts[3]];
+              initialBboxRef.current = bboxRaw;
+            }
+          }
+
           if (center) {
             const parts = center.split(",").map((x) => Number(x.trim()));
             if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
@@ -201,6 +247,21 @@ export default function MapPage() {
         });
 
         mapRef.current = map;
+
+        // Si hay bbox, ajustar vista a esa área (vista exacta)
+        if (initialBbox) {
+          try {
+            map.fitBounds(
+              [
+                [initialBbox[0], initialBbox[1]],
+                [initialBbox[2], initialBbox[3]],
+              ],
+              { padding: 32, duration: 0 }
+            );
+          } catch {
+            // noop
+          }
+        }
 
         map.on("error", (e: unknown) => {
           console.error("❌ Error Mapbox en /map:", e);
@@ -244,8 +305,31 @@ export default function MapPage() {
         const controller = new AbortController();
         inflightRef.current = controller;
 
+        // Guardar center/zoom en URL (shareable) al finalizar movimiento
         try {
-          await loadPropertiesWithinViewport(map, controller.signal);
+          const c = map.getCenter();
+          setCenterZoomInUrl(c.lng, c.lat, map.getZoom());
+
+          const b = map.getBounds();
+          if (!b) return;
+          const bbox = `${Number(b.getWest().toFixed(6))},${Number(b.getSouth().toFixed(6))},${Number(
+            b.getEast().toFixed(6)
+          )},${Number(b.getNorth().toFixed(6))}`;
+          setBboxInUrl(bbox);
+        } catch {
+          // noop
+        }
+
+        try {
+          // Primer fetch: si venimos con bbox en la URL, úsalo una vez (vista reproducible exacta)
+          if (initialBboxRef.current) {
+            const bbox = initialBboxRef.current;
+            initialBboxRef.current = null;
+            setBboxInUrl(bbox);
+            await loadPropertiesWithinBbox(bbox, map, controller.signal);
+          } else {
+            await loadPropertiesWithinViewport(map, controller.signal);
+          }
         } catch (err) {
           // Solo fallback si realmente falla el GEO
           console.warn("Fallo GEO dentro de viewport, usando fallback:", err);
@@ -280,6 +364,42 @@ export default function MapPage() {
   }, [mapLoaded]);
 
   useEffect(() => {
+    // Permitir "Cerca de mí" sin recargar: escuchar evento y centrar el mapa
+    const handler = (ev: Event) => {
+      const e = ev as CustomEvent<{ lng: number; lat: number; zoom?: number }>;
+      const map = mapRef.current;
+      if (!map || !e.detail) return;
+      const { lng, lat, zoom } = e.detail;
+      try {
+        map.easeTo({ center: [lng, lat], zoom: zoom ?? map.getZoom() });
+        setCenterZoomInUrl(lng, lat, zoom ?? map.getZoom());
+        try {
+          const b = map.getBounds();
+          if (!b) return;
+          const bbox = `${Number(b.getWest().toFixed(6))},${Number(b.getSouth().toFixed(6))},${Number(
+            b.getEast().toFixed(6)
+          )},${Number(b.getNorth().toFixed(6))}`;
+          setBboxInUrl(bbox);
+        } catch {
+          // noop
+        }
+      } catch {
+        // noop
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("habitatpro:map-center", handler as EventListener);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("habitatpro:map-center", handler as EventListener);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     propertiesRef.current = properties;
   }, [properties]);
 
@@ -302,6 +422,29 @@ export default function MapPage() {
       const url = new URL(window.location.href);
       if (id) url.searchParams.set("selected", id);
       else url.searchParams.delete("selected");
+      window.history.replaceState({}, "", url.toString());
+    } catch {
+      // noop
+    }
+  };
+
+  const setCenterZoomInUrl = (lng: number, lat: number, zoom: number) => {
+    if (typeof window === "undefined") return;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("center", `${lng.toFixed(6)},${lat.toFixed(6)}`);
+      url.searchParams.set("zoom", String(Math.round(zoom * 10) / 10));
+      window.history.replaceState({}, "", url.toString());
+    } catch {
+      // noop
+    }
+  };
+
+  const setBboxInUrl = (bbox: string) => {
+    if (typeof window === "undefined") return;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("bbox", bbox);
       window.history.replaceState({}, "", url.toString());
     } catch {
       // noop

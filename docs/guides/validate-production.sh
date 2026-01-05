@@ -55,6 +55,7 @@ echo "-----------------------------------"
 test_endpoint "GET /api/properties" "$BACKEND_URL/api/properties"
 test_endpoint "GET /api/health" "$BACKEND_URL/api/health"
 test_endpoint "GET /api/geo/health" "$BACKEND_URL/api/geo/health"
+test_endpoint "GET /api/geo/within (bbox smoke)" "$BACKEND_URL/api/geo/within?bbox=-70.5,18.1,-69.3,18.8&limit=10"
 test_endpoint "GET /api/admin/metrics" "$BACKEND_URL/api/admin/metrics"
 # Favorites endpoint está en app.py directamente, verificamos que existe
 echo -n "Testing GET /api/favorites... "

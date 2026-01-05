@@ -53,6 +53,26 @@ export default function SavedSearchesMenu() {
         current.set('center', `${longitude.toFixed(6)},${latitude.toFixed(6)}`)
         current.set('zoom', '12')
         current.delete('selected')
+        // Si ya estamos en /map, evitar recarga: emitir evento para centrar el mapa
+        if (getPathname().startsWith('/map')) {
+          window.dispatchEvent(
+            new CustomEvent('habitatpro:map-center', {
+              detail: { lng: longitude, lat: latitude, zoom: 12 },
+            })
+          )
+          // Actualizar URL (shareable)
+          try {
+            const url = new URL(window.location.href)
+            url.searchParams.set('center', `${longitude.toFixed(6)},${latitude.toFixed(6)}`)
+            url.searchParams.set('zoom', '12')
+            url.searchParams.delete('selected')
+            window.history.replaceState({}, '', url.toString())
+          } catch {
+            // noop
+          }
+          return
+        }
+
         window.location.href = `/map?${current.toString()}`
       },
       () => {
@@ -60,6 +80,29 @@ export default function SavedSearchesMenu() {
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 }
     )
+  }
+
+  const saveCurrentArea = () => {
+    if (typeof window === 'undefined') return
+    try {
+      // Guardar exactamente la vista actual del mapa (incluye center/zoom/bbox/filtros)
+      const href = `/map${window.location.search || ''}`
+      const qs = new URLSearchParams(window.location.search || '')
+      const op = qs.get('operation') || defaultOperationForPath(getPathname())
+      const parts: string[] = []
+      if (qs.get('location')) parts.push(String(qs.get('location')))
+      if (qs.get('max_price')) parts.push(`<=${qs.get('max_price')}`)
+      if (qs.get('min_price')) parts.push(`>=${qs.get('min_price')}`)
+      if (qs.get('bedrooms')) parts.push(`${qs.get('bedrooms')}+ hab`)
+      if (qs.get('bathrooms')) parts.push(`${qs.get('bathrooms')}+ baños`)
+      const suffix = parts.length ? ` • ${parts.join(' ')}` : ''
+      saveSearch({
+        name: `Área actual (${op})${suffix}`,
+        href,
+      })
+    } catch {
+      // noop
+    }
   }
 
   const PRESETS: Array<{ name: string; href: string }> = [
@@ -117,6 +160,18 @@ export default function SavedSearchesMenu() {
               >
                 Limpiar filtros
               </Link>
+              {getPathname().startsWith('/map') ? (
+                <button
+                  onClick={() => {
+                    saveCurrentArea()
+                    setOpen(false)
+                  }}
+                  className="text-xs font-semibold text-gray-700 hover:text-gray-900"
+                  title="Guarda la vista actual (bbox/center/zoom)"
+                >
+                  Guardar área
+                </button>
+              ) : null}
               <button
                 onClick={() => {
                   setOpen(false)

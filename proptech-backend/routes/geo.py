@@ -56,7 +56,18 @@ def geo_health():
                     """
                 )
             ).mappings().first()
-            return dict(row) if row else {}
+            if not row:
+                return {}
+            # Asegurar JSON-serializable (evitar RowMapping en respuesta)
+            out: dict[str, int | str | None] = {}
+            for k, v in dict(row).items():
+                if v is None:
+                    out[k] = None
+                elif isinstance(v, (int, float)):
+                    out[k] = int(v)
+                else:
+                    out[k] = str(v)
+            return out
         except Exception as e:
             nonlocal status
             status = "degraded"
