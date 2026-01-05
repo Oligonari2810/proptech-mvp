@@ -82,6 +82,22 @@ export default function SavedSearchesMenu() {
     )
   }
 
+  const saveCurrentArea = () => {
+    if (typeof window === 'undefined') return
+    try {
+      // Guardar exactamente la vista actual del mapa (incluye center/zoom/bbox/filtros)
+      const href = `/map${window.location.search || ''}`
+      const qs = new URLSearchParams(window.location.search || '')
+      const op = qs.get('operation') || defaultOperationForPath(getPathname())
+      saveSearch({
+        name: `Área actual (${op})`,
+        href,
+      })
+    } catch {
+      // noop
+    }
+  }
+
   const PRESETS: Array<{ name: string; href: string }> = [
     {
       name: 'Comprar: Santo Domingo < 300k (2+ hab)',
@@ -137,6 +153,18 @@ export default function SavedSearchesMenu() {
               >
                 Limpiar filtros
               </Link>
+              {getPathname().startsWith('/map') ? (
+                <button
+                  onClick={() => {
+                    saveCurrentArea()
+                    setOpen(false)
+                  }}
+                  className="text-xs font-semibold text-gray-700 hover:text-gray-900"
+                  title="Guarda la vista actual (bbox/center/zoom)"
+                >
+                  Guardar área
+                </button>
+              ) : null}
               <button
                 onClick={() => {
                   setOpen(false)

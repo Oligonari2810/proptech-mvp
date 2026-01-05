@@ -248,6 +248,13 @@ export default function MapPage() {
         try {
           const c = map.getCenter();
           setCenterZoomInUrl(c.lng, c.lat, map.getZoom());
+
+          const b = map.getBounds();
+          if (!b) return;
+          const bbox = `${Number(b.getWest().toFixed(6))},${Number(b.getSouth().toFixed(6))},${Number(
+            b.getEast().toFixed(6)
+          )},${Number(b.getNorth().toFixed(6))}`;
+          setBboxInUrl(bbox);
         } catch {
           // noop
         }
@@ -297,6 +304,16 @@ export default function MapPage() {
       try {
         map.easeTo({ center: [lng, lat], zoom: zoom ?? map.getZoom() });
         setCenterZoomInUrl(lng, lat, zoom ?? map.getZoom());
+        try {
+          const b = map.getBounds();
+          if (!b) return;
+          const bbox = `${Number(b.getWest().toFixed(6))},${Number(b.getSouth().toFixed(6))},${Number(
+            b.getEast().toFixed(6)
+          )},${Number(b.getNorth().toFixed(6))}`;
+          setBboxInUrl(bbox);
+        } catch {
+          // noop
+        }
       } catch {
         // noop
       }
@@ -348,6 +365,17 @@ export default function MapPage() {
       const url = new URL(window.location.href);
       url.searchParams.set("center", `${lng.toFixed(6)},${lat.toFixed(6)}`);
       url.searchParams.set("zoom", String(Math.round(zoom * 10) / 10));
+      window.history.replaceState({}, "", url.toString());
+    } catch {
+      // noop
+    }
+  };
+
+  const setBboxInUrl = (bbox: string) => {
+    if (typeof window === "undefined") return;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("bbox", bbox);
       window.history.replaceState({}, "", url.toString());
     } catch {
       // noop
