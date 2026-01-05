@@ -21,9 +21,13 @@ def geo_health():
         return jsonify({"success": False, "error": str(e)}), 500
 
     try:
-        details["dialect"] = getattr(getattr(db.session, "bind", None), "dialect", None).name  # type: ignore[attr-defined]
+        # La forma más fiable (usa el bind real de la sesión)
+        details["dialect"] = db.session.get_bind().dialect.name  # type: ignore[union-attr]
     except Exception:
-        details["dialect"] = "unknown"
+        try:
+            details["dialect"] = db.engine.dialect.name
+        except Exception:
+            details["dialect"] = "unknown"
 
     if details["dialect"] != "postgresql":
         return jsonify(
