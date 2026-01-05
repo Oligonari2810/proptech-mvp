@@ -11,73 +11,98 @@ geo_bp = Blueprint("geo", __name__, url_prefix="/api/geo")
 def geo_health():
     if not FeatureFlags.GEO:
         return jsonify({"success": False, "error": "FEATURE_GEO_DISABLED"}), 404
+    # MVP: endpoint debe ser robusto (no 500), aunque falten permisos/tabla/columna.
+    status = "ok"
+    details: dict = {"dialect": "unknown"}
+
     try:
-        dialect = db.engine.dialect.name
-        if dialect != "postgresql":
-            return jsonify(
-                {
-                    "success": True,
-                    "status": "ok",
-                    "dialect": dialect,
-                    "postgis": False,
-                    "notes": "Geo bbox requiere PostgreSQL+PostGIS",
-                }
-            )
+        db.session.execute(text("SELECT 1"))
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
-        ext = db.session.execute(
-            text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname='postgis') AS ok")
-        ).mappings().first()
-        col = db.session.execute(
-            text(
-                """
-                SELECT EXISTS(
-                  SELECT 1
-                  FROM information_schema.columns
-                  WHERE table_name='properties' AND column_name='geom'
-                ) AS ok
-                """
-            )
-        ).mappings().first()
-        idx = db.session.execute(
-            text(
-                """
-                SELECT EXISTS(
-                  SELECT 1
-                  FROM pg_indexes
-                  WHERE tablename='properties' AND indexname='idx_properties_geom'
-                ) AS ok
-                """
-            )
-        ).mappings().first()
+    try:
+        details["dialect"] = getattr(getattr(db.session, "bind", None), "dialect", None).name  # type: ignore[attr-defined]
+    except Exception:
+        details["dialect"] = "unknown"
 
-        stats = db.session.execute(
-            text(
-                """
-                SELECT
-                  COUNT(*)::int AS total,
-                  COUNT(*) FILTER (WHERE geom IS NULL)::int AS geom_null,
-                  COUNT(*) FILTER (WHERE longitude IS NOT NULL AND latitude IS NOT NULL)::int AS has_latlng
-                FROM properties
-                """
-            )
-        ).mappings().first()
-
-        needs_backfill = bool(stats and stats.get("has_latlng", 0) > 0 and stats.get("geom_null", 0) > 0)
-
+    if details["dialect"] != "postgresql":
         return jsonify(
             {
                 "success": True,
                 "status": "ok",
-                "dialect": dialect,
-                "postgis": bool(ext and ext.get("ok")),
-                "geom_column": bool(col and col.get("ok")),
-                "gist_index": bool(idx and idx.get("ok")),
-                "stats": stats or {},
+                "dialect": details["dialect"],
+                "postgis": False,
+                "notes": "Geo bbox requiere PostgreSQL+PostGIS",
+            }
+        ), 200
+
+    def _safe_bool_query(q: str) -> bool:
+        try:
+            row = db.session.execute(text(q)).mappings().first()
+            return bool(row and row.get("ok"))
+        except Exception:
+            return False
+
+    def _safe_stats() -> dict:
+        try:
+            row = db.session.execute(
+                text(
+                    """
+                    SELECT
+                      COUNT(*)::int AS total,
+                      COUNT(*) FILTER (WHERE geom IS NULL)::int AS geom_null,
+                      COUNT(*) FILTER (WHERE longitude IS NOT NULL AND latitude IS NOT NULL)::int AS has_latlng
+                    FROM properties
+                    """
+                )
+            ).mappings().first()
+            return dict(row) if row else {}
+        except Exception as e:
+            nonlocal status
+            status = "degraded"
+            return {"error": str(e)[:180]}
+
+    postgis_ok = _safe_bool_query("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname='postgis') AS ok")
+    geom_col_ok = _safe_bool_query(
+        """
+        SELECT EXISTS(
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name='properties' AND column_name='geom'
+        ) AS ok
+        """
+    )
+    gist_ok = _safe_bool_query(
+        """
+        SELECT EXISTS(
+          SELECT 1
+          FROM pg_indexes
+          WHERE tablename='properties' AND indexname='idx_properties_geom'
+        ) AS ok
+        """
+    )
+
+    stats = _safe_stats()
+    needs_backfill = bool(stats and stats.get("has_latlng", 0) > 0 and stats.get("geom_null", 0) > 0)
+
+    if not (postgis_ok and geom_col_ok and gist_ok):
+        status = "degraded"
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "status": status,
+                "dialect": "postgresql",
+                "postgis": postgis_ok,
+                "geom_column": geom_col_ok,
+                "gist_index": gist_ok,
+                "stats": stats,
                 "needs_backfill": needs_backfill,
             }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        ),
+        200,
+    )
 
 
 @geo_bp.post("/backfill")
