@@ -13,32 +13,35 @@ def geo_health():
         return jsonify({"success": False, "error": "FEATURE_GEO_DISABLED"}), 404
     # MVP: endpoint debe ser robusto (no 500), aunque falten permisos/tabla/columna.
     status = "ok"
-    details: dict = {"dialect": "unknown"}
 
     try:
         db.session.execute(text("SELECT 1"))
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+    # Dialecto real (lo que estaba fallando en producción)
+    dialect = "unknown"
     try:
-        # La forma más fiable (usa el bind real de la sesión)
-        details["dialect"] = db.session.get_bind().dialect.name  # type: ignore[union-attr]
+        dialect = db.engine.dialect.name
     except Exception:
         try:
-            details["dialect"] = db.engine.dialect.name
+            dialect = db.session.get_bind().dialect.name  # type: ignore[union-attr]
         except Exception:
-            details["dialect"] = "unknown"
+            dialect = "unknown"
 
-    if details["dialect"] != "postgresql":
-        return jsonify(
-            {
-                "success": True,
-                "status": "ok",
-                "dialect": details["dialect"],
-                "postgis": False,
-                "notes": "Geo bbox requiere PostgreSQL+PostGIS",
-            }
-        ), 200
+    if dialect != "postgresql":
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "status": "ok",
+                    "dialect": dialect,
+                    "postgis": False,
+                    "notes": "Geo bbox requiere PostgreSQL+PostGIS",
+                }
+            ),
+            200,
+        )
 
     def _safe_bool_query(q: str) -> bool:
         try:
@@ -62,16 +65,13 @@ def geo_health():
             ).mappings().first()
             if not row:
                 return {}
-            # Asegurar JSON-serializable (evitar RowMapping en respuesta)
-            out: dict[str, int | str | None] = {}
-            for k, v in dict(row).items():
-                if v is None:
-                    out[k] = None
-                elif isinstance(v, (int, float)):
-                    out[k] = int(v)
-                else:
-                    out[k] = str(v)
-            return out
+            # Asegurar JSON-serializable (evitar RowMapping/Decimal)
+            raw = dict(row)
+            return {
+                "total": int(raw.get("total", 0) or 0),
+                "geom_null": int(raw.get("geom_null", 0) or 0),
+                "has_latlng": int(raw.get("has_latlng", 0) or 0),
+            }
         except Exception as e:
             nonlocal status
             status = "degraded"
@@ -108,7 +108,7 @@ def geo_health():
             {
                 "success": True,
                 "status": status,
-                "dialect": "postgresql",
+                "dialect": dialect,
                 "postgis": postgis_ok,
                 "geom_column": geom_col_ok,
                 "gist_index": gist_ok,
