@@ -53,6 +53,26 @@ export default function SavedSearchesMenu() {
         current.set('center', `${longitude.toFixed(6)},${latitude.toFixed(6)}`)
         current.set('zoom', '12')
         current.delete('selected')
+        // Si ya estamos en /map, evitar recarga: emitir evento para centrar el mapa
+        if (getPathname().startsWith('/map')) {
+          window.dispatchEvent(
+            new CustomEvent('habitatpro:map-center', {
+              detail: { lng: longitude, lat: latitude, zoom: 12 },
+            })
+          )
+          // Actualizar URL (shareable)
+          try {
+            const url = new URL(window.location.href)
+            url.searchParams.set('center', `${longitude.toFixed(6)},${latitude.toFixed(6)}`)
+            url.searchParams.set('zoom', '12')
+            url.searchParams.delete('selected')
+            window.history.replaceState({}, '', url.toString())
+          } catch {
+            // noop
+          }
+          return
+        }
+
         window.location.href = `/map?${current.toString()}`
       },
       () => {

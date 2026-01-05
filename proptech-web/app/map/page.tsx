@@ -244,6 +244,14 @@ export default function MapPage() {
         const controller = new AbortController();
         inflightRef.current = controller;
 
+        // Guardar center/zoom en URL (shareable) al finalizar movimiento
+        try {
+          const c = map.getCenter();
+          setCenterZoomInUrl(c.lng, c.lat, map.getZoom());
+        } catch {
+          // noop
+        }
+
         try {
           await loadPropertiesWithinViewport(map, controller.signal);
         } catch (err) {
@@ -280,6 +288,32 @@ export default function MapPage() {
   }, [mapLoaded]);
 
   useEffect(() => {
+    // Permitir "Cerca de mí" sin recargar: escuchar evento y centrar el mapa
+    const handler = (ev: Event) => {
+      const e = ev as CustomEvent<{ lng: number; lat: number; zoom?: number }>;
+      const map = mapRef.current;
+      if (!map || !e.detail) return;
+      const { lng, lat, zoom } = e.detail;
+      try {
+        map.easeTo({ center: [lng, lat], zoom: zoom ?? map.getZoom() });
+        setCenterZoomInUrl(lng, lat, zoom ?? map.getZoom());
+      } catch {
+        // noop
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("habitatpro:map-center", handler as EventListener);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("habitatpro:map-center", handler as EventListener);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     propertiesRef.current = properties;
   }, [properties]);
 
@@ -302,6 +336,18 @@ export default function MapPage() {
       const url = new URL(window.location.href);
       if (id) url.searchParams.set("selected", id);
       else url.searchParams.delete("selected");
+      window.history.replaceState({}, "", url.toString());
+    } catch {
+      // noop
+    }
+  };
+
+  const setCenterZoomInUrl = (lng: number, lat: number, zoom: number) => {
+    if (typeof window === "undefined") return;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("center", `${lng.toFixed(6)},${lat.toFixed(6)}`);
+      url.searchParams.set("zoom", String(Math.round(zoom * 10) / 10));
       window.history.replaceState({}, "", url.toString());
     } catch {
       // noop
