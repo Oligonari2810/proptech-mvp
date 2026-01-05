@@ -35,6 +35,7 @@ export default function MapPage() {
   const inflightRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<number | null>(null);
   const propertiesRef = useRef<Property[]>([]);
+  const initialBboxRef = useRef<string | null>(null);
 
   const SOURCE_ID = "properties-src";
   const SOURCE_HEAT_ID = "properties-heat-src";
@@ -126,6 +127,33 @@ export default function MapPage() {
     setProperties(list);
   };
 
+  const loadPropertiesWithinBbox = async (bbox: string, map: MapboxMap, signal?: AbortSignal) => {
+    // Ajustar límite por zoom (menos puntos cuando estás lejos)
+    const zoom = typeof map.getZoom === "function" ? map.getZoom() : 10;
+    const limit = zoom < 9 ? 250 : zoom < 12 ? 750 : 1500;
+
+    const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const allow = new Set(["operation", "property_type", "type", "min_price", "max_price", "bedrooms", "bathrooms"]);
+    const extra = new URLSearchParams();
+    for (const [k, v] of qs.entries()) {
+      if (allow.has(k) && v) extra.set(k, v);
+    }
+    setActiveFilters(Object.fromEntries(extra.entries()));
+
+    const url = `/api/backend/api/geo/within?bbox=${encodeURIComponent(bbox)}&limit=${limit}&${extra.toString()}`;
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`GEO_HTTP_${res.status}`);
+
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data.properties || [];
+    setPropertiesSource("geo");
+    setProperties(list);
+  };
+
   useEffect(() => {
     // Precarga mínima (si GEO todavía no está listo o el mapa tarda)
     const controller = new AbortController();
@@ -193,6 +221,7 @@ export default function MapPage() {
               parts[1] <= parts[3]
             ) {
               initialBbox = [parts[0], parts[1], parts[2], parts[3]];
+              initialBboxRef.current = bboxRaw;
             }
           }
 
@@ -292,7 +321,15 @@ export default function MapPage() {
         }
 
         try {
-          await loadPropertiesWithinViewport(map, controller.signal);
+          // Primer fetch: si venimos con bbox en la URL, úsalo una vez (vista reproducible exacta)
+          if (initialBboxRef.current) {
+            const bbox = initialBboxRef.current;
+            initialBboxRef.current = null;
+            setBboxInUrl(bbox);
+            await loadPropertiesWithinBbox(bbox, map, controller.signal);
+          } else {
+            await loadPropertiesWithinViewport(map, controller.signal);
+          }
         } catch (err) {
           // Solo fallback si realmente falla el GEO
           console.warn("Fallo GEO dentro de viewport, usando fallback:", err);

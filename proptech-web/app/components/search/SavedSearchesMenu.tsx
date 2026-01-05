@@ -89,8 +89,15 @@ export default function SavedSearchesMenu() {
       const href = `/map${window.location.search || ''}`
       const qs = new URLSearchParams(window.location.search || '')
       const op = qs.get('operation') || defaultOperationForPath(getPathname())
+      const parts: string[] = []
+      if (qs.get('location')) parts.push(String(qs.get('location')))
+      if (qs.get('max_price')) parts.push(`<=${qs.get('max_price')}`)
+      if (qs.get('min_price')) parts.push(`>=${qs.get('min_price')}`)
+      if (qs.get('bedrooms')) parts.push(`${qs.get('bedrooms')}+ hab`)
+      if (qs.get('bathrooms')) parts.push(`${qs.get('bathrooms')}+ baños`)
+      const suffix = parts.length ? ` • ${parts.join(' ')}` : ''
       saveSearch({
-        name: `Área actual (${op})`,
+        name: `Área actual (${op})${suffix}`,
         href,
       })
     } catch {
