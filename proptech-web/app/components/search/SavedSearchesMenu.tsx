@@ -8,6 +8,7 @@ import { useSavedSearches } from '../../hooks/useSavedSearches'
 export default function SavedSearchesMenu() {
   const { savedSearches, deleteSearch, saveSearch } = useSavedSearches()
   const [open, setOpen] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   const getPathname = () => (typeof window !== 'undefined' ? window.location.pathname : '/')
   const getSearch = () => (typeof window !== 'undefined' ? window.location.search || '' : '')
@@ -20,6 +21,27 @@ export default function SavedSearchesMenu() {
     } catch {
       // Si viene malformado, al menos intenta abrir el mapa
       return '/map'
+    }
+  }
+
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else if (typeof document !== 'undefined') {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.style.position = 'fixed'
+        ta.style.left = '-9999px'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey(null), 1200)
+    } catch {
+      // noop
     }
   }
 
@@ -105,24 +127,63 @@ export default function SavedSearchesMenu() {
     }
   }
 
-  const PRESETS: Array<{ name: string; href: string }> = [
-    {
-      name: 'Comprar: Santo Domingo < 300k (2+ hab)',
-      href: '/comprar?operation=compra&location=Santo%20Domingo&max_price=300000&bedrooms=2',
-    },
-    {
-      name: 'Alquilar: Punta Cana (2+ hab, < 1500)',
-      href: '/alquilar?operation=alquiler&location=Punta%20Cana&max_price=1500&bedrooms=2',
-    },
-    {
-      name: 'Inversión: Punta Cana < 350k',
-      href: '/invertir?operation=inversion&location=Punta%20Cana&max_price=350000',
-    },
-    {
-      name: 'Lujo: 3+ baños, > 500k',
-      href: '/comprar?operation=compra&min_price=500000&bathrooms=3',
-    },
-  ]
+  const buildPresets = (pathname: string): Array<{ name: string; href: string }> => {
+    // Presets contextuales para que “encajen” con la pantalla actual
+    if (pathname.startsWith('/alquilar')) {
+      return [
+        {
+          name: 'Alquilar: Punta Cana (2+ hab, < 1500)',
+          href: '/alquilar?operation=alquiler&location=Punta%20Cana&max_price=1500&bedrooms=2',
+        },
+        {
+          name: 'Alquilar: Santo Domingo (1+ hab, < 900)',
+          href: '/alquilar?operation=alquiler&location=Santo%20Domingo&max_price=900&bedrooms=1',
+        },
+      ]
+    }
+    if (pathname.startsWith('/invertir')) {
+      return [
+        {
+          name: 'Inversión: Punta Cana < 350k',
+          href: '/invertir?operation=inversion&location=Punta%20Cana&max_price=350000',
+        },
+        {
+          name: 'Inversión: Santo Domingo < 250k',
+          href: '/invertir?operation=inversion&location=Santo%20Domingo&max_price=250000',
+        },
+      ]
+    }
+    if (pathname.startsWith('/map')) {
+      // En mapa, usar presets que abren mapa directamente
+      return [
+        {
+          name: 'Mapa: Comprar (vista actual / bbox)',
+          href: `/map${getSearch() || '?operation=compra'}`,
+        },
+        {
+          name: 'Mapa: Lujo (>=500k)',
+          href: '/map?operation=compra&min_price=500000&zoom=11',
+        },
+      ]
+    }
+    // Default: comprar
+    return [
+      {
+        name: 'Comprar: Santo Domingo < 300k (2+ hab)',
+        href: '/comprar?operation=compra&location=Santo%20Domingo&max_price=300000&bedrooms=2',
+      },
+      {
+        name: 'Comprar: Punta Cana >= 500k',
+        href: '/comprar?operation=compra&location=Punta%20Cana&min_price=500000',
+      },
+      {
+        name: 'Lujo: 3+ baños, > 500k',
+        href: '/comprar?operation=compra&min_price=500000&bathrooms=3',
+      },
+    ]
+  }
+
+  const PRESETS = buildPresets(getPathname())
 
   const savePreset = (preset: { name: string; href: string }) => {
     try {
@@ -208,6 +269,13 @@ export default function SavedSearchesMenu() {
                       Mapa →
                     </Link>
                     <button
+                      onClick={() => copyToClipboard(p.href, `preset:${p.href}`)}
+                      className="text-xs font-semibold text-gray-700 hover:text-gray-900"
+                      title="Copiar link"
+                    >
+                      {copiedKey === `preset:${p.href}` ? 'Copiado' : 'Copiar'}
+                    </button>
+                    <button
                       onClick={() => savePreset(p)}
                       className="ml-auto text-xs font-semibold text-gray-700 hover:text-gray-900"
                       title="Guardar preset"
@@ -247,6 +315,13 @@ export default function SavedSearchesMenu() {
                         >
                           Mapa →
                         </Link>
+                        <button
+                          onClick={() => copyToClipboard(s.href, `saved:${s.id}`)}
+                          className="ml-3 inline-flex items-center text-xs font-semibold text-gray-700 hover:text-gray-900"
+                          title="Copiar link"
+                        >
+                          {copiedKey === `saved:${s.id}` ? 'Copiado' : 'Copiar'}
+                        </button>
                       </div>
                     </div>
                     <button
