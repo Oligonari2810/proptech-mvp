@@ -172,13 +172,30 @@ export default function MapPage() {
           return;
         }
 
-        // Soportar links compartibles: /map?center=lng,lat&zoom=12
+        // Soportar links compartibles:
+        // - /map?bbox=minLng,minLat,maxLng,maxLat (prioritario)
+        // - /map?center=lng,lat&zoom=12
         let initialCenter: [number, number] = [-69.9312, 18.4861];
         let initialZoom = 10;
+        let initialBbox: [number, number, number, number] | null = null;
         try {
           const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+          const bboxRaw = (qs.get("bbox") || "").trim();
           const center = (qs.get("center") || "").trim();
           const zoomRaw = (qs.get("zoom") || "").trim();
+
+          if (bboxRaw) {
+            const parts = bboxRaw.split(",").map((x) => Number(x.trim()));
+            if (
+              parts.length === 4 &&
+              parts.every((n) => Number.isFinite(n)) &&
+              parts[0] <= parts[2] &&
+              parts[1] <= parts[3]
+            ) {
+              initialBbox = [parts[0], parts[1], parts[2], parts[3]];
+            }
+          }
+
           if (center) {
             const parts = center.split(",").map((x) => Number(x.trim()));
             if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
@@ -201,6 +218,21 @@ export default function MapPage() {
         });
 
         mapRef.current = map;
+
+        // Si hay bbox, ajustar vista a esa área (vista exacta)
+        if (initialBbox) {
+          try {
+            map.fitBounds(
+              [
+                [initialBbox[0], initialBbox[1]],
+                [initialBbox[2], initialBbox[3]],
+              ],
+              { padding: 32, duration: 0 }
+            );
+          } catch {
+            // noop
+          }
+        }
 
         map.on("error", (e: unknown) => {
           console.error("❌ Error Mapbox en /map:", e);
