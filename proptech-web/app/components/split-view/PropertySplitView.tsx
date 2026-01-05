@@ -12,6 +12,9 @@ interface Property {
   location: string;
   latitude?: number;
   longitude?: number;
+  // compat: algunos endpoints/fixtures usan lat/lng
+  lat?: number;
+  lng?: number;
   bedrooms?: number;
   bathrooms?: number;
   area?: number;
@@ -38,6 +41,14 @@ export default function PropertySplitView({
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
 
+  const getCoords = (p: Property): { latitude: number; longitude: number } | null => {
+    const lat = p.latitude ?? p.lat;
+    const lng = p.longitude ?? p.lng;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { latitude: lat, longitude: lng };
+  };
+
   useEffect(() => {
     if (!initialSelectedId) return;
     const found = properties.find((p) => String(p.id) === String(initialSelectedId));
@@ -45,7 +56,13 @@ export default function PropertySplitView({
   }, [initialSelectedId, properties]);
 
   // Filtrar propiedades con coordenadas para el mapa
-  const mapProperties = properties.filter(p => p.latitude && p.longitude);
+  const mapProperties = properties
+    .map((p) => {
+      const coords = getCoords(p);
+      if (!coords) return null;
+      return { ...p, ...coords };
+    })
+    .filter(Boolean) as Array<Property & { latitude: number; longitude: number }>;
 
   const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property);
